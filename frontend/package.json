@@ -15,6 +15,7 @@
   },
   "proxy": "http://127.0.0.1:8000",
   "scripts": {
+    "dev": "react-scripts start",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
