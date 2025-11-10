@@ -31,7 +31,7 @@ ActivityPass streamlines how college staff publish extracurricular activities an
 
 | Layer    | Technology                                                             |
 | -------- | ---------------------------------------------------------------------- |
-| Backend  | Python 3, Django, Django REST Framework (planned)                      |
+| Backend  | Python 3, Django, Django REST Framework                                |
 | Frontend | React (Create React App scaffold)                                      |
 | Data     | PostgreSQL (planned), SQLite (dev), Redis (caching sessions - planned) |
 | AI       | Transformers / Open-source LLMs (future), rule engine (initial)        |
@@ -60,8 +60,26 @@ LICENSE         # MIT License
 ```pwsh
 cd backend
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install django djangorestframework
+\.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+Create a MySQL database and set environment variables:
+
+```pwsh
+# In MySQL shell
+# CREATE DATABASE activitypass CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+# In repo root, create .env from template
+cd ..
+Copy-Item .env.example .env -Force
+# .env is already set to DB_PASSWORD=000000 for local dev; adjust if needed
+```
+
+Run migrations and start server:
+
+```pwsh
+cd backend
 python manage.py migrate
 python manage.py runserver
 ```
@@ -85,6 +103,19 @@ App runs at http://localhost:3000/
 - Introduce authentication (Django auth + JWT for SPA usage).
 - Draft eligibility service (class conflict, count cap, major filter, language requirement).
 - Add testing (pytest + React Testing Library) & CI workflow.
+
+## Environment Variables
+
+See `.env.example` for supported keys. A local `.env` is already created for you and is git-ignored.
+
+## AI Integration
+
+- A lightweight recommendation helper is available in `backend/ai/recommendation.py`.
+- It optionally uses `sentence-transformers` (MiniLM) to embed activity titles and find similar content. If not installed, it falls back to a simple keyword overlap method.
+- To enable embeddings:
+  ```pwsh
+  pip install sentence-transformers
+  ```
 
 ## Contributing
 
