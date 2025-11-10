@@ -96,6 +96,39 @@ npm start
 
 App runs at http://localhost:3000/
 
+### Fullstack Development Convenience
+
+Run both Django API and React dev server (requires Node/npm installed and on PATH):
+
+```pwsh
+cd backend
+python manage.py runfullstack
+```
+
+Build React and serve via Django only (production-like single port):
+
+```pwsh
+cd backend
+python manage.py runfullstack --build
+```
+
+### Seeding Demo Data
+
+Create a staff user and sample activities:
+
+```pwsh
+cd backend
+python manage.py seed_demo
+```
+
+### Node.js on Windows
+
+Download installer from https://nodejs.org/en/download and reopen PowerShell so `npm` is available. Verify:
+
+```pwsh
+npm --version
+```
+
 ## Next Steps
 
 - Define Django apps: users, activities, eligibility, timetable.
@@ -116,6 +149,7 @@ See `.env.example` for supported keys. A local `.env` is already created for you
   ```pwsh
   pip install sentence-transformers
   ```
+  (Optional, not required for basic functionality.)
 
 ## Contributing
 
