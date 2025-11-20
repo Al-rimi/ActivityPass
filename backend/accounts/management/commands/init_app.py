@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 
 
 class Command(BaseCommand):
-    help = "Run migrations and seed initial student data from data/cst.csv"
+    help = "Run migrations and seed initial student data from backend/accounts/seed_data/students.csv"
 
     def handle(self, *args, **options):
         call_command('migrate')

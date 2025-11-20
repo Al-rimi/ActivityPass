@@ -1,21 +1,36 @@
 import React, { useEffect, useState } from 'react';
 
 // Two-state theme: 'light' | 'dark'. If no prior choice, detect system and persist.
-const systemPrefersDark = () => window.matchMedia('(prefers-color-scheme: dark)').matches;
+const systemPrefersDark = () => typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches;
 
 const applyTheme = (mode: 'light' | 'dark') => {
+    if (typeof document === 'undefined') return;
     document.documentElement.classList.toggle('dark', mode === 'dark');
 };
 
+const fallbackTheme: 'light' | 'dark' = 'light';
+
+export const ensureInitialTheme = (): 'light' | 'dark' => {
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+        return fallbackTheme;
+    }
+    const stored = localStorage.getItem('theme');
+    const computed: 'light' | 'dark' = stored === 'light' || stored === 'dark'
+        ? stored
+        : systemPrefersDark() ? 'dark' : 'light';
+    applyTheme(computed);
+    if (stored !== computed) {
+        localStorage.setItem('theme', computed);
+    }
+    return computed;
+};
+
+if (typeof window !== 'undefined') {
+    ensureInitialTheme();
+}
+
 const ThemeToggle: React.FC = () => {
-    const [mode, setMode] = useState<'light' | 'dark'>(() => {
-        const stored = localStorage.getItem('theme');
-        if (stored === 'light' || stored === 'dark') return stored;
-        // auto select system then persist
-        const sys = systemPrefersDark() ? 'dark' : 'light';
-        localStorage.setItem('theme', sys);
-        return sys;
-    });
+    const [mode, setMode] = useState<'light' | 'dark'>(() => ensureInitialTheme());
 
     useEffect(() => {
         applyTheme(mode);

@@ -15,5 +15,5 @@ const renderApp = () => render(
 
 test('renders app title translation', () => {
     renderApp();
-    expect(screen.getByText(/ActivityPass/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/ActivityPass/i).length).toBeGreaterThan(0);
 });

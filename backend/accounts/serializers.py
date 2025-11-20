@@ -29,5 +29,18 @@ class StudentProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StudentProfile
-        fields = ["id", "user", "major", "college", "class_name", "gender", "phone", "chinese_level", "year", "activities_participated", "remaining_activity_slots"]
+        fields = [
+            "id",
+            "user",
+            "student_id",
+            "major",
+            "college",
+            "class_name",
+            "gender",
+            "phone",
+            "chinese_level",
+            "year",
+            "activities_participated",
+            "remaining_activity_slots",
+        ]
         read_only_fields = ["activities_participated", "remaining_activity_slots"]

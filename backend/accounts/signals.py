@@ -5,7 +5,15 @@ from django.dispatch import receiver
 from .models import StudentProfile
 
 
+def _looks_like_student(username: str) -> bool:
+    return username.isdigit() and len(username) >= 8
+
+
 @receiver(post_save, sender=get_user_model())
 def create_student_profile(sender, instance, created, **kwargs):
-    if created:
-        StudentProfile.objects.create(user=instance)
+    if not created:
+        return
+    username = instance.username or ''
+    if not _looks_like_student(username):
+        return
+    StudentProfile.objects.get_or_create(user=instance, defaults={'student_id': username})

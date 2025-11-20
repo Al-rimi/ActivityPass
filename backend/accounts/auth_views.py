@@ -9,6 +9,7 @@ from django.db import transaction
 
 from .models import StudentProfile
 from .serializers import UserSerializer, StudentProfileSerializer
+from .utils import to_key, gender_key
 
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
@@ -30,13 +31,17 @@ def register(request):
         user.save()
     else:
         profile_data = data.get('profile', {}) or {}
-        StudentProfile.objects.create(
-            user=user,
-            major=profile_data.get('major',''),
-            college=profile_data.get('college',''),
-            chinese_level=profile_data.get('chinese_level',''),
-            year=profile_data.get('year',1),
-        )
+        defaults = {
+            'student_id': username,
+            'major': to_key(profile_data.get('major_key') or profile_data.get('major') or ''),
+            'college': to_key(profile_data.get('college_key') or profile_data.get('college') or ''),
+            'class_name': to_key(profile_data.get('class_name_key') or profile_data.get('class_name') or ''),
+            'gender': gender_key(profile_data.get('gender')),
+            'chinese_level': profile_data.get('chinese_level', ''),
+            'year': profile_data.get('year', 1),
+            'phone': profile_data.get('phone', ''),
+        }
+        StudentProfile.objects.update_or_create(user=user, defaults=defaults)
     refresh = RefreshToken.for_user(user)
     return Response({
         'user': UserSerializer(user).data,
@@ -97,6 +102,6 @@ class TokenObtainOrCreateStudentView(TokenObtainPairView):
                     year = int(username[:4])
                 except Exception:
                     year = 1
-                StudentProfile.objects.create(user=user, year=year)
+                StudentProfile.objects.create(user=user, student_id=username, year=year)
         # Fallback to standard token obtain
         return super().post(request, *args, **kwargs)

@@ -30,6 +30,7 @@ from __future__ import annotations
 import argparse
 import os
 import shutil
+import stat
 import subprocess
 import sys
 import time
@@ -47,8 +48,12 @@ def spawn(cmd: list[str] | str, cwd: Path | None = None, env: dict[str, str] | N
     return subprocess.Popen(cmd, cwd=str(cwd) if cwd else None, env=env)
 
 
+def npm_executable() -> str:
+    return "npm.cmd" if os.name == "nt" else "npm"
+
+
 def detect_node() -> bool:
-    return shutil.which("node") is not None and shutil.which("npm") is not None
+    return shutil.which("node") is not None and shutil.which(npm_executable()) is not None
 
 
 def venv_python(venv_dir: Path) -> Path:
@@ -110,7 +115,7 @@ def start_backend(py: Path, backend_dir: Path, host: str, port: int) -> subproce
 
 def frontend_install(frontend_dir: Path):
     print("[frontend] Installing npm dependencies")
-    code = run(["npm", "install"], cwd=frontend_dir)
+    code = run([npm_executable(), "install"], cwd=frontend_dir)
     if code != 0:
         sys.exit(code)
 
@@ -120,14 +125,47 @@ def frontend_start(frontend_dir: Path, port: int) -> subprocess.Popen:
     # CRA respects PORT env var
     env.setdefault("PORT", str(port))
     print(f"[frontend] Starting React dev server at http://localhost:{port}")
-    return spawn(["npm", "start"], cwd=frontend_dir, env=env)
+    return spawn([npm_executable(), "start"], cwd=frontend_dir, env=env)
 
 
 def frontend_build(frontend_dir: Path):
     print("[frontend] Building production bundle")
-    code = run(["npm", "run", "build"], cwd=frontend_dir)
+    code = run([npm_executable(), "run", "build"], cwd=frontend_dir)
     if code != 0:
         sys.exit(code)
+
+
+def remove_path(path: Path):
+    if not path.exists():
+        return
+
+    print(f"[clean] Removing {path}")
+
+    def _onerror(func, p, exc_info):
+        try:
+            os.chmod(p, stat.S_IWRITE)
+        except OSError:
+            pass
+        func(p)
+
+    if path.is_dir():
+        for attempt in range(3):
+            try:
+                shutil.rmtree(path, onerror=_onerror)
+                break
+            except OSError as err:
+                if attempt == 2:
+                    raise
+                print(f"[clean] Retry removing {path}: {err}")
+                time.sleep(0.5)
+    else:
+        try:
+            path.unlink()
+        except FileNotFoundError:
+            return
+        except PermissionError:
+            os.chmod(path, stat.S_IWRITE)
+            path.unlink()
 
 
 def parse_args() -> argparse.Namespace:
@@ -141,6 +179,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--host", default="127.0.0.1", help="Backend host")
     p.add_argument("--port", type=int, default=8000, help="Backend port")
     p.add_argument("--frontend-port", type=int, default=3000, help="Frontend dev server port")
+    p.add_argument("--rebuild", action="store_true", help="Remove existing environments/artifacts and rebuild backend & frontend")
     return p.parse_args()
 
 
@@ -150,6 +189,12 @@ def main():
     backend_dir = (repo_root / args.backend_dir).resolve()
     frontend_dir = (repo_root / args.frontend_dir).resolve()
     venv_dir = backend_dir / ".venv"
+
+    if args.rebuild:
+        print("[rebuild] Refreshing build artifacts (dependencies stay cached)")
+        frontend_build_dir = frontend_dir / "build"
+        remove_path(frontend_build_dir)
+        args.build = True
 
     if not backend_dir.exists():
         print(f"[error] Backend directory '{backend_dir}' not found")

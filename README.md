@@ -60,13 +60,14 @@ python manage.py runserver 0.0.0.0:8000
 ```powershell
 cd frontend
 npm install
-npm start   # Dev server (proxy to backend)
+npm run dev   # Vite dev server with API proxy
 ```
 
 Production build:
 
 ```powershell
 npm run build
+npm run preview   # Optional: serve the production build locally
 ```
 
 ### 3. Single-Command Automation (Optional)
@@ -83,7 +84,7 @@ PowerShell alternative (Windows only):
 ./run_all.ps1
 ```
 
-Both perform: create venv, install backend deps, migrate, (optional) seed students, start backend, install frontend deps, and start frontend dev server. Use `python run_all.py --help` for flags (skip seed, disable frontend, build frontend, custom ports).
+Both perform: create venv, install backend deps, migrate, (optional) seed students, start backend, install frontend deps, and start frontend dev server. Use `python run_all.py --help` for flags (skip seed, disable frontend, build frontend, custom ports). Pass `--rebuild` to clear the previous frontend build folder and force a fresh production build without reinstalling dependencies.
 
 ## Authentication Flow
 
@@ -94,16 +95,20 @@ Both perform: create venv, install backend deps, migrate, (optional) seed studen
 
 Admin login: default superuser `admin`/`000000` (created by `init_app`). Use same login form. Admin can manage users via admin APIs below.
 
+## Student Metadata Keys
+
+`StudentProfile` stores normalized keys for `college`, `major`, `class_name`, and `gender` (lowercase, slugified, underscores). The frontend is responsible for mapping those keys to localized display strings.
+
 ## i18n Content
 
 Activities store bilingual fields (`title_i18n`, `description_i18n`) with fallback logic. Translation helper (`backend/common/translation.py`) can populate English / Chinese using a LibreTranslate‑compatible endpoint.
 
 ## Key Management Commands
 
-| Command                                              | Purpose                     |
-| ---------------------------------------------------- | --------------------------- |
-| `python manage.py seed_students --file data/cst.csv` | Bulk import student records |
-| `python manage.py init_app`                          | Migrate + seed in one step  |
+| Command                                                                         | Purpose                     |
+| ------------------------------------------------------------------------------- | --------------------------- |
+| `python manage.py seed_students --file backend/accounts/seed_data/students.csv` | Bulk import student records |
+| `python manage.py init_app`                                                     | Migrate + seed in one step  |
 
 ## Admin Management API
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 // Tailwind handles styling; legacy CRA styles not required
 // import './App.css';
 import { Routes, Route, Link, useNavigate, Navigate, useLocation } from 'react-router-dom';
@@ -10,59 +10,238 @@ import ProtectedRoute from './components/ProtectedRoute';
 import AuthPage from './pages/AuthPage';
 import CompleteProfilePage from './pages/CompleteProfilePage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
+import AdminStudentsPage from './pages/AdminStudentsPage';
+import AdminStaffPage from './pages/AdminStaffPage';
+import StaffDashboardPage from './pages/StaffDashboardPage';
+
+const setDocumentCssVar = (name: string, value: number) => {
+    if (typeof document === 'undefined') return;
+    document.documentElement.style.setProperty(name, `${Math.round(value)}px`);
+};
 
 const Navbar: React.FC = () => {
     const { t } = useTranslation();
     const { tokens, logout, me } = useAuth();
     const navigate = useNavigate();
     const loc = useLocation();
-    const isAuthPage = loc.pathname.startsWith('/auth');
-    // removed mobile menu state (no hamburger)
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [settingsOpen, setSettingsOpen] = useState(false);
+    const settingsRef = useRef<HTMLDivElement>(null);
+    const navRef = useRef<HTMLElement>(null);
+
+    const dashboardLabel = useMemo(() => {
+        if (me?.role === 'admin') {
+            return t('nav.adminDashboard', { defaultValue: t('nav.dashboard') });
+        }
+        if (me?.role === 'staff') {
+            return t('nav.staffDashboard', { defaultValue: t('nav.dashboard') });
+        }
+        return t('nav.dashboard');
+    }, [me?.role, t]);
+
+    const navLinks = useMemo(() => {
+        if (!tokens) return [] as { label: string; to: string }[];
+        const target = me?.role === 'admin' ? '/admin' : me?.role === 'staff' ? '/staff' : '/';
+        return [{ label: dashboardLabel, to: target }];
+    }, [tokens, me?.role, dashboardLabel]);
+
+    useEffect(() => {
+        setSidebarOpen(false);
+        setSettingsOpen(false);
+    }, [loc.pathname]);
+
+    useEffect(() => {
+        if (!settingsOpen) return;
+        const handler = (evt: MouseEvent) => {
+            if (settingsRef.current && !settingsRef.current.contains(evt.target as Node)) {
+                setSettingsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [settingsOpen]);
+
+    const isActive = (href: string) => {
+        if (href === '/') return loc.pathname === '/';
+        return loc.pathname.startsWith(href);
+    };
+
+    const handleLogout = () => {
+        logout();
+        navigate('/auth');
+    };
+
+    useLayoutEffect(() => {
+        const el = navRef.current;
+        if (!el || typeof window === 'undefined') {
+            setDocumentCssVar('--ap-header-height', el?.offsetHeight || 64);
+            return;
+        }
+        const updateHeight = () => setDocumentCssVar('--ap-header-height', el.getBoundingClientRect().height);
+        updateHeight();
+        let observer: ResizeObserver | null = null;
+        if (typeof ResizeObserver !== 'undefined') {
+            observer = new ResizeObserver(updateHeight);
+            observer.observe(el);
+        } else {
+            window.addEventListener('resize', updateHeight);
+        }
+        return () => {
+            observer?.disconnect();
+            window.removeEventListener('resize', updateHeight);
+        };
+    }, []);
+
+    const settingsLabel = t('nav.settings', { defaultValue: 'Settings' });
+    const preferencesLabel = t('nav.preferences', { defaultValue: 'Preferences' });
+    const quickPreferencesLabel = t('nav.quickPreferences', { defaultValue: 'Quick preferences' });
+    const menuLabel = t('nav.menu', { defaultValue: 'Menu' });
+    const isAuthPage = loc.pathname === '/auth' || loc.pathname === '/login';
+    const inlinePreferencesVisible = !tokens && !isAuthPage;
+    const showLoginCTA = !tokens && !isAuthPage;
+    const showPreferencesInsideSettings = tokens || isAuthPage;
+
     return (
-        <nav className="sticky top-0 bg-white/70 dark:bg-gray-900/70 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 z-10">
-            <div className="max-w-7xl mx-auto px-6">
-                <div className="flex items-center justify-between h-16 lg:h-20">
-                    <div className="flex items-center gap-4">
-                        <Link to="/" className="text-xl lg:text-2xl font-semibold tracking-tight">{t('app.title')}</Link>
-                    </div>
-                    <div className="hidden sm:flex items-center gap-6">
-                        {!isAuthPage && (
-                            <>
-                                {/* Home hidden per request; only language + auth actions */}
-                                {tokens ? (
-                                    <button onClick={() => { logout(); navigate('/auth'); }} className="px-4 py-2 rounded-md bg-gray-900 text-white text-sm lg:text-base hover:bg-black">{t('nav.logout')}</button>
-                                ) : (
-                                    <Link to="/auth" className="px-4 py-2 rounded-md bg-gray-900 text-white text-sm lg:text-base hover:bg-black">{t('nav.login')}</Link>
-                                )}
-                                {me?.role === 'admin' && (
-                                    <Link to="/admin" className="px-4 py-2 rounded-md border border-gray-200 dark:border-gray-700 text-sm lg:text-base text-gray-900 dark:text-gray-100">
-                                        {t('nav.admin')}
-                                    </Link>
-                                )}
-                                <LanguageSwitcher />
-                                <ThemeToggle />
-                            </>
+        <nav ref={navRef} className="sticky top-0 z-20 border-b border-gray-200 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl dark:border-gray-800">
+            <div className="w-full px-4 sm:px-6">
+                <div className="flex items-center justify-between h-16 gap-4 lg:h-20">
+                    <div className="flex items-center gap-3">
+                        {tokens && (
+                            <button
+                                type="button"
+                                className="inline-flex items-center justify-center p-2 text-gray-600 rounded-md sm:hidden hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800"
+                                onClick={() => setSidebarOpen(true)}
+                                aria-label="Open navigation"
+                            >
+                                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M4 7h16M4 12h16M4 17h16" />
+                                </svg>
+                            </button>
                         )}
-                        {isAuthPage && (
-                            <div className="flex items-center gap-4">
+                        <Link to="/" className="text-xl font-semibold tracking-tight lg:text-2xl">{t('app.title')}</Link>
+                    </div>
+                    <div className="items-center hidden gap-6 sm:flex">
+                        {navLinks.map(link => (
+                            <Link
+                                key={link.to}
+                                to={link.to}
+                                className={`text-sm lg:text-base font-medium transition-colors ${isActive(link.to) ? 'text-gray-900 dark:text-white' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'}`}
+                            >
+                                {link.label}
+                            </Link>
+                        ))}
+                    </div>
+                    <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+                        {inlinePreferencesVisible && (
+                            <div className="flex items-center gap-2" aria-label={quickPreferencesLabel}>
                                 <LanguageSwitcher />
                                 <ThemeToggle />
                             </div>
                         )}
-                    </div>
-                    {/* Mobile: remove hamburger; keep language only */}
-                    <div className="sm:hidden flex items-center gap-3 pr-2">
-                        {tokens && me?.role === 'admin' && !isAuthPage && (
-                            <Link to="/admin" className="text-sm text-gray-900 dark:text-gray-100">
-                                {t('nav.admin')}
+                        {tokens && (
+                            <button onClick={handleLogout} className="px-4 py-2 text-sm text-white bg-gray-900 rounded-md lg:text-base hover:bg-black" data-testid="logout-button">
+                                {t('nav.logout')}
+                            </button>
+                        )}
+                        {showLoginCTA && (
+                            <Link to="/auth" className="px-4 py-2 text-sm text-white bg-gray-900 rounded-md lg:text-base hover:bg-black">
+                                {t('nav.login')}
                             </Link>
                         )}
-                        <LanguageSwitcher />
-                        <ThemeToggle />
+                        <div className="relative" ref={settingsRef}>
+                            <button
+                                type="button"
+                                onClick={() => setSettingsOpen(prev => !prev)}
+                                className="inline-flex items-center justify-center p-2 text-gray-600 bg-white border border-gray-200 rounded-md dark:border-gray-700 dark:bg-gray-900 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+                                aria-haspopup="true"
+                                aria-expanded={settingsOpen}
+                            >
+                                <span className="sr-only">{settingsLabel}</span>
+                                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <line x1="4" y1="21" x2="4" y2="14" />
+                                    <line x1="4" y1="10" x2="4" y2="3" />
+                                    <line x1="12" y1="21" x2="12" y2="12" />
+                                    <line x1="12" y1="8" x2="12" y2="3" />
+                                    <line x1="20" y1="21" x2="20" y2="16" />
+                                    <line x1="20" y1="12" x2="20" y2="3" />
+                                    <line x1="1" y1="14" x2="7" y2="14" />
+                                    <line x1="9" y1="8" x2="15" y2="8" />
+                                    <line x1="17" y1="16" x2="23" y2="16" />
+                                </svg>
+                            </button>
+                            {settingsOpen && (
+                                <div className="absolute right-0 w-64 mt-2 bg-white border border-gray-200 divide-y divide-gray-100 shadow-xl rounded-xl dark:border-gray-700 dark:bg-gray-900 dark:divide-gray-800">
+                                    <div className="px-4 py-3">
+                                        <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">{preferencesLabel}</p>
+                                    </div>
+                                    <div className="flex flex-col gap-3 p-4">
+                                        {showPreferencesInsideSettings ? (
+                                            <>
+                                                <LanguageSwitcher />
+                                                <ThemeToggle />
+                                            </>
+                                        ) : (
+                                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                                                {t('nav.loginToCustomize', { defaultValue: 'Sign in to customize your experience.' })}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
-                {/* No mobile dropdown menu */}
             </div>
+            {sidebarOpen && tokens && (
+                <div className="fixed inset-0 z-30 sm:hidden">
+                    <div className="absolute inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} aria-hidden="true" />
+                    <div className="relative ml-auto h-full w-72 max-w-[80vw] bg-white dark:bg-gray-950 border-l border-gray-200 dark:border-gray-800 shadow-2xl flex flex-col p-6 gap-6">
+                        <div className="flex items-center justify-between">
+                            <p className="text-base font-semibold text-gray-900 dark:text-white">{menuLabel}</p>
+                            <button
+                                type="button"
+                                onClick={() => setSidebarOpen(false)}
+                                className="p-2 text-gray-500 rounded-md hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                                aria-label="Close navigation"
+                            >
+                                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div className="flex flex-col gap-3">
+                            {navLinks.map(link => (
+                                <Link
+                                    key={link.to}
+                                    to={link.to}
+                                    onClick={() => setSidebarOpen(false)}
+                                    className={`rounded-lg px-4 py-2 text-sm font-medium ${isActive(link.to) ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'}`}
+                                >
+                                    {link.label}
+                                </Link>
+                            ))}
+                        </div>
+                        <div className="flex flex-col gap-4 mt-auto">
+                            <div className="p-4 border border-gray-200 rounded-xl dark:border-gray-800">
+                                <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">{preferencesLabel}</p>
+                                <div className="flex flex-col gap-3 mt-3">
+                                    <LanguageSwitcher />
+                                    <ThemeToggle />
+                                </div>
+                            </div>
+                            {tokens ? (
+                                <button onClick={handleLogout} className="w-full px-4 py-2 text-sm text-white bg-gray-900 rounded-md hover:bg-black" data-testid="logout-button-mobile">
+                                    {t('nav.logout')}
+                                </button>
+                            ) : (
+                                <Link to="/auth" onClick={() => setSidebarOpen(false)} className="w-full px-4 py-2 text-sm text-center text-white bg-gray-900 rounded-md hover:bg-black">
+                                    {t('nav.login')}
+                                </Link>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </nav>
     );
 };
@@ -79,18 +258,11 @@ type Activity = {
 
 const ActivityList: React.FC = () => {
     const { t } = useTranslation();
-    const navigate = useNavigate();
-    const { tokens, me } = useAuth();
+    const { tokens } = useAuth();
     const [activities, setActivities] = useState<Activity[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [notice, setNotice] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
-
-    useEffect(() => {
-        if (me?.role === 'admin') {
-            navigate('/admin', { replace: true });
-        }
-    }, [me, navigate]);
 
     useEffect(() => {
         fetch('/api/activities/')
@@ -128,12 +300,12 @@ const ActivityList: React.FC = () => {
             {loading && <p className="py-6 text-gray-700">{t('activities.loading')}</p>}
             {error && <p className="py-6 text-red-500">{t('error.generic')}: {error}</p>}
             {!loading && !error && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 py-4">
+                <div className="grid grid-cols-1 gap-4 py-4 sm:grid-cols-2 lg:grid-cols-3">
                     {activities.map(a => (
-                        <article key={a.id} className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm p-5 flex flex-col">
-                            <h3 className="text-base lg:text-lg font-semibold mb-2">{a.title}</h3>
-                            <p className="text-sm lg:text-base text-gray-600 dark:text-gray-300 flex-1">{a.description || '—'}</p>
-                            <div className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mt-3">
+                        <article key={a.id} className="flex flex-col p-5 bg-white border border-gray-200 shadow-sm rounded-xl dark:border-gray-800 dark:bg-gray-900">
+                            <h3 className="mb-2 text-base font-semibold lg:text-lg">{a.title}</h3>
+                            <p className="flex-1 text-sm text-gray-600 lg:text-base dark:text-gray-300">{a.description || '—'}</p>
+                            <div className="mt-3 text-xs text-gray-500 lg:text-sm dark:text-gray-400">
                                 <div>Starts: {fmt.format(new Date(a.start_datetime))}</div>
                                 <div>Ends: {fmt.format(new Date(a.end_datetime))}</div>
                             </div>
@@ -143,43 +315,113 @@ const ActivityList: React.FC = () => {
                 </div>
             )}
             {!loading && !error && activities.length === 0 && (
-                <p className="text-gray-500 dark:text-gray-400 py-6">{t('activities.none')}</p>
+                <p className="py-6 text-gray-500 dark:text-gray-400">{t('activities.none')}</p>
             )}
         </main>
     );
 };
 
+const RoleAwareHome: React.FC = () => {
+    const { me, meLoading } = useAuth();
+    const navigate = useNavigate();
+    useEffect(() => {
+        if (meLoading || !me) return;
+        if (me.role === 'admin') {
+            navigate('/admin', { replace: true });
+        } else if (me.role === 'staff') {
+            navigate('/staff', { replace: true });
+        }
+    }, [me, meLoading, navigate]);
+
+    if (meLoading || !me) {
+        return (
+            <main className="flex items-center justify-center flex-1">
+                <p className="text-sm text-gray-600 dark:text-gray-300">Loading dashboard…</p>
+            </main>
+        );
+    }
+    if (me.role === 'admin' || me.role === 'staff') return null;
+    return <ActivityList />;
+};
+
+const Footer: React.FC = () => {
+    const { t } = useTranslation();
+    const footerRef = useRef<HTMLElement>(null);
+
+    useLayoutEffect(() => {
+        const el = footerRef.current;
+        if (!el || typeof window === 'undefined') {
+            setDocumentCssVar('--ap-footer-height', el?.offsetHeight || 80);
+            return;
+        }
+        const updateHeight = () => setDocumentCssVar('--ap-footer-height', el.getBoundingClientRect().height);
+        updateHeight();
+        let observer: ResizeObserver | null = null;
+        if (typeof ResizeObserver !== 'undefined') {
+            observer = new ResizeObserver(updateHeight);
+            observer.observe(el);
+        } else {
+            window.addEventListener('resize', updateHeight);
+        }
+        return () => {
+            observer?.disconnect();
+            window.removeEventListener('resize', updateHeight);
+        };
+    }, []);
+
+    return (
+        <footer ref={footerRef} className="px-6 py-10 mx-auto mt-auto text-xs text-gray-500 max-w-7xl">© {new Date().getFullYear()} {t('app.title')}</footer>
+    );
+};
+
 const App: React.FC = () => {
     const { t, i18n } = useTranslation();
-    const loc = useLocation();
     useEffect(() => {
         document.title = t('app.title') + ' · ActivityPass';
     }, [i18n.language, t]);
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 flex flex-col">
+        <div className="flex flex-col min-h-screen text-gray-900 bg-gray-50 dark:bg-gray-950 dark:text-gray-100">
             <Navbar />
-            {!loc.pathname.startsWith('/auth') && (
-                <header className="max-w-7xl mx-auto px-6 py-10 lg:py-12">
-                    <h1 className="text-2xl lg:text-4xl font-bold">{t('app.title')}</h1>
-                    <p className="text-sm lg:text-lg text-gray-600 dark:text-gray-300">{t('app.subtitle')}</p>
-                </header>
-            )}
             <Routes>
                 <Route path="/auth" element={<AuthPage />} />
                 <Route path="/login" element={<Navigate to="/auth" replace />} />
                 <Route path="/complete-profile" element={<ProtectedRoute><CompleteProfilePage /></ProtectedRoute>} />
                 <Route path="/admin" element={<ProtectedRoute><AdminRoute><AdminDashboardPage /></AdminRoute></ProtectedRoute>} />
-                <Route path="/" element={<ProtectedRoute><ActivityList /></ProtectedRoute>} />
+                <Route path="/admin/students" element={<ProtectedRoute><AdminRoute><AdminStudentsPage /></AdminRoute></ProtectedRoute>} />
+                <Route path="/admin/staff" element={<ProtectedRoute><AdminRoute><AdminStaffPage /></AdminRoute></ProtectedRoute>} />
+                <Route path="/staff" element={<ProtectedRoute><StaffRoute><StaffDashboardPage /></StaffRoute></ProtectedRoute>} />
+                <Route path="/" element={<ProtectedRoute><RoleAwareHome /></ProtectedRoute>} />
             </Routes>
-            <footer className="max-w-7xl mx-auto px-6 py-10 text-xs text-gray-500 mt-auto">© {new Date().getFullYear()} {t('app.title')}</footer>
+            <Footer />
         </div>
     );
 };
 
 const AdminRoute: React.FC<React.PropsWithChildren> = ({ children }) => {
-    const { me } = useAuth();
+    const { me, meLoading } = useAuth();
+    if (meLoading) {
+        return (
+            <main className="flex items-center justify-center flex-1 py-10">
+                <p className="text-sm text-gray-600 dark:text-gray-400">Confirming admin access…</p>
+            </main>
+        );
+    }
     if (!me) return null;
     if (me.role !== 'admin') return <Navigate to="/" replace />;
+    return <>{children}</>;
+};
+
+const StaffRoute: React.FC<React.PropsWithChildren> = ({ children }) => {
+    const { me, meLoading } = useAuth();
+    if (meLoading) {
+        return (
+            <main className="flex items-center justify-center flex-1 py-10">
+                <p className="text-sm text-gray-600 dark:text-gray-400">Confirming staff access…</p>
+            </main>
+        );
+    }
+    if (!me) return null;
+    if (me.role !== 'staff') return <Navigate to="/" replace />;
     return <>{children}</>;
 };
 

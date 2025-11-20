@@ -10,6 +10,7 @@ interface AuthContextValue {
     tokens: Tokens | null;
     user: any; // JWT payload
     me?: { id: number; username: string; first_name?: string; role: 'admin' | 'staff' | 'student' | 'user'; must_change_password?: boolean; student_profile?: any } | null;
+    meLoading: boolean;
     login: (username: string, password: string) => Promise<Tokens>;
     register: (payload: { username: string; password: string; role: 'staff' | 'student'; email?: string; profile?: any }) => Promise<Tokens>;
     logout: () => void;
@@ -35,20 +36,25 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     });
 
     const [me, setMe] = useState<AuthContextValue['me']>(null);
+    const [meLoading, setMeLoading] = useState(false);
 
     useEffect(() => {
         if (tokens) {
             localStorage.setItem('ap_tokens', JSON.stringify(tokens));
             try { setUser(jwtDecode(tokens.access)); } catch { setUser(null); }
             // fetch /api/auth/me to get role and profile
+            setMe(null);
+            setMeLoading(true);
             fetch('/api/auth/me/', { headers: { Authorization: `Bearer ${tokens.access}` } })
                 .then(r => r.ok ? r.json() : Promise.reject(new Error('me failed')))
-                .then(setMe)
-                .catch(() => setMe(null));
+                .then(data => setMe(data))
+                .catch(() => setMe(null))
+                .finally(() => setMeLoading(false));
         } else {
             localStorage.removeItem('ap_tokens');
             setUser(null);
             setMe(null);
+            setMeLoading(false);
         }
     }, [tokens]);
 
@@ -85,7 +91,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
 
     const logout = () => setTokens(null);
 
-    const value = useMemo<AuthContextValue>(() => ({ tokens, user, me, login, register, logout, setTokens }), [tokens, user, me]);
+    const value = useMemo<AuthContextValue>(() => ({ tokens, user, me, meLoading, login, register, logout, setTokens }), [tokens, user, me, meLoading]);
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

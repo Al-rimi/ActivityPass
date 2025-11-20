@@ -14,8 +14,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
-from django.urls import path, include
+from django.urls import include, path, re_path
 from django.views.generic import TemplateView
 from django.http import HttpResponse
 from pathlib import Path
@@ -37,8 +36,16 @@ router.register(r'course-events', StudentCourseEventViewSet)
 router.register(r'student-profile', StudentProfileViewSet, basename='student-profile')
 router.register(r'admin/users', accounts_admin.AdminUserViewSet, basename='admin-users')
 
+FRONTEND_INDEX = Path(__file__).resolve().parent.parent.parent / 'frontend' / 'build' / 'index.html'
+
+def _frontend_view():
+    if FRONTEND_INDEX.exists():
+        return TemplateView.as_view(template_name='index.html')
+    return lambda request: HttpResponse('Frontend build not found. Run: python manage.py build_frontend or use runfullstack for dev.', status=503)
+
+spa_view = _frontend_view()
+
 urlpatterns = [
-    path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
     path('api/eligibility/<int:activity_id>/', eligibility_check, name='eligibility-check'),
     # Auth (JWT)
@@ -49,10 +56,10 @@ urlpatterns = [
     path('api/auth/me/', me, name='auth_me'),
     # Admin management
     path('api/admin/create-staff/', accounts_admin.create_staff, name='admin_create_staff'),
+    path('api/admin/create-student/', accounts_admin.create_student, name='admin_create_student'),
     path('api/admin/reset-password/', accounts_admin.reset_password, name='admin_reset_password'),
     path('api/admin/prompt-default-students-change/', accounts_admin.prompt_default_students_change, name='admin_prompt_default_students_change'),
-    # Serve React build (if built) at root.
-        # Root SPA: only serve built index.html if it exists, else show helpful message.
-        path('', (TemplateView.as_view(template_name='index.html') if (Path(__file__).resolve().parent.parent.parent / 'frontend' / 'build' / 'index.html').exists() else (lambda request: HttpResponse('Frontend build not found. Run: python manage.py build_frontend or use runfullstack for dev.', status=503))), name='react-app'),
+    # Serve React build (if built) for all remaining GET routes.
+    re_path(r'^(?!api/|health/).*$', spa_view, name='react-app'),
     path('health/', health, name='health'),
 ]
