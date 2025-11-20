@@ -88,6 +88,14 @@ def migrate(py: Path, backend_dir: Path):
         sys.exit(code)
 
 
+def init_app(py: Path, backend_dir: Path):
+    print("[backend] Initializing app (migrate + seed + ensure admin)")
+    code = run([str(py), "manage.py", "init_app"], cwd=backend_dir)
+    if code != 0:
+        print("[backend] init_app failed; falling back to migrate only")
+        migrate(py, backend_dir)
+
+
 def seed_students(py: Path, backend_dir: Path):
     print("[backend] Seeding students (if command exists)")
     code = run([str(py), "manage.py", "seed_students"], cwd=backend_dir)
@@ -149,9 +157,11 @@ def main():
 
     py = ensure_venv(args.python, backend_dir, venv_dir)
     install_backend_deps(py, backend_dir)
-    migrate(py, backend_dir)
-    if not args.skip_seed:
-        seed_students(py, backend_dir)
+    # Prefer init_app which also ensures default admin user
+    if args.skip_seed:
+        migrate(py, backend_dir)
+    else:
+        init_app(py, backend_dir)
 
     backend_proc = start_backend(py, backend_dir, args.host, args.port)
 
