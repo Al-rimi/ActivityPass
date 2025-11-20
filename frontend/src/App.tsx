@@ -1,80 +1,83 @@
-import React, { useEffect, useState } from 'react';
-import './App.css';
-import { Routes, Route, Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+// Tailwind handles styling; legacy CRA styles not required
+// import './App.css';
+import { Routes, Route, Link, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './components/LanguageSwitcher';
+import ThemeToggle from './components/ThemeToggle';
+import ProtectedRoute from './components/ProtectedRoute';
+import AuthPage from './pages/AuthPage';
+import CompleteProfilePage from './pages/CompleteProfilePage';
 
 const Navbar: React.FC = () => {
     const { t } = useTranslation();
-    const { user, logout } = useAuth();
+    const { tokens, logout } = useAuth();
     const navigate = useNavigate();
+    const loc = useLocation();
+    const isAuthPage = loc.pathname.startsWith('/auth');
+    // removed mobile menu state (no hamburger)
     return (
-        <nav style={{ display: 'flex', gap: 12, padding: '0.75rem 1rem', borderBottom: '1px solid #333' }}>
-            <Link to="/">{t('nav.home')}</Link>
-            {user ? (
-                <>
-                    <button onClick={() => { logout(); navigate('/'); }} style={{ marginLeft: 'auto' }}>{t('nav.logout')}</button>
-                </>
-            ) : (
-                <Link style={{ marginLeft: 'auto' }} to="/login">{t('nav.login')}</Link>
-            )}
-            <LanguageSwitcher />
+        <nav className="sticky top-0 bg-white/70 dark:bg-gray-900/70 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 z-10">
+            <div className="max-w-7xl mx-auto px-6">
+                <div className="flex items-center justify-between h-16 lg:h-20">
+                    <div className="flex items-center gap-4">
+                        <Link to="/" className="text-xl lg:text-2xl font-semibold tracking-tight">{t('app.title')}</Link>
+                    </div>
+                    <div className="hidden sm:flex items-center gap-6">
+                        {!isAuthPage && (
+                            <>
+                                {/* Home hidden per request; only language + auth actions */}
+                                {tokens ? (
+                                    <button onClick={() => { logout(); navigate('/auth'); }} className="px-4 py-2 rounded-md bg-gray-900 text-white text-sm lg:text-base hover:bg-black">{t('nav.logout')}</button>
+                                ) : (
+                                    <Link to="/auth" className="px-4 py-2 rounded-md bg-gray-900 text-white text-sm lg:text-base hover:bg-black">{t('nav.login')}</Link>
+                                )}
+                                <LanguageSwitcher />
+                                <ThemeToggle />
+                            </>
+                        )}
+                        {isAuthPage && (
+                            <div className="flex items-center gap-4">
+                                <LanguageSwitcher />
+                                <ThemeToggle />
+                            </div>
+                        )}
+                    </div>
+                    {/* Mobile: remove hamburger; keep language only */}
+                    <div className="sm:hidden flex items-center gap-3 pr-2">
+                        <LanguageSwitcher />
+                        <ThemeToggle />
+                    </div>
+                </div>
+                {/* No mobile dropdown menu */}
+            </div>
         </nav>
     );
 };
 
-const Login: React.FC = () => {
-    const { t } = useTranslation();
-    const { login } = useAuth();
-    const navigate = useNavigate();
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const onSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError('');
-        try {
-            await login(username, password);
-            navigate('/');
-        } catch (err: any) {
-            setError(err?.message || 'Login failed');
-        }
-    };
-    return (
-        <div style={{ maxWidth: 420, margin: '2rem auto' }}>
-            <h2>{t('login.heading')}</h2>
-            {error && <p style={{ color: 'salmon' }}>{error}</p>}
-            <form onSubmit={onSubmit}>
-                <div style={{ marginBottom: 8 }}>
-                    <label>{t('login.username')}</label>
-                    <input value={username} onChange={e => setUsername(e.target.value)} className="form-control" />
-                </div>
-                <div style={{ marginBottom: 8 }}>
-                    <label>{t('login.password')}</label>
-                    <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="form-control" />
-                </div>
-                <button type="submit">{t('login.submit')}</button>
-            </form>
-            <p style={{ marginTop: 8 }}>
-                {t('login.sample')} <code>staff / StaffPass123!</code>
-            </p>
-        </div>
-    );
+// Legacy inline Login removed in favor of unified AuthPage
+
+type Activity = {
+    id: number;
+    title: string;
+    description?: string | null;
+    start_datetime: string;
+    end_datetime: string;
 };
 
 const ActivityList: React.FC = () => {
     const { t } = useTranslation();
     const { tokens } = useAuth();
-    const [activities, setActivities] = useState<any[]>([]);
+    const [activities, setActivities] = useState<Activity[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         fetch('/api/activities/')
             .then(r => r.json())
-            .then(data => { setActivities(data); setLoading(false); })
-            .catch(err => { setError(err.message); setLoading(false); });
+            .then((data: Activity[]) => { setActivities(data); setLoading(false); })
+            .catch((err: unknown) => { setError(err instanceof Error ? err.message : String(err)); setLoading(false); });
     }, []);
 
     const apply = async (id: number) => {
@@ -94,42 +97,55 @@ const ActivityList: React.FC = () => {
         }
     };
 
+    const fmt = useMemo(() => new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }), []);
     return (
-        <main style={{ padding: '1rem', maxWidth: 900, margin: '0 auto' }}>
-            {loading && <p>{t('activities.loading')}</p>}
-            {error && <p style={{ color: 'salmon' }}>{t('error.generic')}: {error}</p>}
+        <main className="px-4 mx-auto max-w-7xl">
+            {loading && <p className="py-6 text-gray-700">{t('activities.loading')}</p>}
+            {error && <p className="py-6 text-red-500">{t('error.generic')}: {error}</p>}
             {!loading && !error && (
-                <ul style={{ listStyle: 'none', padding: 0 }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 py-4">
                     {activities.map(a => (
-                        <li key={a.id} style={{ border: '1px solid #333', marginBottom: '0.75rem', padding: '0.75rem', borderRadius: 6 }}>
-                            <h3 style={{ margin: '0 0 0.25rem' }}>{a.title}</h3>
-                            <p style={{ margin: '0 0 0.5rem', fontSize: '0.9rem' }}>{a.description || 'No description yet.'}</p>
-                            <small>Starts: {a.start_datetime} | Ends: {a.end_datetime}</small>
-                            <div style={{ marginTop: 8 }}>
-                                <button onClick={() => apply(a.id)}>{t('activity.apply')}</button>
+                        <article key={a.id} className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm p-5 flex flex-col">
+                            <h3 className="text-base lg:text-lg font-semibold mb-2">{a.title}</h3>
+                            <p className="text-sm lg:text-base text-gray-600 dark:text-gray-300 flex-1">{a.description || '—'}</p>
+                            <div className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mt-3">
+                                <div>Starts: {fmt.format(new Date(a.start_datetime))}</div>
+                                <div>Ends: {fmt.format(new Date(a.end_datetime))}</div>
                             </div>
-                        </li>
+                            <button onClick={() => apply(a.id)} className="mt-4 px-4 py-2.5 rounded-md bg-gray-900 text-white text-sm lg:text-base hover:bg-black">{t('activity.apply')}</button>
+                        </article>
                     ))}
-                    {activities.length === 0 && <li>{t('activities.none')}</li>}
-                </ul>
+                </div>
+            )}
+            {!loading && !error && activities.length === 0 && (
+                <p className="text-gray-500 dark:text-gray-400 py-6">{t('activities.none')}</p>
             )}
         </main>
     );
 };
 
 const App: React.FC = () => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const loc = useLocation();
+    useEffect(() => {
+        document.title = t('app.title') + ' · ActivityPass';
+    }, [i18n.language, t]);
     return (
-        <div className="App">
-            <header className="App-header">
-                <h1>{t('app.title')}</h1>
-                <p>{t('app.subtitle')}</p>
-            </header>
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 flex flex-col">
             <Navbar />
+            {!loc.pathname.startsWith('/auth') && (
+                <header className="max-w-7xl mx-auto px-6 py-10 lg:py-12">
+                    <h1 className="text-2xl lg:text-4xl font-bold">{t('app.title')}</h1>
+                    <p className="text-sm lg:text-lg text-gray-600 dark:text-gray-300">{t('app.subtitle')}</p>
+                </header>
+            )}
             <Routes>
-                <Route path="/" element={<ActivityList />} />
-                <Route path="/login" element={<Login />} />
+                <Route path="/auth" element={<AuthPage />} />
+                <Route path="/login" element={<Navigate to="/auth" replace />} />
+                <Route path="/complete-profile" element={<ProtectedRoute><CompleteProfilePage /></ProtectedRoute>} />
+                <Route path="/" element={<ProtectedRoute><ActivityList /></ProtectedRoute>} />
             </Routes>
+            <footer className="max-w-7xl mx-auto px-6 py-10 text-xs text-gray-500 mt-auto">© {new Date().getFullYear()} {t('app.title')}</footer>
         </div>
     );
 };
