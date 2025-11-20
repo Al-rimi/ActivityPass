@@ -75,7 +75,7 @@ npm run preview   # Optional: serve the production build locally
 Cross‑platform Python runner (recommended):
 
 ```bash
-python run_all.py
+python run_all.py --rebuild
 ```
 
 PowerShell alternative (Windows only):
