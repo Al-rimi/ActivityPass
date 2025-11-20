@@ -8,6 +8,9 @@ class StudentProfile(models.Model):
     college = models.CharField(max_length=120, blank=True)
     chinese_level = models.CharField(max_length=20, blank=True, help_text="e.g. HSK5, HSK6, CET4")
     year = models.PositiveIntegerField(default=1)
+    class_name = models.CharField(max_length=120, blank=True)
+    gender = models.CharField(max_length=16, blank=True)
+    phone = models.CharField(max_length=32, blank=True)
 
     def __str__(self):
         return f"StudentProfile({self.user.username})"

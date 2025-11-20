@@ -13,13 +13,25 @@ from .serializers import (
 from .eligibility import evaluate_eligibility
 
 
+class IsStaffOrReadOnly(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return bool(request.user and request.user.is_staff)
+
+
 class ActivityViewSet(viewsets.ModelViewSet):
     queryset = Activity.objects.all().order_by('-created_at')
     serializer_class = ActivitySerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [IsStaffOrReadOnly]
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
+
+    def get_serializer_context(self):
+        ctx = super().get_serializer_context()
+        ctx['request'] = self.request
+        return ctx
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def apply(self, request, pk=None):
@@ -50,6 +62,11 @@ class ParticipationViewSet(viewsets.ModelViewSet):
             return qs.filter(student=student_profile)
         return qs.none()
 
+    def get_serializer_context(self):
+        ctx = super().get_serializer_context()
+        ctx['request'] = self.request
+        return ctx
+
 
 class StudentCourseEventViewSet(viewsets.ModelViewSet):
     queryset = StudentCourseEvent.objects.all().order_by('start_datetime')
@@ -69,6 +86,11 @@ class StudentCourseEventViewSet(viewsets.ModelViewSet):
             serializer.save(student=student_profile)
         else:
             serializer.save()
+
+    def get_serializer_context(self):
+        ctx = super().get_serializer_context()
+        ctx['request'] = self.request
+        return ctx
 
 
 @api_view(['GET'])
