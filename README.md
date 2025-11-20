@@ -1,3 +1,143 @@
+# ActivityPass (活动通)
+
+Unified bilingual student activity management platform.
+
+## Overview
+
+ActivityPass provides:
+
+- Django REST backend (JWT auth, auto student provisioning, CSV seeding, bilingual content fields)
+- React + TypeScript + Tailwind CSS frontend (English / 中文, dark mode, profile completion flow)
+- Automatic student creation on first login when ID matches pattern and default password `000000`
+- Management commands for init (`init_app`) and data seeding (`seed_students`)
+
+## Repository Structure
+
+```
+backend/        Django project & apps
+frontend/       React (CRA) TypeScript SPA
+data/           Student CSV & sample timetable ICS
+```
+
+## Quick Start (Windows PowerShell)
+
+Prerequisites: Python 3.11+, Node.js 18+, MySQL running & accessible.
+
+### 1. Configure Backend Environment
+
+Create `.env` in `backend/ActivityPass/` (example):
+
+```
+DJANGO_SECRET_KEY=change-me
+DB_NAME=activitypass
+DB_USER=root
+DB_PASSWORD=yourpassword
+DB_HOST=127.0.0.1
+DB_PORT=3306
+TRANSLATE_API_URL=https://libretranslate.de/translate
+# TRANSLATE_API_KEY=optional-key
+```
+
+Install dependencies & apply migrations:
+
+```powershell
+cd backend
+python -m venv .venv
+./.venv/Scripts/Activate.ps1
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py seed_students   # or: python manage.py init_app
+```
+
+Run development server:
+
+```powershell
+python manage.py runserver 0.0.0.0:8000
+```
+
+### 2. Frontend Setup
+
+```powershell
+cd frontend
+npm install
+npm start   # Dev server (proxy to backend)
+```
+
+Production build:
+
+```powershell
+npm run build
+```
+
+### 3. Single-Command Automation (Optional)
+
+Use provided PowerShell script at repo root:
+
+```powershell
+./run_all.ps1
+```
+
+It will: create venv, install backend deps, migrate, seed students, start backend in a new window, install frontend deps, and start frontend dev server.
+
+## Authentication Flow
+
+1. Student enters 12‑digit ID + password `000000`.
+2. Backend auto‑creates user + `StudentProfile` if ID valid & not existing.
+3. User redirected to profile completion page if missing name.
+4. JWT access/refresh issued from `/api/token/`.
+
+## i18n Content
+
+Activities store bilingual fields (`title_i18n`, `description_i18n`) with fallback logic. Translation helper (`backend/common/translation.py`) can populate English / Chinese using a LibreTranslate‑compatible endpoint.
+
+## Key Management Commands
+
+| Command | Purpose |
+|---------|---------|
+| `python manage.py seed_students --file data/cst.csv` | Bulk import student records |
+| `python manage.py init_app` | Migrate + seed in one step |
+
+## Frontend Conventions
+
+- Tailwind utilities for styling; dark mode via `class` strategy.
+- Translation keys live in `src/locales/en/` & `src/locales/zh/`.
+- ProtectedRoute enforces auth + profile completion.
+
+## Development Tips
+
+- Use `python manage.py createsuperuser` for admin access.
+- If seeding large CSV, performance optimized by skipping password rehash for existing users.
+- Adjust MySQL connection/timeouts in `backend/ActivityPass/settings.py` if needed.
+
+## Deployment Notes
+
+- Collect static files if serving frontend separately or switch to a production build served by a static host.
+- Configure MySQL and translation API endpoints via environment variables in production.
+- Use a stronger password policy; current default `000000` is placeholder for controlled environments.
+
+## License
+
+See `LICENSE` (add if missing).
+
+## Frontend README Summary
+
+The frontend README covers stack (React, TS, Tailwind, i18n), scripts (`npm start`, `npm test`, `npm run build`, `npm run typecheck`), translation usage via `useTranslation`, Tailwind setup, proxy configuration to backend, auth flow, feature checklist, and future enhancements (token refresh, forms, recommendations, dark theme refinements).
+
+## Running Migrations Recap
+
+```powershell
+cd backend
+./.venv/Scripts/Activate.ps1
+python manage.py migrate
+python manage.py seed_students   # or init_app
+```
+
+## Seeding Performance
+
+Seed script skips resetting passwords for existing users to avoid CPU cost of repeated hashing.
+
+---
+Generated README; update as architecture evolves.
 # ActivityPass
 
 AI-assisted student activity management platform for Zhejiang Normal University (ZJNU).
