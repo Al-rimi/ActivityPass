@@ -9,7 +9,7 @@ export interface Tokens {
 interface AuthContextValue {
     tokens: Tokens | null;
     user: any; // JWT payload
-    me?: { id: number; username: string; first_name?: string; role: 'staff' | 'student' | 'user'; student_profile?: any } | null;
+    me?: { id: number; username: string; first_name?: string; role: 'admin' | 'staff' | 'student' | 'user'; must_change_password?: boolean; student_profile?: any } | null;
     login: (username: string, password: string) => Promise<Tokens>;
     register: (payload: { username: string; password: string; role: 'staff' | 'student'; email?: string; profile?: any }) => Promise<Tokens>;
     logout: () => void;

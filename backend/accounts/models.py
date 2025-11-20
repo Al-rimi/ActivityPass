@@ -24,3 +24,11 @@ class StudentProfile(models.Model):
     def remaining_activity_slots(self):
         # limit: 7 total per academic year
         return max(0, 7 - self.activities_participated)
+
+
+class AccountMeta(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='account_meta')
+    must_change_password = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"AccountMeta({self.user.username}, must_change_password={self.must_change_password})"

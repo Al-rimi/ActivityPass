@@ -28,6 +28,7 @@ from rest_framework_simplejwt.views import (
 from activities.views import ActivityViewSet, ParticipationViewSet, StudentCourseEventViewSet, eligibility_check
 from accounts.views import StudentProfileViewSet
 from accounts.auth_views import register, me, TokenObtainOrCreateStudentView
+from accounts import admin_views as accounts_admin
 
 router = DefaultRouter()
 router.register(r'activities', ActivityViewSet)
@@ -45,6 +46,10 @@ urlpatterns = [
     # Unified auth
     path('api/auth/register/', register, name='auth_register'),
     path('api/auth/me/', me, name='auth_me'),
+    # Admin management
+    path('api/admin/create-staff/', accounts_admin.create_staff, name='admin_create_staff'),
+    path('api/admin/reset-password/', accounts_admin.reset_password, name='admin_reset_password'),
+    path('api/admin/prompt-default-students-change/', accounts_admin.prompt_default_students_change, name='admin_prompt_default_students_change'),
     # Serve React build (if built) at root.
         # Root SPA: only serve built index.html if it exists, else show helpful message.
         path('', (TemplateView.as_view(template_name='index.html') if (Path(__file__).resolve().parent.parent.parent / 'frontend' / 'build' / 'index.html').exists() else (lambda request: HttpResponse('Frontend build not found. Run: python manage.py build_frontend or use runfullstack for dev.', status=503))), name='react-app'),
