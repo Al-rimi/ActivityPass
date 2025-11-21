@@ -91,6 +91,10 @@ const AdminCoursesPage: React.FC = () => {
         return '—';
     };
 
+    const formatDay = (value: number) => t(`admin.weekday.${value}`, { defaultValue: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][value - 1] });
+    const formatPeriods = (course: AdminCourse) => (course.periods?.length ? course.periods.join(', ') : '—');
+    const formatWeeks = (course: AdminCourse) => (course.week_pattern?.length ? course.week_pattern.join(', ') : '—');
+
 
     const openCreateModal = () => {
         setForm(defaultCourseForm());
