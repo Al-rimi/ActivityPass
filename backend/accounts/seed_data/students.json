@@ -1,0 +1,2801 @@
+[
+  {
+    "id": "201931990531",
+    "name": "王思源",
+    "gender": "male",
+    "major": "软件工程（全英文班）",
+    "class": "1901",
+    "phone": "13106217187",
+    "country": ""
+  },
+  {
+    "id": "201932130118",
+    "name": "BOUMEDIANE YASSER",
+    "gender": "male",
+    "major": "软件工程（全英文班）",
+    "class": "1901",
+    "phone": "15024399730",
+    "country": ""
+  },
+  {
+    "id": "202032130215",
+    "name": "ENGO-ENGO NELSONE TRAVAILLISTE",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Gabon"
+  },
+  {
+    "id": "202032130216",
+    "name": "PETOU SADIE KARIM-MESMER",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Cameroon"
+  },
+  {
+    "id": "202036020207",
+    "name": "DOUMBOUYA MOHAMED",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2001",
+    "phone": "18395930760",
+    "country": "Guinea"
+  },
+  {
+    "id": "202120800061",
+    "name": "ALWAHEDI MAZEN AHMED YAHYA",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Yemen"
+  },
+  {
+    "id": "202136020105",
+    "name": "ONA ADA TELESFORO",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Equatorial Guinea"
+  },
+  {
+    "id": "202136020106",
+    "name": "MPONEJA ESTHER CHARLES",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2101",
+    "phone": "19548810159",
+    "country": "Tanzania"
+  },
+  {
+    "id": "202136020110",
+    "name": "DEKO MUYUMBA SYRIELLE",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Democratic Republic of the Congo"
+  },
+  {
+    "id": "202136020121",
+    "name": "ROKON MD MAHMUDUR RAHMAN",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Bangladesh"
+  },
+  {
+    "id": "202136020122",
+    "name": "RADOUAIA YASSIR",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Morocco"
+  },
+  {
+    "id": "202136020123",
+    "name": "MITCHELL EMMANUEL",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Liberia"
+  },
+  {
+    "id": "202207801604",
+    "name": "KULYYEV MERETDURDY",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202220780161",
+    "name": "ADJEI KINGSLEY",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Ghana"
+  },
+  {
+    "id": "202236020104",
+    "name": "EDDAHBI MANAR",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Morocco"
+  },
+  {
+    "id": "202236020111",
+    "name": "LAFAI HIBA",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Morocco"
+  },
+  {
+    "id": "202236020112",
+    "name": "OKOYE AMARACHI SCHOLASTICAR",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Nigeria"
+  },
+  {
+    "id": "202236020116",
+    "name": "AL-AREQI ABDULMALEK DHEYA DAWAD ABDULMALEK",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2201",
+    "phone": "15267966016",
+    "country": "Yemen"
+  },
+  {
+    "id": "202236020118",
+    "name": "ALSOBUH SULEMAN",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2201",
+    "phone": "15967970044",
+    "country": "Syria"
+  },
+  {
+    "id": "202238330109",
+    "name": "ONDO SIAFA LEOCADIA NLANG",
+    "gender": "male",
+    "major": "国际经济与贸易（全英文班）",
+    "class": "2201",
+    "phone": "15664903738",
+    "country": ""
+  },
+  {
+    "id": "202320581345",
+    "name": "HRBEK JAKUB",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Czech Republic"
+  },
+  {
+    "id": "202320781647",
+    "name": "YAAQOB ABDULSATTAR HAMID ABDULQADER",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Yemen"
+  },
+  {
+    "id": "202320781648",
+    "name": "ADMASU EDEN SOLOMON",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Ethiopia"
+  },
+  {
+    "id": "202320781649",
+    "name": "JAMES DARLINGTON UGOCHUKWU",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Nigeria"
+  },
+  {
+    "id": "202320781653",
+    "name": "RBAHI AYOUB",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Morocco"
+  },
+  {
+    "id": "202320781660",
+    "name": "NARTEY SYLVESTER AMANOR",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Ghana"
+  },
+  {
+    "id": "202320781662",
+    "name": "KOUONTCHOU NEIL ARMSTRONG",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Cameroon"
+  },
+  {
+    "id": "202320781664",
+    "name": "MILINGA RAJABU KELVIN",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Tanzania"
+  },
+  {
+    "id": "202336020102",
+    "name": "ERRAISS SARA",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2301",
+    "phone": "19708819032",
+    "country": "Morocco"
+  },
+  {
+    "id": "202336020105",
+    "name": "MAHAMUD ABDULRIZAK SAID",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2301",
+    "phone": "19708818952",
+    "country": "Somalia"
+  },
+  {
+    "id": "202336020106",
+    "name": "AHABCHAN AMINE",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2301",
+    "phone": "19708818948",
+    "country": "Morocco"
+  },
+  {
+    "id": "202336020109",
+    "name": "AL-AHMADI ABDULRAHMAN MOHAMMED HAMED",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2301",
+    "phone": "19558255239",
+    "country": "Yemen"
+  },
+  {
+    "id": "202336020111",
+    "name": "BERDIYEV YHLAS",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2301",
+    "phone": "13106265689",
+    "country": ""
+  },
+  {
+    "id": "202336020112",
+    "name": "CHAMANDOUR ALMANASSFI MOHAMAD KARAM",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2301",
+    "phone": "17369713533",
+    "country": ""
+  },
+  {
+    "id": "202336020114",
+    "name": "EL KETTANY ACHRAF",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2301",
+    "phone": "13106266297",
+    "country": "Morocco"
+  },
+  {
+    "id": "202336020115",
+    "name": "HAQUE MD NAZMUL",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2301",
+    "phone": "13106267002",
+    "country": "Bangladesh"
+  },
+  {
+    "id": "202336020116",
+    "name": "IKOUBOU NGAMPELE LLOYD CHRISTOPHER",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2301",
+    "phone": "19708812499",
+    "country": "Gabon"
+  },
+  {
+    "id": "202336020117",
+    "name": "JAWO MOHAMMED",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2301",
+    "phone": "13454944512",
+    "country": "Liberia"
+  },
+  {
+    "id": "202336020118",
+    "name": "KANTE HAMIDOU",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2301",
+    "phone": "19708812504",
+    "country": ""
+  },
+  {
+    "id": "202336020119",
+    "name": "KEUBOU JIOGO  BONEL PATERSON",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2301",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202336020120",
+    "name": "MACHUKI JOASH OMWANDO",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2301",
+    "phone": "15689869745",
+    "country": "肯尼亚"
+  },
+  {
+    "id": "202336020121",
+    "name": "MOUGHOMBO JACQUES YARNEL",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2301",
+    "phone": "15695790733",
+    "country": ""
+  },
+  {
+    "id": "202336020122",
+    "name": "MUNGOLO  TAONGA",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2301",
+    "phone": "19708812529",
+    "country": ""
+  },
+  {
+    "id": "202336020123",
+    "name": "NOKUTENDA MUSANGA",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2301",
+    "phone": "19708812449",
+    "country": "Zimbabwe"
+  },
+  {
+    "id": "202336020124",
+    "name": "SEOLWANA MAREI IGNECIOUS",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2301",
+    "phone": "13106265316",
+    "country": "South Africa"
+  },
+  {
+    "id": "202336020125",
+    "name": "TAZI-CHIBY YAHYA",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2301",
+    "phone": "19708818947",
+    "country": "Morocco"
+  },
+  {
+    "id": "202336020126",
+    "name": "UDE RAPHAEL IKECHUKWU",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2301",
+    "phone": "13621788398",
+    "country": "Nigeria"
+  },
+  {
+    "id": "202336020129",
+    "name": "ABDELGHAFAR YOUSEF ALAA MOSTAFA",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2301",
+    "phone": "15557979107",
+    "country": "Egypt"
+  },
+  {
+    "id": "202336020201",
+    "name": "BENDAHMAN CHAYMAE",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2302",
+    "phone": "19708818970",
+    "country": "Morocco"
+  },
+  {
+    "id": "202336020202",
+    "name": "DOVLETGELDIYEVA LEYLI",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2302",
+    "phone": "13106265332",
+    "country": ""
+  },
+  {
+    "id": "202336020203",
+    "name": "EL-FANI MARYEM",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2302",
+    "phone": "19708812535",
+    "country": "Morocco"
+  },
+  {
+    "id": "202336020204",
+    "name": "FATHALLAH ZINEB",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2302",
+    "phone": "19708818973",
+    "country": "Morocco"
+  },
+  {
+    "id": "202336020205",
+    "name": "GELDIYEVA GULSHAT",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2302",
+    "phone": "13106265331",
+    "country": ""
+  },
+  {
+    "id": "202336020206",
+    "name": "HALLALA YASMINE",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2302",
+    "phone": "19708818975",
+    "country": "Morocco"
+  },
+  {
+    "id": "202336020209",
+    "name": "TABIRI AYA",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2302",
+    "phone": "19708818965",
+    "country": "Morocco"
+  },
+  {
+    "id": "202336020210",
+    "name": "AKMYRADOV EZIZ",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2302",
+    "phone": "13106265683",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202336020211",
+    "name": "AL RAIMI ABDULLAH",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2302",
+    "phone": "19708819040",
+    "country": "Algeria"
+  },
+  {
+    "id": "202336020213",
+    "name": "BEGENJOV YSLAM",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2302",
+    "phone": "13106265387",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202336020214",
+    "name": "BERKANE HICHAM",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2302",
+    "phone": "19708818971",
+    "country": ""
+  },
+  {
+    "id": "202336020215",
+    "name": "CHANANE SOFIANE",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2302",
+    "phone": "19708819039",
+    "country": "Algeria"
+  },
+  {
+    "id": "202336020219",
+    "name": "ISLAM MD MUZAHIDUL",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2302",
+    "phone": "13095876797",
+    "country": ""
+  },
+  {
+    "id": "202336020221",
+    "name": "MALIKGULYYEV DOVLETGULY",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2302",
+    "phone": "13106265359",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202336020222",
+    "name": "MHIRA ANASS",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2302",
+    "phone": "19708818972",
+    "country": "Morocco"
+  },
+  {
+    "id": "202336020223",
+    "name": "NASSIF MOUAD",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2302",
+    "phone": "13106266965",
+    "country": "Morocco"
+  },
+  {
+    "id": "202336020224",
+    "name": "NSHIMIRIMANA ORES-DEVY",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2302",
+    "phone": "19708812310",
+    "country": "Burundi"
+  },
+  {
+    "id": "202336020225",
+    "name": "OJAROV SULEYMAN",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2302",
+    "phone": "13106265685",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202336020226",
+    "name": "SEMEDO GOMES  JORGE EMERSON",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2302",
+    "phone": "15695790981",
+    "country": ""
+  },
+  {
+    "id": "202336020229",
+    "name": "AMZIL FATIMA-ZOUHRA",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2302",
+    "phone": "19708818969",
+    "country": "Morocco"
+  },
+  {
+    "id": "202336020230",
+    "name": "DASH SHISHIR",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2302",
+    "phone": "19708812383",
+    "country": "Bangladesh"
+  },
+  {
+    "id": "202410180191",
+    "name": "HAYATU UMAR FARUQ",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Nigeria"
+  },
+  {
+    "id": "202410180193",
+    "name": "MUMANIKIDZWA GOLDEN TENDEKAI",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Zimbabwe"
+  },
+  {
+    "id": "202410180195",
+    "name": "WOULADJE CABREL",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Cameroon"
+  },
+  {
+    "id": "202420581366",
+    "name": "ABOURIDA ZINEB",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Morocco"
+  },
+  {
+    "id": "202420581368",
+    "name": "ALBERT RICHARD HALIM",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Indonesia"
+  },
+  {
+    "id": "202420581369",
+    "name": "NZE AVOMO ZENOVIO NDONG",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Equatorial Guinea"
+  },
+  {
+    "id": "202420581370",
+    "name": "KOUTABA ANGE",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Republic of the Congo"
+  },
+  {
+    "id": "202420581372",
+    "name": "SOROM CHURCHILL",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Papua New Guinea"
+  },
+  {
+    "id": "202420581376",
+    "name": "CHARLES CHARLES",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Indonesia"
+  },
+  {
+    "id": "202420581378",
+    "name": "APPIAH LAWRENCE OPOKU",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Ghana"
+  },
+  {
+    "id": "202420581381",
+    "name": "MESSIE SAPOCK MARK LAUREN",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Cameroon"
+  },
+  {
+    "id": "202420781739",
+    "name": "EL-ARABY YASSINE",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Morocco"
+  },
+  {
+    "id": "202420781741",
+    "name": "KIMBULUNGU ELIAKIM ELIE",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Democratic Republic of the Congo"
+  },
+  {
+    "id": "202420781742",
+    "name": "BOUSSOUF AYA",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Morocco"
+  },
+  {
+    "id": "202420781743",
+    "name": "ALI ZAYID ALI JAMA",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Somalia"
+  },
+  {
+    "id": "202420781744",
+    "name": "MALANGO LUSAJO ANDE",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Tanzania"
+  },
+  {
+    "id": "202420781745",
+    "name": "BARAKAT MOATASSIM",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Morocco"
+  },
+  {
+    "id": "202420781746",
+    "name": "UDOTUNG GODSWILL BASSEY",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Nigeria"
+  },
+  {
+    "id": "202431990242",
+    "name": "MUHAMMAD NIYYAT TAWWASUL LENA",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Dominica"
+  },
+  {
+    "id": "202431990243",
+    "name": "PHILOGENE VALERIAN JR",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Dominica"
+  },
+  {
+    "id": "202436020101",
+    "name": "AKIL MOHAMED",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2401",
+    "phone": "19730315093",
+    "country": "Morocco"
+  },
+  {
+    "id": "202436020102",
+    "name": "NASSIM MOHAMED",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2401",
+    "phone": "19730315103",
+    "country": "Morocco"
+  },
+  {
+    "id": "202436020103",
+    "name": "APPIAH DERRICK KWEKU",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2401",
+    "phone": "19730342449",
+    "country": "Ghana"
+  },
+  {
+    "id": "202436020104",
+    "name": "AL-MAQTARI IBRAHIM MOHAMMED NAJIB",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2401",
+    "phone": "13115232120",
+    "country": ""
+  },
+  {
+    "id": "202436020105",
+    "name": "HATTANI MAROUANE",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2401",
+    "phone": "13173815302",
+    "country": "Morocco"
+  },
+  {
+    "id": "202436020106",
+    "name": "GABI ZEZREEL GINI",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2401",
+    "phone": "13175513873",
+    "country": "Papua New Guinea"
+  },
+  {
+    "id": "202436020107",
+    "name": "BENCHAMI ABDELMANNANE",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2401",
+    "phone": "13106261869",
+    "country": "Morocco"
+  },
+  {
+    "id": "202436020109",
+    "name": "MARWAN EMADALDEEN HASABALLA OSMAN",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2401",
+    "phone": "19730315274",
+    "country": "Sudan"
+  },
+  {
+    "id": "202436020110",
+    "name": "AL JABERI AHMED AMIN AHMED",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2401",
+    "phone": "15990386892",
+    "country": "Yemen"
+  },
+  {
+    "id": "202436020112",
+    "name": "GYLYJOV BEGENCH",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2401",
+    "phone": "19730315270",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202436020113",
+    "name": "ANNAMYRADOV BABAJAN",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2401",
+    "phone": "19730315314",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202436020114",
+    "name": "KAPULO PIERROT GLOIRE",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2401",
+    "phone": "19730315356",
+    "country": "Democratic Republic of the Congo"
+  },
+  {
+    "id": "202436020115",
+    "name": "SOW MAMADOU TAHIROU",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2401",
+    "phone": "19511382616",
+    "country": "Guinea"
+  },
+  {
+    "id": "202436020116",
+    "name": "ROZYKULYYEV MEKAN",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2401",
+    "phone": "18505896653",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202436020121",
+    "name": "OVEZOV YAKUP",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2401",
+    "phone": "13175513705",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202436020122",
+    "name": "GURBANGELDIYEV ATAJAN",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2401",
+    "phone": "13175513893",
+    "country": ""
+  },
+  {
+    "id": "202436020123",
+    "name": "BOURIAL AYMANE",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2401",
+    "phone": "18579107749",
+    "country": "Morocco"
+  },
+  {
+    "id": "202436020124",
+    "name": "AZADOVA SAPARSOLTAN",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2401",
+    "phone": "13106261805",
+    "country": ""
+  },
+  {
+    "id": "202436020125",
+    "name": "GURBANNAZAROV ROVSHEN",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2401",
+    "phone": "13106261803",
+    "country": ""
+  },
+  {
+    "id": "202436020126",
+    "name": "MOSKVICHYEV NIKITA",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2401",
+    "phone": "19730342418",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202436020127",
+    "name": "WAHMANE YOUNES",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2401",
+    "phone": "18679599094",
+    "country": "Morocco"
+  },
+  {
+    "id": "202436020128",
+    "name": "ABDIHAFID MOHAMUD ISMAIL",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2401",
+    "phone": "19730315319",
+    "country": "Somalia"
+  },
+  {
+    "id": "202436020129",
+    "name": "BOURAQ IMANE",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2401",
+    "phone": "13362907709",
+    "country": "Morocco"
+  },
+  {
+    "id": "202436020130",
+    "name": "AHMED ABDOURAHAMANE",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2401",
+    "phone": "19564911834",
+    "country": "Comoros"
+  },
+  {
+    "id": "202436020132",
+    "name": "AGAJANOV AGAJAN",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2401",
+    "phone": "15527163181",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202436020133",
+    "name": "HAILU YAFET SISAY",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2401",
+    "phone": "19730342559",
+    "country": "Ethiopia"
+  },
+  {
+    "id": "202436020135",
+    "name": "AIT EL HAJ OMAR",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2401",
+    "phone": "16651753529",
+    "country": "Morocco"
+  },
+  {
+    "id": "202436020136",
+    "name": "NUR MITA",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2401",
+    "phone": "19730315407",
+    "country": "Bangladesh"
+  },
+  {
+    "id": "202436020137",
+    "name": "GURBANOV ORAZGELDI",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2401",
+    "phone": "19730315454",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202436020201",
+    "name": "AARAB MOHAMMED BELHAJ",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2402",
+    "phone": "19730315107",
+    "country": "Morocco"
+  },
+  {
+    "id": "202436020202",
+    "name": "HUDAYBERDIYEVA AYBOLEK",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2402",
+    "phone": "19730315362",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202436020203",
+    "name": "EL KARDOUDI MOHAMED AMINE",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2402",
+    "phone": "19730342613",
+    "country": "Morocco"
+  },
+  {
+    "id": "202436020205",
+    "name": "SALMA ELSAYED SALAHELDIN AHMED OTHMAN",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2402",
+    "phone": "15024384301",
+    "country": "Egypt"
+  },
+  {
+    "id": "202436020206",
+    "name": "BENAYAD SIFEDDINE",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2402",
+    "phone": "19730315142",
+    "country": "Morocco"
+  },
+  {
+    "id": "202436020208",
+    "name": "CHARYYEVA CHEPERSOLTAN",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2402",
+    "phone": "17681307483",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202436020210",
+    "name": "BARRY ALPHA IBRAHIMA",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2402",
+    "phone": "19810880250",
+    "country": "Guinea"
+  },
+  {
+    "id": "202436020211",
+    "name": "RAHMOUN MOHAMED",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2402",
+    "phone": "19730315084",
+    "country": "Morocco"
+  },
+  {
+    "id": "202436020213",
+    "name": "BAZAROV ALLAGULY",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2402",
+    "phone": "19730315350",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202436020214",
+    "name": "MUHAMMEDOVA JENNET",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2402",
+    "phone": "19730315449",
+    "country": ""
+  },
+  {
+    "id": "202436020215",
+    "name": "AAKIK MOHAMED",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2402",
+    "phone": "18241682534",
+    "country": "Morocco"
+  },
+  {
+    "id": "202436020216",
+    "name": "EL KHARMOUDI JIHANE",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2402",
+    "phone": "19730315380",
+    "country": "Morocco"
+  },
+  {
+    "id": "202436020217",
+    "name": "ALGHADHBAN QAYS SALAH SALIM",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2402",
+    "phone": "19708812477",
+    "country": ""
+  },
+  {
+    "id": "202436020218",
+    "name": "OLATUNJI FEMI EMMANUEL",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2402",
+    "phone": "19730315247",
+    "country": "Nigeria"
+  },
+  {
+    "id": "202436020219",
+    "name": "KOMBILA MOUSSAVOU KARL CEFEL",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2402",
+    "phone": "19708816290",
+    "country": ""
+  },
+  {
+    "id": "202436020220",
+    "name": "AL-GAILANI KHALED ABDO ALI",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2402",
+    "phone": "19550506812",
+    "country": "Yemen"
+  },
+  {
+    "id": "202436020221",
+    "name": "NIGUSSIE ANATOLI RETA",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2402",
+    "phone": "19730315004",
+    "country": "Ethiopia"
+  },
+  {
+    "id": "202436020222",
+    "name": "ALAHOUI IMAD EDDINE",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2402",
+    "phone": "19730315190",
+    "country": "Morocco"
+  },
+  {
+    "id": "202436020223",
+    "name": "MOUNANGA ONDO SALOMON",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2402",
+    "phone": "13094714951",
+    "country": "Gabon"
+  },
+  {
+    "id": "202436020224",
+    "name": "ATAYEVA AYJEMAL",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2402",
+    "phone": "19730315051",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202436020225",
+    "name": "SHAMADOVA AYMARAL",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2402",
+    "phone": "19730315047",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202436020226",
+    "name": "MAKSADOV MUHAMMET",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2402",
+    "phone": "19730315053",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202436020227",
+    "name": "HEKIMOV MERGEN",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2402",
+    "phone": "14757880475",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202436020228",
+    "name": "CEN THERENA LAYVIA",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2402",
+    "phone": "19730342639",
+    "country": "Indonesia"
+  },
+  {
+    "id": "202436020230",
+    "name": "JIM MD  MUNTAKIMUL ISLAM",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2402",
+    "phone": "13175512965",
+    "country": "Bangladesh"
+  },
+  {
+    "id": "202436020231",
+    "name": "ROVSHENOV RAKYP",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2402",
+    "phone": "19730315351",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202436020232",
+    "name": "BAZAROV GAYGYSYZ",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2402",
+    "phone": "19730315354",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202436020233",
+    "name": "MIR ALI ABDULLAH",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2402",
+    "phone": "18005791782",
+    "country": "Pakistan"
+  },
+  {
+    "id": "202436020234",
+    "name": "SBOUL SALAHEDDINE",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2402",
+    "phone": "15505153310",
+    "country": "Morocco"
+  },
+  {
+    "id": "202436020235",
+    "name": "HAGAR MOHANAD ALI MOHAMMED QASEM",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2402",
+    "phone": "19558255239",
+    "country": "Yemen"
+  },
+  {
+    "id": "202436020236",
+    "name": "BERDIGYLYJOV SELIM",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2402",
+    "phone": "19730315366",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202436020238",
+    "name": "NJIATHIO TCHINDA STEVE PATRICK",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2402",
+    "phone": "19557915132",
+    "country": ""
+  },
+  {
+    "id": "202436020239",
+    "name": "SEYIDOVA NURBIBI",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2402",
+    "phone": "19730315372",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202436020301",
+    "name": "BASHIMOV SHATLYK",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2403",
+    "phone": "19730315452",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202436020302",
+    "name": "DJAMBAE ALI ANFIATI",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2403",
+    "phone": "15557977561",
+    "country": "Comoros"
+  },
+  {
+    "id": "202436020303",
+    "name": "ALIMOVA OGULJAN",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2403",
+    "phone": "19730315364",
+    "country": ""
+  },
+  {
+    "id": "202436020306",
+    "name": "CHARYYEV ILYAS",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2403",
+    "phone": "19730315369",
+    "country": ""
+  },
+  {
+    "id": "202436020307",
+    "name": "ATAYEV ORAZDURDY",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2403",
+    "phone": "19730315448",
+    "country": ""
+  },
+  {
+    "id": "202436020308",
+    "name": "TAHIZOUT FIRDAOUS",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2403",
+    "phone": "19730315101",
+    "country": "Morocco"
+  },
+  {
+    "id": "202436020309",
+    "name": "AL-SHAWDHABI TAHA FARES MOHAMMED NAJI",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2403",
+    "phone": "19558255239",
+    "country": "Yemen"
+  },
+  {
+    "id": "202436020310",
+    "name": "SHALAROVA LEYLI",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2403",
+    "phone": "19730315361",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202436020312",
+    "name": "OUHASSOU HAMZA",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2403",
+    "phone": "15356189226",
+    "country": "Morocco"
+  },
+  {
+    "id": "202436020313",
+    "name": "HAMOU MOHAMED AMINE",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2403",
+    "phone": "19730315110",
+    "country": "Morocco"
+  },
+  {
+    "id": "202436020314",
+    "name": "SERRI MOHAMMED",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2403",
+    "phone": "19730315191",
+    "country": "Morocco"
+  },
+  {
+    "id": "202436020315",
+    "name": "BOURGANA AYA",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2403",
+    "phone": "19730315102",
+    "country": "Morocco"
+  },
+  {
+    "id": "202436020316",
+    "name": "BOUCHGHEL HAMZA",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2403",
+    "phone": "19730315193",
+    "country": "Morocco"
+  },
+  {
+    "id": "202436020317",
+    "name": "BERDIYEVA CHEMEN",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2403",
+    "phone": "19730315048",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202436020319",
+    "name": "ABDULLAHI ABDI HAMDI",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2403",
+    "phone": "19708819001",
+    "country": "Somalia"
+  },
+  {
+    "id": "202436020321",
+    "name": "SHAMSAN MAHA SAMEER MAHFOUDH ABDO",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2403",
+    "phone": "13375899069",
+    "country": "Yemen"
+  },
+  {
+    "id": "202436020322",
+    "name": "DANNAYEVA MEYREM",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2403",
+    "phone": "19730342432",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202436020323",
+    "name": "TANTOUF ZAKARIA",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2403",
+    "phone": "13115790051",
+    "country": "Morocco"
+  },
+  {
+    "id": "202436020324",
+    "name": "GEE COURAGE PHILIP",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2403",
+    "phone": "13162195703",
+    "country": ""
+  },
+  {
+    "id": "202436020326",
+    "name": "HASSANI ZAKARIA",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2403",
+    "phone": "19730315109",
+    "country": "Morocco"
+  },
+  {
+    "id": "202436020327",
+    "name": "HALLYYEV AGAJAN",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2403",
+    "phone": "13175513121",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202436020328",
+    "name": "SERHAN HACHEM MOHAMED",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2403",
+    "phone": "13095873217",
+    "country": "Venezuela"
+  },
+  {
+    "id": "202436020329",
+    "name": "ABDYYEVA MERJEN",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2403",
+    "phone": "19730315044",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202436020330",
+    "name": "MIRZAYEVA ENEJAN",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2403",
+    "phone": "19730315363",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202436020331",
+    "name": "TAZLAFT DINA",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2403",
+    "phone": "19730342641",
+    "country": "Morocco"
+  },
+  {
+    "id": "202436020332",
+    "name": "KUWANDIRA BRENDON TAPIWA",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2403",
+    "phone": "19730315498",
+    "country": "Zimbabwe"
+  },
+  {
+    "id": "202436020333",
+    "name": "ALSIRKAL SALEH SALAH SALEH ABDULRAB",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2403",
+    "phone": "13173813576",
+    "country": "Yemen"
+  },
+  {
+    "id": "202436020334",
+    "name": "NURYAGDYYEV SEYRAN",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2403",
+    "phone": "19730315475",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202436020335",
+    "name": "NAZAROV NAZAR",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2403",
+    "phone": "19730315473",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202436020336",
+    "name": "LAHMAMI ALAA EDDINE",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2403",
+    "phone": "19730315116",
+    "country": "Morocco"
+  },
+  {
+    "id": "202436020337",
+    "name": "MAKSATMYRADOV AZYMBERDI",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2403",
+    "phone": "13095872023",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202436020338",
+    "name": "AL-HADDAD ZAYED AKRAM SALEH GHALEB",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2403",
+    "phone": "15657933820",
+    "country": "Yemen"
+  },
+  {
+    "id": "202436020339",
+    "name": "GAMRANI ALI",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2403",
+    "phone": "19730342560",
+    "country": "Morocco"
+  },
+  {
+    "id": "202520581431",
+    "name": "AGHAYEV MUBARIZ",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Azerbaijan"
+  },
+  {
+    "id": "202520581432",
+    "name": "MOSLEH ABDULQUDOOS HAMID MOSLEH",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Iraq"
+  },
+  {
+    "id": "202520581433",
+    "name": "ISLAM MD APON",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Bangladesh"
+  },
+  {
+    "id": "202520581436",
+    "name": "SEN SOUMI",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "India"
+  },
+  {
+    "id": "202520581437",
+    "name": "BOUMEDIANE YASSER",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Morocco"
+  },
+  {
+    "id": "202520581438",
+    "name": "YAVA MAKWILU ARNOLD",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Democratic Republic of the Congo"
+  },
+  {
+    "id": "202520581439",
+    "name": "BUYA MD HABIB HASAN SHAKIL",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Bangladesh"
+  },
+  {
+    "id": "202520581440",
+    "name": "MAHI ABDULLAH AL",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Bangladesh"
+  },
+  {
+    "id": "202520581441",
+    "name": "NZATSI KASSA CKRIS GEROLE",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Gabon"
+  },
+  {
+    "id": "202536000142",
+    "name": "PLESHAKOVA VALERIIA",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Russia"
+  },
+  {
+    "id": "202536000143",
+    "name": "ZOIROV DALER",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Tajikistan"
+  },
+  {
+    "id": "202536000144",
+    "name": "KLASSOU ROBERT SYLVANUS KOSSI SESSI",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Togo"
+  },
+  {
+    "id": "202536000145",
+    "name": "PRATHEEPSAKUNTHONG THAMONWAN",
+    "gender": "",
+    "major": "",
+    "class": "",
+    "phone": "",
+    "country": "Thailand"
+  },
+  {
+    "id": "202536020101",
+    "name": "PRASAD VEDIKA",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "19730335851",
+    "country": "India"
+  },
+  {
+    "id": "202536020102",
+    "name": "KHASANOV MUKHAMMADALI",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "19706419334",
+    "country": "Uzbekistan"
+  },
+  {
+    "id": "202536020103",
+    "name": "ANGOUAND GEORGES THIERRY",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "13486138150",
+    "country": "Cameroon"
+  },
+  {
+    "id": "202536020104",
+    "name": "SARKAR DIBYO",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020105",
+    "name": "MOHAMMED KEDIR AHMED",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "19730325951",
+    "country": "Ethiopia"
+  },
+  {
+    "id": "202536020106",
+    "name": "ELSHIEKH ASMAA MOHAMED MOHAMED MAHMOUD",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "19706419446",
+    "country": "Egypt"
+  },
+  {
+    "id": "202536020107",
+    "name": "LLOYD LAURINE G",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "19730329972",
+    "country": "Liberia"
+  },
+  {
+    "id": "202536020108",
+    "name": "AMMOUR MOHAMED RAYANN",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020109",
+    "name": "MANGOMBE TAKUDZWA",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "19730335797",
+    "country": "Zimbabwe"
+  },
+  {
+    "id": "202536020110",
+    "name": "ALEARDO PAUL KAMILO OTWARI",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "",
+    "country": "南苏丹"
+  },
+  {
+    "id": "202536020111",
+    "name": "KURMANALIEV ISKANDER",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "16729276230",
+    "country": "Kyrgyzstan"
+  },
+  {
+    "id": "202536020112",
+    "name": "SAINBILEG MUNKH ORGIL",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020113",
+    "name": "JOARDER TAWFIQUR RAHMAN",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020114",
+    "name": "SAYNAB SAID ADAN",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020115",
+    "name": "ABBASSI SAAD",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "19730315446",
+    "country": "Morocco"
+  },
+  {
+    "id": "202536020116",
+    "name": "MOHAMED MOSTAFA ELGABRY RUQAYA",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "17606790150",
+    "country": "Egypt"
+  },
+  {
+    "id": "202536020117",
+    "name": "BAQADER MOHAMMED ABDULMAJID ABDULKAREM",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020118",
+    "name": "ZAHRA KHEIRA",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "19708193572",
+    "country": "Algeria"
+  },
+  {
+    "id": "202536020119",
+    "name": "ABDELWAHAB MOUSTAFA HASSAN ABDOU ALI",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "13157988171",
+    "country": "Egypt"
+  },
+  {
+    "id": "202536020120",
+    "name": "HUSSEIN MOHAMED ABDELRAZEK SELIM YOUSSEF",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "19558255239",
+    "country": "Egypt"
+  },
+  {
+    "id": "202536020121",
+    "name": "KHALIF SULDAN ISMAIL",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "19706419448",
+    "country": "Somalia"
+  },
+  {
+    "id": "202536020122",
+    "name": "ISLAM SALEH ELRAGHY IBRAHIM AHMED",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "15268691947",
+    "country": "Egypt"
+  },
+  {
+    "id": "202536020123",
+    "name": "ROBA ABEL SINTAYEHU",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "19730317539",
+    "country": "Ethiopia"
+  },
+  {
+    "id": "202536020124",
+    "name": "MOHAMMED IHSAN SHAFI",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "19730315569",
+    "country": "Ethiopia"
+  },
+  {
+    "id": "202536020125",
+    "name": "AIT YAHYA FATIMA EZZAHRA",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "19730335820",
+    "country": "Morocco"
+  },
+  {
+    "id": "202536020126",
+    "name": "RAHYMJANOVA JEREN",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020127",
+    "name": "MBARKI KARIM",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020128",
+    "name": "AL-ABIDI SULTAN ZAYED SULTAN NASR",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "15623826951",
+    "country": "Yemen"
+  },
+  {
+    "id": "202536020129",
+    "name": "ALYAZEEDI ABDULAZIZ KHALED YAHYA SALEH",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "19730342724",
+    "country": "Yemen"
+  },
+  {
+    "id": "202536020130",
+    "name": "MACHA PRIZLE RABIEL",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "17744658227",
+    "country": "Tanzania"
+  },
+  {
+    "id": "202536020131",
+    "name": "NSA NGUEMA JESPIN",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020132",
+    "name": "WINATA ANGEL RICH FAUSTINE",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "19730332885",
+    "country": "Indonesia"
+  },
+  {
+    "id": "202536020133",
+    "name": "RASHID MUHAMMAD AHSAN",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020134",
+    "name": "ZINDOGA MELVICK ANESU",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "19025764816",
+    "country": "Zimbabwe"
+  },
+  {
+    "id": "202536020135",
+    "name": "OKOMA GRACIA CHRISTELLE",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "19730312811",
+    "country": "Republic of the Congo"
+  },
+  {
+    "id": "202536020136",
+    "name": "ESENOVA BAHAR",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "19730315573",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202536020137",
+    "name": "SEYIDOVA CHEPER",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "19730335822",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202536020138",
+    "name": "AZADOV YUSUP",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2501",
+    "phone": "19730335880",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202536020201",
+    "name": "BA MATRAF GUMAAN AHMED GUMAAN",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "19730335787",
+    "country": "Yemen"
+  },
+  {
+    "id": "202536020202",
+    "name": "KABANGU  KANKOLONGO DONEL",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "18457952862",
+    "country": "Democratic Republic of the Congo"
+  },
+  {
+    "id": "202536020203",
+    "name": "AGAJANOVA AKMARAL",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020204",
+    "name": "CHIN YAN SHEN",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "19057459513",
+    "country": "Malaysia"
+  },
+  {
+    "id": "202536020205",
+    "name": "HASANAGHA HAJIYEV",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "19730317533",
+    "country": "Azerbaijan"
+  },
+  {
+    "id": "202536020206",
+    "name": "SIDI BABA AHMED",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "18358947297",
+    "country": "Mauritania"
+  },
+  {
+    "id": "202536020207",
+    "name": "KHADROUF IKRAME",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "19730319960",
+    "country": "Morocco"
+  },
+  {
+    "id": "202536020208",
+    "name": "BKHOUTI KAWTAR",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "17651656023",
+    "country": "Morocco"
+  },
+  {
+    "id": "202536020209",
+    "name": "DORDZHIEV ALTAN",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "19730317562",
+    "country": "Russia"
+  },
+  {
+    "id": "202536020210",
+    "name": "ANNAGYLYJOV KAMAR",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020211",
+    "name": "TARN GEORGE JAKE",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020212",
+    "name": "ZHOROBAEV ASAN",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020213",
+    "name": "ISMAIL ABDIRAHMAN ABSHIR",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "19730325929",
+    "country": "Somalia"
+  },
+  {
+    "id": "202536020214",
+    "name": "KIM ALEKSANDR VADIMOVICH",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "19730335856",
+    "country": "Kyrgyzstan"
+  },
+  {
+    "id": "202536020215",
+    "name": "KHAYRULLAEV SHAHRAM",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020216",
+    "name": "ZAHIR RAYAN",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020217",
+    "name": "AL-HAMIDI YASER HAMID ABDULQADER YAAQOB",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "13095871899",
+    "country": "Yemen"
+  },
+  {
+    "id": "202536020218",
+    "name": "KATANGA KUSHOMA",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020219",
+    "name": "APPIAH COLLINS JUNIOR",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "19730335857",
+    "country": "Ghana"
+  },
+  {
+    "id": "202536020220",
+    "name": "BEN ZEROUAL DOUAA",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "19730335983",
+    "country": "Algeria"
+  },
+  {
+    "id": "202536020221",
+    "name": "AYEDH AIMAN ABDULLAH MOHAMMED",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020222",
+    "name": "NGUNZA KINGAMBO VINCE",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "19730315148",
+    "country": "Democratic Republic of the Congo"
+  },
+  {
+    "id": "202536020223",
+    "name": "DUQUE ZULUAGA ANDRES SANTIAGO",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020224",
+    "name": "VINDZOR ELEONORA",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020225",
+    "name": "FOUNI ABDULMALIK RAJAB ALMOULIDI",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "18329033604",
+    "country": "Libya"
+  },
+  {
+    "id": "202536020226",
+    "name": "NGUIDI NTOUTOUME DANIELLA LAURETTA PASCALINE",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "18357027365",
+    "country": "Gabon"
+  },
+  {
+    "id": "202536020227",
+    "name": "ESSOUKOU EMMANUEL CYRILLE",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "19706419363",
+    "country": "Gabon"
+  },
+  {
+    "id": "202536020228",
+    "name": "MUBIAYI CHRINOVIC MUKENGESHAYI",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020229",
+    "name": "OMONOV FAZLIDDIN",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020230",
+    "name": "MOHAMED ISACK ABDULLAHI",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "19730325952",
+    "country": "Somalia"
+  },
+  {
+    "id": "202536020231",
+    "name": "MASROUR ACHRAF",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020232",
+    "name": "SARYYEVA AYJEREN",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "19706419476",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202536020233",
+    "name": "OLWAN QUSAI MOHAMMAD EDAIS",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "19560154413",
+    "country": "Jordan"
+  },
+  {
+    "id": "202536020234",
+    "name": "KULYYEV OVEZMYRAT",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020235",
+    "name": "MAKSAT SHAMADOV",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "19730318744",
+    "country": ""
+  },
+  {
+    "id": "202536020236",
+    "name": "HUSSEIN DAHRAN NUR",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "18358947502",
+    "country": "Somalia"
+  },
+  {
+    "id": "202536020237",
+    "name": "GUNAWAN FEBRIANA",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020238",
+    "name": "HASSANI HAJAR",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2502",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020301",
+    "name": "ALI AMR DIAB",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "19730318486",
+    "country": "India"
+  },
+  {
+    "id": "202536020302",
+    "name": "JAFARLI FATIMA",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "19730335717",
+    "country": "Azerbaijan"
+  },
+  {
+    "id": "202536020303",
+    "name": "MABKHOT MAZEN AHMED NASSER",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020304",
+    "name": "HUGAIRA ASEEL BAKER YAHYA",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "13277838751",
+    "country": "Yemen"
+  },
+  {
+    "id": "202536020305",
+    "name": "ALLOUCH HIBA",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "19730312975",
+    "country": "Morocco"
+  },
+  {
+    "id": "202536020306",
+    "name": "BYRD EDISON THOMAS",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020307",
+    "name": "QANI ACHRAF",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020308",
+    "name": "BABAMYRADOVA ABADAN",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "19706419416",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202536020309",
+    "name": "MUSTAFA AWNI NASSER AWNI",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "13265092040",
+    "country": "Jordan"
+  },
+  {
+    "id": "202536020310",
+    "name": "ALLAMYRADOV MYRAT",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "19730335782",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202536020311",
+    "name": "JOURIF REDA",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020312",
+    "name": "ALHURAIBY AHMED HAEL SAEED",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "15669633868",
+    "country": "Yemen"
+  },
+  {
+    "id": "202536020313",
+    "name": "OUDMINE FATIMA ZAHRA",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "19730311249",
+    "country": "Morocco"
+  },
+  {
+    "id": "202536020314",
+    "name": "HENRIES CHRISTIAN DARGAR",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "19706419589",
+    "country": "Liberia"
+  },
+  {
+    "id": "202536020315",
+    "name": "ANIEKWE KINGSLEY TOCHUKWU",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "19706419557",
+    "country": ""
+  },
+  {
+    "id": "202536020316",
+    "name": "SHAGYLYJOV YHLAS",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "19730335907",
+    "country": ""
+  },
+  {
+    "id": "202536020317",
+    "name": "DEVKOTA HARDIK",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020318",
+    "name": "PANDEY AYUSH",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020319",
+    "name": "HUMMEDOV ILYAS",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "19730335825",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202536020320",
+    "name": "BERDIMYRADOV RAHMAN",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "19706419458",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202536020321",
+    "name": "HAILU RAFAEL ANDNET",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "19558255239",
+    "country": "Ethiopia"
+  },
+  {
+    "id": "202536020322",
+    "name": "HARED JAMA SAMIYA",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "19730319919",
+    "country": "Somalia"
+  },
+  {
+    "id": "202536020323",
+    "name": "OBIANG JR PAULE RUBENE JORDYE",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "15167179863",
+    "country": "Gabon"
+  },
+  {
+    "id": "202536020324",
+    "name": "KENGUE MAYEMBA ESTHER LUDMILLA",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "13173817739",
+    "country": "Gabon"
+  },
+  {
+    "id": "202536020325",
+    "name": "MOMMADOV BEGENCH",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "15664947052",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202536020326",
+    "name": "CHARYYAROV MERGEN",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "15529396898",
+    "country": ""
+  },
+  {
+    "id": "202536020327",
+    "name": "NYAMIKE AKOUBA ELSHADAI",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "15958451347",
+    "country": "Ivory Coast"
+  },
+  {
+    "id": "202536020328",
+    "name": "KEBEDE MEKIDES KASSAHUN",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "19706419601",
+    "country": "Ethiopia"
+  },
+  {
+    "id": "202536020329",
+    "name": "KAMARA MADUSU S",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020330",
+    "name": "BAYLYYEV HYDYR",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "19730335881",
+    "country": "Turkmenistan"
+  },
+  {
+    "id": "202536020331",
+    "name": "LBAKHAR SAAD",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "19518664133",
+    "country": "Morocco"
+  },
+  {
+    "id": "202536020332",
+    "name": "BATSAIKHAN BILGUUN",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "19730335983",
+    "country": "Mongolia"
+  },
+  {
+    "id": "202536020333",
+    "name": "CAMARA MORIKEN",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "19730315385",
+    "country": "Guinea"
+  },
+  {
+    "id": "202536020334",
+    "name": "IVANOVA IANA",
+    "gender": "female",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "19730311224",
+    "country": "Russia"
+  },
+  {
+    "id": "202536020335",
+    "name": "JLILA SOUHAIL",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020336",
+    "name": "KURBANOV EZIZ",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020337",
+    "name": "JALLOH MOHAMMED S",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "",
+    "country": ""
+  },
+  {
+    "id": "202536020338",
+    "name": "ROZYYEV SEYITNAZAR",
+    "gender": "male",
+    "major": "计算机科学与技术（全英文班）",
+    "class": "2503",
+    "phone": "19730335819",
+    "country": "Turkmenistan"
+  }
+]
