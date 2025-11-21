@@ -8,33 +8,6 @@ from django.db import transaction
 from accounts.models import Course, StudentProfile, CourseEnrollment
 
 
-SECTION_TIMES = {
-    1: ("08:00", "08:40"),
-    2: ("08:45", "09:25"),
-    3: ("09:40", "10:20"),
-    4: ("10:35", "11:15"),
-    5: ("11:20", "12:00"),
-    6: ("14:00", "14:40"),
-    7: ("14:45", "15:25"),
-    8: ("15:40", "16:20"),
-    9: ("16:30", "17:10"),
-    10: ("18:00", "18:40"),
-    11: ("18:45", "19:25"),
-    12: ("19:40", "20:20"),
-    13: ("20:30", "21:10"),
-}
-
-
-def compute_times_from_periods(periods):
-    if not periods:
-        return None, None
-    min_p = min(periods)
-    max_p = max(periods)
-    start = SECTION_TIMES.get(min_p, ("", ""))[0]
-    end = SECTION_TIMES.get(max_p, ("", ""))[1]
-    return start, end
-
-
 class Command(BaseCommand):
     help = "Seed courses from backend/accounts/seed_data/courses.json and enroll students."
 
@@ -86,7 +59,6 @@ class Command(BaseCommand):
             if course_data.get('day_of_week') is None:
                 continue  # Skip courses without day_of_week
             periods = course_data.get('periods', [])
-            start_time, end_time = compute_times_from_periods(periods)
             course, created = Course.objects.get_or_create(
                 title=course_data.get('title', ''),
                 teacher=course_data.get('teacher', ''),
@@ -98,9 +70,6 @@ class Command(BaseCommand):
                     'course_type': course_data.get('course_type', ''),
                     'week_pattern': course_data.get('week_pattern', []),
                     'periods': periods,
-                    'start_time': start_time,
-                    'end_time': end_time,
-                    'last_week': max(course_data.get('week_pattern', [])) if course_data.get('week_pattern') else 16,
                 }
             )
             course_objects[course_key] = course

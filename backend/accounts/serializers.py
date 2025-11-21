@@ -59,13 +59,9 @@ class CourseSerializer(serializers.ModelSerializer):
             "location",
             "term",
             "first_week_monday",
-            "last_week",
             "day_of_week",
-            "start_time",
-            "end_time",
             "periods",
             "week_pattern",
-            "source_filename",
             "created_at",
             "updated_at",
         ]
@@ -104,10 +100,6 @@ class CourseSerializer(serializers.ModelSerializer):
         return sorted(set(cleaned))
 
     def validate(self, attrs):
-        start = attrs.get('start_time') or getattr(self.instance, 'start_time', None)
-        end = attrs.get('end_time') or getattr(self.instance, 'end_time', None)
-        if start and end and start >= end:
-            raise serializers.ValidationError({'end_time': 'End time must be after start time.'})
         day = attrs.get('day_of_week') or getattr(self.instance, 'day_of_week', None)
         if day and not 1 <= day <= 7:
             raise serializers.ValidationError({'day_of_week': 'Day of week must be between 1 (Mon) and 7 (Sun).'})

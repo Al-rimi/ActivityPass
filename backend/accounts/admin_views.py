@@ -191,7 +191,7 @@ class AdminCourseViewSet(viewsets.ModelViewSet):
                 Q(teacher__icontains=q) |
                 Q(location__icontains=q)
             )
-        return qs.order_by('term', 'day_of_week', 'start_time', 'title')
+        return qs.order_by('term', 'day_of_week', 'periods', 'title')
 
 
 class AdminCourseEnrollmentViewSet(viewsets.ModelViewSet):
