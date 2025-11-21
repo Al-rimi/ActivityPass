@@ -306,133 +306,238 @@ const AdminCoursesPage: React.FC = () => {
             </div>
 
             {modalOpen && (
-                <div className="fixed inset-0 z-30 flex items-center justify-center px-4 py-6 bg-black/50">
-                    <div className="w-full max-w-2xl p-6 bg-white border border-gray-200 shadow-2xl rounded-2xl dark:bg-gray-950 dark:border-gray-800">
-                        <div className="flex items-center justify-between mb-4">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="w-full max-w-3xl max-h-[90vh] overflow-hidden bg-white border border-gray-200 shadow-2xl rounded-2xl dark:bg-gray-900 dark:border-gray-700">
+                        <div className="flex items-center justify-between p-6 pb-4">
                             <div>
                                 <p className="text-xs tracking-wider text-gray-500 uppercase dark:text-gray-400">
                                     {editingCourse ? t('admin.editCourse') : t('admin.addCourse')}
                                 </p>
-                                <h2 className="text-xl font-semibold">{form.title || t('admin.course.title')}</h2>
+                                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{form.title || t('admin.course.title')}</h2>
                             </div>
-                            <button type="button" onClick={closeModal} className="p-2 text-gray-500 rounded-md hover:text-gray-900 dark:text-gray-400 dark:hover:text-white" aria-label={t('common.close')}>
-                                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                            <button type="button" onClick={closeModal} className="p-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" aria-label={t('common.close')}>
+                                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </button>
                         </div>
-                        <form onSubmit={submitCourse} className="grid gap-4 max-h-[75vh] overflow-y-auto pr-1" autoComplete="off">
-                            <div className="grid gap-4 sm:grid-cols-2">
-                                <label className="flex flex-col gap-1 text-sm text-gray-600 dark:text-gray-300">
-                                    {t('admin.courseForm.code')}
-                                    <input value={form.code} onChange={e => setForm(prev => ({ ...prev, code: e.target.value }))} className="px-3 py-2 bg-white border border-gray-300 rounded-md dark:border-gray-700 dark:bg-gray-900" />
-                                </label>
-                                <label className="flex flex-col gap-1 text-sm text-gray-600 dark:text-gray-300">
-                                    {t('admin.courseForm.type')}
-                                    <select value={form.course_type} onChange={e => setForm(prev => ({ ...prev, course_type: e.target.value }))} className="px-3 py-2 bg-white border border-gray-300 rounded-md dark:border-gray-700 dark:bg-gray-900">
-                                        <option value="">{t('admin.courseForm.type')}</option>
-                                        <option value="Theory">{t('admin.courseForm.type.theory')}</option>
-                                        <option value="Technical">{t('admin.courseForm.type.technical')}</option>
-                                        <option value="Practice">{t('admin.courseForm.type.practice')}</option>
-                                        <option value="Experiment">{t('admin.courseForm.type.experiment')}</option>
-                                    </select>
-                                </label>
-                            </div>
-                            <label className="flex flex-col gap-1 text-sm text-gray-600 dark:text-gray-300">
-                                {t('admin.courseForm.title')}
-                                <input value={form.title} onChange={e => setForm(prev => ({ ...prev, title: e.target.value }))} required className="px-3 py-2 bg-white border border-gray-300 rounded-md dark:border-gray-700 dark:bg-gray-900" />
-                            </label>
-                            <div className="grid gap-4 sm:grid-cols-2">
-                                <label className="flex flex-col gap-1 text-sm text-gray-600 dark:text-gray-300">
-                                    {t('admin.courseForm.teacher')}
-                                    <input value={form.teacher} onChange={e => setForm(prev => ({ ...prev, teacher: e.target.value }))} className="px-3 py-2 bg-white border border-gray-300 rounded-md dark:border-gray-700 dark:bg-gray-900" />
-                                </label>
-                                <label className="flex flex-col gap-1 text-sm text-gray-600 dark:text-gray-300">
-                                    {t('admin.courseForm.location')}
-                                    <input value={form.location} onChange={e => setForm(prev => ({ ...prev, location: e.target.value }))} className="px-3 py-2 bg-white border border-gray-300 rounded-md dark:border-gray-700 dark:bg-gray-900" />
-                                </label>
-                            </div>
-                            <div className="grid gap-4 sm:grid-cols-3">
-                                <label className="flex flex-col gap-1 text-sm text-gray-600 dark:text-gray-300">
-                                    {t('admin.courseForm.term')}
-                                    <select value={form.term} onChange={e => setForm(prev => ({ ...prev, term: e.target.value }))} className="px-3 py-2 bg-white border border-gray-300 rounded-md dark:border-gray-700 dark:bg-gray-900">
-                                        <option value="">{t('admin.courseForm.term')}</option>
-                                        <option value="first">{t('admin.courseForm.term.first')}</option>
-                                        <option value="second">{t('admin.courseForm.term.second')}</option>
-                                    </select>
-                                </label>
-                                <label className="flex flex-col gap-1 text-sm text-gray-600 dark:text-gray-300">
-                                    {t('admin.courseForm.firstWeek')}
-                                    <input type="date" value={form.first_week_monday} onChange={e => setForm(prev => ({ ...prev, first_week_monday: e.target.value }))} required className="px-3 py-2 bg-white border border-gray-300 rounded-md dark:border-gray-700 dark:bg-gray-900" />
-                                </label>
-                                <label className="flex flex-col gap-1 text-sm text-gray-600 dark:text-gray-300">
-                                    {t('admin.courseForm.day')}
-                                    <select value={form.day_of_week} onChange={e => setForm(prev => ({ ...prev, day_of_week: e.target.value }))} className="px-3 py-2 bg-white border border-gray-300 rounded-md dark:border-gray-700 dark:bg-gray-900">
-                                        {weekdayKeys.map(key => (
-                                            <option key={key} value={key}>{formatDay(key)}</option>
-                                        ))}
-                                    </select>
-                                </label>
-                            </div>
-                            <div className="grid gap-4 sm:grid-cols-2">
-                                <label className="flex flex-col gap-1 text-sm text-gray-600 dark:text-gray-300">
-                                    {t('admin.courseForm.periods')}
-                                    <div className="grid grid-cols-4 gap-2 p-3 bg-gray-50 border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-700">
-                                        {Array.from({ length: 13 }, (_, i) => i + 1).map(session => (
-                                            <label key={session} className="flex items-center gap-1 text-xs">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={form.periods.includes(session)}
-                                                    onChange={e => {
-                                                        const checked = e.target.checked;
+                        <div className="px-6 pb-6">
+                            <form onSubmit={submitCourse} className="space-y-6" autoComplete="off">
+                                {/* Basic Info Row */}
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            {t('admin.courseForm.code')}
+                                        </label>
+                                        <input
+                                            value={form.code}
+                                            onChange={e => setForm(prev => ({ ...prev, code: e.target.value }))}
+                                            className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-colors"
+                                            placeholder={t('admin.courseForm.code')}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            {t('admin.courseForm.type')}
+                                        </label>
+                                        <div className="relative">
+                                            <select
+                                                value={form.course_type}
+                                                onChange={e => setForm(prev => ({ ...prev, course_type: e.target.value }))}
+                                                className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:focus:ring-blue-400 dark:focus:border-blue-400 appearance-none transition-colors"
+                                            >
+                                                <option value="">{t('admin.courseForm.type')}</option>
+                                                <option value="Theory">{t('admin.courseForm.type.theory')}</option>
+                                                <option value="Technical">{t('admin.courseForm.type.technical')}</option>
+                                                <option value="Practice">{t('admin.courseForm.type.practice')}</option>
+                                                <option value="Experiment">{t('admin.courseForm.type.experiment')}</option>
+                                            </select>
+                                            <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
+                                                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Title */}
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        {t('admin.courseForm.title')}
+                                    </label>
+                                    <input
+                                        value={form.title}
+                                        onChange={e => setForm(prev => ({ ...prev, title: e.target.value }))}
+                                        required
+                                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-colors"
+                                        placeholder={t('admin.courseForm.title')}
+                                    />
+                                </div>
+
+                                {/* Teacher and Location */}
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            {t('admin.courseForm.teacher')}
+                                        </label>
+                                        <input
+                                            value={form.teacher}
+                                            onChange={e => setForm(prev => ({ ...prev, teacher: e.target.value }))}
+                                            className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-colors"
+                                            placeholder={t('admin.courseForm.teacher')}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            {t('admin.courseForm.location')}
+                                        </label>
+                                        <input
+                                            value={form.location}
+                                            onChange={e => setForm(prev => ({ ...prev, location: e.target.value }))}
+                                            className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-colors"
+                                            placeholder={t('admin.courseForm.location')}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Term, Date, Day */}
+                                <div className="grid gap-4 sm:grid-cols-3">
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            {t('admin.courseForm.term')}
+                                        </label>
+                                        <div className="relative">
+                                            <select
+                                                value={form.term}
+                                                onChange={e => setForm(prev => ({ ...prev, term: e.target.value }))}
+                                                className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:focus:ring-blue-400 dark:focus:border-blue-400 appearance-none transition-colors"
+                                            >
+                                                <option value="">{t('admin.courseForm.term')}</option>
+                                                <option value="first">{t('admin.courseForm.term.first')}</option>
+                                                <option value="second">{t('admin.courseForm.term.second')}</option>
+                                            </select>
+                                            <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
+                                                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            {t('admin.courseForm.firstWeek')}
+                                        </label>
+                                        <input
+                                            type="date"
+                                            value={form.first_week_monday}
+                                            onChange={e => setForm(prev => ({ ...prev, first_week_monday: e.target.value }))}
+                                            required
+                                            className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-colors"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            {t('admin.courseForm.day')}
+                                        </label>
+                                        <div className="relative">
+                                            <select
+                                                value={form.day_of_week}
+                                                onChange={e => setForm(prev => ({ ...prev, day_of_week: e.target.value }))}
+                                                className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:focus:ring-blue-400 dark:focus:border-blue-400 appearance-none transition-colors"
+                                            >
+                                                {weekdayKeys.map(key => (
+                                                    <option key={key} value={key}>{formatDay(key)}</option>
+                                                ))}
+                                            </select>
+                                            <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
+                                                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Sessions and Weeks */}
+                                <div className="grid gap-6 lg:grid-cols-2">
+                                    <div className="space-y-3">
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            {t('admin.courseForm.periods')}
+                                        </label>
+                                        <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-4 gap-2 p-4 bg-gray-50 border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600">
+                                            {Array.from({ length: 13 }, (_, i) => i + 1).map(session => (
+                                                <button
+                                                    key={session}
+                                                    type="button"
+                                                    onClick={() => {
                                                         setForm(prev => ({
                                                             ...prev,
-                                                            periods: checked
-                                                                ? [...prev.periods, session].sort((a, b) => a - b)
-                                                                : prev.periods.filter(p => p !== session)
+                                                            periods: prev.periods.includes(session)
+                                                                ? prev.periods.filter(p => p !== session)
+                                                                : [...prev.periods, session].sort((a, b) => a - b)
                                                         }));
                                                     }}
-                                                    className="w-3 h-3"
-                                                />
-                                                {session}
-                                            </label>
-                                        ))}
+                                                    className={`flex items-center justify-center w-full h-10 text-sm font-medium rounded-lg transition-all duration-200 ${
+                                                        form.periods.includes(session)
+                                                            ? 'bg-blue-600 text-white shadow-md transform scale-105'
+                                                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-500 dark:hover:bg-gray-600'
+                                                    }`}
+                                                >
+                                                    {session}
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
-                                </label>
-                                <label className="flex flex-col gap-1 text-sm text-gray-600 dark:text-gray-300">
-                                    {t('admin.courseForm.weeks')}
-                                    <div className="grid grid-cols-5 gap-2 p-3 bg-gray-50 border border-gray-300 rounded-md dark:bg-gray-800 dark:border-gray-700 max-h-32 overflow-y-auto">
-                                        {Array.from({ length: 17 }, (_, i) => i + 1).map(week => (
-                                            <label key={week} className="flex items-center gap-1 text-xs">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={form.week_pattern.includes(week)}
-                                                    onChange={e => {
-                                                        const checked = e.target.checked;
+                                    <div className="space-y-3">
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            {t('admin.courseForm.weeks')}
+                                        </label>
+                                        <div className="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-5 gap-2 p-4 bg-gray-50 border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-600 max-h-48 overflow-y-auto">
+                                            {Array.from({ length: 17 }, (_, i) => i + 1).map(week => (
+                                                <button
+                                                    key={week}
+                                                    type="button"
+                                                    onClick={() => {
                                                         setForm(prev => ({
                                                             ...prev,
-                                                            week_pattern: checked
-                                                                ? [...prev.week_pattern, week].sort((a, b) => a - b)
-                                                                : prev.week_pattern.filter(w => w !== week)
+                                                            week_pattern: prev.week_pattern.includes(week)
+                                                                ? prev.week_pattern.filter(w => w !== week)
+                                                                : [...prev.week_pattern, week].sort((a, b) => a - b)
                                                         }));
                                                     }}
-                                                    className="w-3 h-3"
-                                                />
-                                                {week}
-                                            </label>
-                                        ))}
+                                                    className={`flex items-center justify-center w-full h-10 text-sm font-medium rounded-lg transition-all duration-200 ${
+                                                        form.week_pattern.includes(week)
+                                                            ? 'bg-blue-600 text-white shadow-md transform scale-105'
+                                                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-500 dark:hover:bg-gray-600'
+                                                    }`}
+                                                >
+                                                    {week}
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
-                                </label>
-                            </div>
-                            <div className="flex justify-end gap-3 pt-2">
-                                <button type="button" onClick={closeModal} className="px-4 py-2 text-sm border border-gray-300 rounded-md dark:border-gray-700">
-                                    {t('common.cancel')}
-                                </button>
-                                <button type="submit" disabled={saving} className="px-4 py-2 text-sm text-white bg-gray-900 rounded-md disabled:opacity-60">
-                                    {saving ? t('profile.saving') : t('common.save')}
-                                </button>
-                            </div>
-                        </form>
+                                </div>
+
+                                {/* Form Actions */}
+                                <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-3 space-y-3 space-y-reverse sm:space-y-0 pt-4 border-t border-gray-200 dark:border-gray-700">
+                                    <button
+                                        type="button"
+                                        onClick={closeModal}
+                                        className="w-full sm:w-auto px-6 py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-400 transition-colors"
+                                    >
+                                        {t('common.cancel')}
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={saving}
+                                        className="w-full sm:w-auto px-6 py-3 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors"
+                                    >
+                                        {saving ? t('profile.saving') : t('common.save')}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
             )}
