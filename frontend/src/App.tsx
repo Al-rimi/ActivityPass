@@ -13,6 +13,7 @@ import CompleteProfilePage from './pages/CompleteProfilePage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminStudentsPage from './pages/AdminStudentsPage';
 import AdminStaffPage from './pages/AdminStaffPage';
+import AdminCoursesPage from './pages/AdminCoursesPage';
 import StaffDashboardPage from './pages/StaffDashboardPage';
 
 const setDocumentCssVar = (name: string, value: number) => {
@@ -40,18 +41,44 @@ const Navbar: React.FC = () => {
 
     const navLinks = useMemo(() => {
         if (!tokens) return [] as { label: string; to: string }[];
-        const target = me?.role === 'admin' ? '/admin' : me?.role === 'staff' ? '/staff' : '/';
-        return [{ label: dashboardLabel, to: target }];
-    }, [tokens, me?.role, dashboardLabel]);
+        if (me?.role === 'admin') {
+            return [
+                { label: dashboardLabel, to: '/admin' },
+                { label: t('admin.studentsTab', { defaultValue: 'Students' }), to: '/admin/students' },
+                { label: t('admin.staffTab', { defaultValue: 'Staff' }), to: '/admin/staff' },
+                { label: t('admin.coursesTab', { defaultValue: 'Courses' }), to: '/admin/courses' },
+            ];
+        }
+        if (me?.role === 'staff') {
+            return [{ label: dashboardLabel, to: '/staff' }];
+        }
+        return [{ label: dashboardLabel, to: '/' }];
+    }, [tokens, me?.role, dashboardLabel, t]);
 
     useEffect(() => {
         setSidebarOpen(false);
     }, [loc.pathname]);
 
-    const isActive = (href: string) => {
-        if (href === '/') return loc.pathname === '/';
-        return loc.pathname.startsWith(href);
+    const normalizePath = (path: string) => {
+        if (!path) return '/';
+        const withLeading = path.startsWith('/') ? path : `/${path}`;
+        const withoutTrailing = withLeading.replace(/\/+$/, '');
+        return withoutTrailing || '/';
     };
+
+    const activeLink = useMemo(() => {
+        if (!navLinks.length) return null;
+        const current = normalizePath(loc.pathname);
+        return navLinks.reduce<string | null>((best, link) => {
+            const target = normalizePath(link.to);
+            const matches = current === target || current.startsWith(`${target}/`);
+            if (!matches) return best;
+            if (!best) return target;
+            return target.length > best.length ? target : best;
+        }, null);
+    }, [loc.pathname, navLinks]);
+
+    const isActive = (href: string) => activeLink === normalizePath(href);
 
     const handleLogout = () => {
         logout();
@@ -147,13 +174,12 @@ const Navbar: React.FC = () => {
                                     {link.label}
                                 </Link>
                             )) : (
-                                <p className="text-sm text-gray-500 dark:text-gray-400">{t('nav.noLinks', { defaultValue: 'Sign in to access dashboard shortcuts.' })}</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">{t('nav.noLinks', { defaultValue: 'Sign in to access the pages.' })}</p>
                             )}
                         </div>
                         <div className="flex flex-col gap-4 mt-auto">
-                            <div className="p-4 border border-gray-200 rounded-xl dark:border-gray-800">
-                                <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">{preferencesLabel}</p>
-                                <div className="flex flex-col gap-3 mt-3">
+                            <div className="p-4 border border-gray-200 rounded-xl dark:border-gray-800" role="group" aria-label={preferencesLabel}>
+                                <div className="flex flex-wrap items-center justify-between w-full gap-4">
                                     <LanguageSwitcher />
                                     <ThemeToggle />
                                 </div>
@@ -319,6 +345,7 @@ const App: React.FC = () => {
                 <Route path="/admin" element={<ProtectedRoute><AdminRoute><AdminDashboardPage /></AdminRoute></ProtectedRoute>} />
                 <Route path="/admin/students" element={<ProtectedRoute><AdminRoute><AdminStudentsPage /></AdminRoute></ProtectedRoute>} />
                 <Route path="/admin/staff" element={<ProtectedRoute><AdminRoute><AdminStaffPage /></AdminRoute></ProtectedRoute>} />
+                <Route path="/admin/courses" element={<ProtectedRoute><AdminRoute><AdminCoursesPage /></AdminRoute></ProtectedRoute>} />
                 <Route path="/staff" element={<ProtectedRoute><StaffRoute><StaffDashboardPage /></StaffRoute></ProtectedRoute>} />
                 <Route path="/" element={<ProtectedRoute><RoleAwareHome /></ProtectedRoute>} />
             </Routes>

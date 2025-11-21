@@ -22,3 +22,27 @@ export type AdminUser = {
     student_profile?: StudentProfile | null;
     staff_number?: string | null;
 };
+
+export type SecurityPreferences = {
+    force_students_change_default: boolean;
+    force_staff_change_default: boolean;
+};
+
+export type AdminCourse = {
+    id: number;
+    code: string;
+    title: string;
+    course_type: string;
+    teacher: string;
+    location: string;
+    term: string;
+    first_week_monday: string;
+    last_week: number;
+    day_of_week: number;
+    start_time: string;
+    end_time: string;
+    week_pattern: number[];
+    source_filename: string;
+    created_at: string;
+    updated_at: string;
+};

@@ -1,51 +1,17 @@
-import React, { useEffect, useState } from 'react';
-
-// Two-state theme: 'light' | 'dark'. If no prior choice, detect system and persist.
-const systemPrefersDark = () => typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-const applyTheme = (mode: 'light' | 'dark') => {
-    if (typeof document === 'undefined') return;
-    document.documentElement.classList.toggle('dark', mode === 'dark');
-};
-
-const fallbackTheme: 'light' | 'dark' = 'light';
-
-export const ensureInitialTheme = (): 'light' | 'dark' => {
-    if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
-        return fallbackTheme;
-    }
-    const stored = localStorage.getItem('theme');
-    const computed: 'light' | 'dark' = stored === 'light' || stored === 'dark'
-        ? stored
-        : systemPrefersDark() ? 'dark' : 'light';
-    applyTheme(computed);
-    if (stored !== computed) {
-        localStorage.setItem('theme', computed);
-    }
-    return computed;
-};
-
-if (typeof window !== 'undefined') {
-    ensureInitialTheme();
-}
+import React from 'react';
+import { usePreferences } from '../context/PreferencesContext';
 
 const ThemeToggle: React.FC = () => {
-    const [mode, setMode] = useState<'light' | 'dark'>(() => ensureInitialTheme());
+    const { theme, setTheme } = usePreferences();
 
-    useEffect(() => {
-        applyTheme(mode);
-        localStorage.setItem('theme', mode);
-    }, [mode]);
-
-    // Switch component: pill with sliding thumb and icons
-    const toggle = () => setMode(m => (m === 'dark' ? 'light' : 'dark'));
+    const toggle = () => setTheme(theme === 'dark' ? 'light' : 'dark');
 
     return (
         <button
             type="button"
             onClick={toggle}
-            aria-label={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            className={`relative inline-flex items-center h-8 w-16 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-600 shadow-sm border border-gray-300 dark:border-gray-700 ${mode === 'dark' ? 'bg-gray-800' : 'bg-white dark:bg-gray-900'}`}
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            className={`relative inline-flex items-center h-8 w-16 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-600 shadow-sm border border-gray-300 dark:border-gray-700 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white dark:bg-gray-900'}`}
         >
             {/* Icons */}
             <span className="absolute left-2 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-gray-500 dark:text-gray-400 pointer-events-none">
@@ -70,7 +36,7 @@ const ThemeToggle: React.FC = () => {
             </span>
             {/* Thumb */}
             <span
-                className={`absolute top-1 left-1 inline-block h-6 w-6 rounded-full bg-gray-200 dark:bg-gray-700 shadow transition-transform duration-300 ease-out ${mode === 'dark' ? 'translate-x-8' : 'translate-x-0'}`}
+                className={`absolute top-1 left-1 inline-block h-6 w-6 rounded-full bg-gray-200 dark:bg-gray-700 shadow transition-transform duration-300 ease-out ${theme === 'dark' ? 'translate-x-8' : 'translate-x-0'}`}
             />
         </button>
     );
