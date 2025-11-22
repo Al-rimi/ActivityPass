@@ -90,21 +90,40 @@ if python3 -c "import sys; sys.exit(0 if sys.version_info >= (3, 8) else 1)"; th
 else
     print_warning "Python $PYTHON_VERSION is too old for Django 5.x. Installing Python 3.8+..."
     
-    # Install Python 3.8+ on CentOS/RHEL
-    if command -v dnf &> /dev/null; then
-        # Enable SCL repository for newer Python
-        sudo dnf install -y centos-release-scl
-        sudo dnf install -y rh-python38 rh-python38-python-pip rh-python38-python-devel
-        
-        # Enable the SCL Python
+    # Try different methods based on OS
+    OS_VERSION=$(cat /etc/os-release | grep -E "^VERSION_ID=" | cut -d'"' -f2 | cut -d'.' -f1)
+    OS_NAME=$(cat /etc/os-release | grep -E "^ID=" | cut -d'"' -f2)
+    
+    if [[ "$OS_NAME" == "centos" ]] && [[ "$OS_VERSION" -ge 8 ]]; then
+        # CentOS 8+ has python38 in appstream
+        print_status "Installing Python 3.8 on CentOS $OS_VERSION..."
+        sudo dnf install -y python38 python38-pip python38-devel
+        PYTHON_CMD="python3.8"
+    elif [[ "$OS_NAME" == "rocky" ]] || [[ "$OS_NAME" == "almalinux" ]]; then
+        # Rocky Linux/AlmaLinux 8+
+        print_status "Installing Python 3.8 on $OS_NAME $OS_VERSION..."
+        sudo dnf install -y python38 python38-pip python38-devel
+        PYTHON_CMD="python3.8"
+    elif [[ "$OS_NAME" == "centos" ]] && [[ "$OS_VERSION" -eq 7 ]]; then
+        # CentOS 7 - use SCL
+        print_status "Installing Python 3.8 via SCL on CentOS 7..."
+        sudo yum install -y centos-release-scl
+        sudo yum install -y rh-python38 rh-python38-python-pip rh-python38-python-devel
         source /opt/rh/rh-python38/enable
         PYTHON_CMD="python3.8"
-        
-        print_status "Python 3.8 installed and enabled"
     else
-        print_error "Unable to install Python 3.8+. Please upgrade your system Python manually."
-        exit 1
+        # Try generic python38 package
+        print_status "Trying to install python38 package..."
+        if sudo dnf install -y python38 python38-pip python38-devel 2>/dev/null; then
+            PYTHON_CMD="python3.8"
+        else
+            print_error "Unable to install Python 3.8+. Please upgrade your system Python manually to version 3.8 or higher."
+            print_error "You can try: sudo dnf install python38 python38-pip python38-devel"
+            exit 1
+        fi
     fi
+    
+    print_status "Python 3.8+ installed successfully"
 fi
 
 # Install MySQL/MariaDB
