@@ -79,6 +79,34 @@ else
     print_status "Node.js already installed: $(node --version)"
 fi
 
+# Check and upgrade Python version if necessary
+print_step "Checking Python version..."
+PYTHON_VERSION=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
+REQUIRED_PYTHON="3.8"
+
+if python3 -c "import sys; sys.exit(0 if sys.version_info >= (3, 8) else 1)"; then
+    print_status "Python $PYTHON_VERSION is compatible (Django 5.x requires Python 3.8+)"
+    PYTHON_CMD="python3"
+else
+    print_warning "Python $PYTHON_VERSION is too old for Django 5.x. Installing Python 3.8+..."
+    
+    # Install Python 3.8+ on CentOS/RHEL
+    if command -v dnf &> /dev/null; then
+        # Enable SCL repository for newer Python
+        sudo dnf install -y centos-release-scl
+        sudo dnf install -y rh-python38 rh-python38-python-pip rh-python38-python-devel
+        
+        # Enable the SCL Python
+        source /opt/rh/rh-python38/enable
+        PYTHON_CMD="python3.8"
+        
+        print_status "Python 3.8 installed and enabled"
+    else
+        print_error "Unable to install Python 3.8+. Please upgrade your system Python manually."
+        exit 1
+    fi
+fi
+
 # Install MySQL/MariaDB
 print_step "Checking database service..."
 MYSQL_RUNNING=false
@@ -190,7 +218,7 @@ fi
 read -p "Enter AMap API key (leave empty to skip): " AMAP_KEY
 
 # Generate random secret key
-SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_urlsafe(50))")
+SECRET_KEY=$($PYTHON_CMD -c "import secrets; print(secrets.token_urlsafe(50))")
 
 # Update .env file
 sed -i "s/DB_NAME=.*/DB_NAME=$DB_NAME/" .env
@@ -208,7 +236,7 @@ print_status "Environment configuration completed"
 # Setup backend
 print_step "Setting up Python backend..."
 cd backend
-python3 -m venv .venv
+$PYTHON_CMD -m venv .venv
 source .venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
