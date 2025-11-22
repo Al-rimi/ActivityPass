@@ -40,13 +40,16 @@ router.register(r'admin/course-enrollments', accounts_admin.AdminCourseEnrollmen
 
 FRONTEND_INDEX = Path(__file__).resolve().parent.parent.parent / 'frontend' / 'build' / 'index.html'
 
-def _frontend_view():
+def frontend_view(request):
     if FRONTEND_INDEX.exists():
-        return TemplateView.as_view(template_name='index.html')
-    return lambda request: HttpResponse('Frontend build not found. Run: python manage.py build_frontend or use runfullstack for dev.', status=503)
+        return TemplateView.as_view(template_name='index.html')(request)
+    return HttpResponse('Frontend build not found. Run: python manage.py build_frontend or use runfullstack for dev.', status=503)
 
-spa_view = _frontend_view()
+spa_view = frontend_view
 
+# Serve static files in development (before catch-all to avoid conflicts)
+from django.conf import settings
+from django.conf.urls.static import static
 urlpatterns = [
     path('api/', include(router.urls)),
     path('api/eligibility/<int:activity_id>/', eligibility_check, name='eligibility-check'),
@@ -63,7 +66,18 @@ urlpatterns = [
     path('api/admin/courses/import/', accounts_admin.import_courses, name='admin_courses_import'),
     path('api/admin/security/preferences/', accounts_admin.get_security_preferences, name='admin_security_preferences'),
     path('api/admin/security/toggle/', accounts_admin.toggle_default_password_enforcement, name='admin_security_toggle'),
-    # Serve React build (if built) for all remaining GET routes.
+]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    # Also serve frontend build assets directly
+    from pathlib import Path
+    frontend_build = Path(__file__).resolve().parent.parent.parent / 'frontend' / 'build'
+    if frontend_build.exists():
+        urlpatterns += static('/assets/', document_root=str(frontend_build / 'assets'))
+
+# Catch-all for React app (must come after static serving)
+urlpatterns += [
     re_path(r'^(?!api/|health/).*$', spa_view, name='react-app'),
     path('health/', health, name='health'),
 ]

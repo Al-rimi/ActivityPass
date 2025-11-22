@@ -173,9 +173,15 @@ TRANSLATE_API_URL = os.environ.get('TRANSLATE_API_URL', 'https://libretranslate.
 TRANSLATE_API_KEY = os.environ.get('TRANSLATE_API_KEY', '')
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = []
-frontend_static = FRONTEND_BUILD_DIR / 'static'
-if frontend_static.exists():
-    STATICFILES_DIRS.append(frontend_static)
+# Vite puts assets in 'assets' directory, not 'static'
+frontend_assets = FRONTEND_BUILD_DIR / 'assets'
+if frontend_assets.exists():
+    STATICFILES_DIRS.append(frontend_assets)
+
+# Serve static files in development
+if DEBUG:
+    from django.conf.urls.static import static
+    # This will be used in urls.py to serve static files
 
 # CORS (allow dev origins)
 CORS_ALLOW_ALL_ORIGINS = os.getenv('CORS_ALLOW_ALL', 'true').lower() == 'true'

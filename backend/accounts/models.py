@@ -17,6 +17,7 @@ class StudentProfile(models.Model):
     class_name = models.CharField(max_length=120, blank=True)
     gender = models.CharField(max_length=16, blank=True)
     phone = models.CharField(max_length=32, blank=True)
+    country = models.CharField(max_length=120, blank=True)
 
     def __str__(self):
         return f"StudentProfile({self.student_id or self.user.username})"

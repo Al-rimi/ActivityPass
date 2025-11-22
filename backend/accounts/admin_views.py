@@ -10,19 +10,6 @@ import string
 from .serializers import UserSerializer, CourseSerializer, CourseEnrollmentSerializer
 from rest_framework.decorators import api_view, permission_classes
 
-# ...existing code...
-
-# Place import_courses after IsAdmin and all class definitions
-
-# ...existing code...
-
-# At the end of the file, before toggle_default_password_enforcement
-
-
-# ...existing code...
-
-# Place import_courses at the end of the file, after all class and function definitions
-
 @api_view(['POST'])
 @transaction.atomic
 def import_courses(request):

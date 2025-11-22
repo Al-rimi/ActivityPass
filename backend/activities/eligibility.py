@@ -17,8 +17,29 @@ def check_time_conflict(student: StudentProfile, activity: Activity) -> bool:
 
 
 def check_major_college(student: StudentProfile, activity: Activity) -> bool:
-    if activity.college_required and activity.college_required != student.college:
-        return False
+    # Handle college_required: can be list, "all", or empty
+    if activity.college_required:
+        if isinstance(activity.college_required, str):
+            if activity.college_required == "all":
+                pass  # Allow all colleges
+            elif activity.college_required != student.college:
+                return False
+        elif isinstance(activity.college_required, list):
+            if student.college not in activity.college_required:
+                return False
+    
+    # Handle countries: can be list, "all", or empty
+    # Note: StudentProfile doesn't have country field yet, so skip for now
+    # if activity.countries:
+    #     if isinstance(activity.countries, str):
+    #         if activity.countries == "all":
+    #             pass  # Allow all countries
+    #         elif activity.countries != student.country:
+    #             return False
+    #     elif isinstance(activity.countries, list):
+    #         if student.country not in activity.countries:
+    #             return False
+    
     if activity.major_required and activity.major_required != student.major:
         return False
     return True

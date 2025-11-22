@@ -77,6 +77,7 @@ class Command(BaseCommand):
                     profile.country = country
                     profile.save()
                 created += 1
+                self.stdout.write(f"Created student: {sid} - {name} (major: {major}, college: {college}, chinese_level: {chinese_level}, class: {class_name}, gender: {gender}, phone: {phone}, country: {country})")
             else:
                 # Skip password reset for existing users (avoid slow hashing)
                 sp, _ = StudentProfile.objects.get_or_create(user=user, defaults={
@@ -109,20 +110,17 @@ class Command(BaseCommand):
                 if phone and sp.phone != phone:
                     sp.phone = phone
                     changed = True
+                if country != sp.country:
+                    sp.country = country
+                    changed = True
                 if changed:
                     sp.save()
+                    updated += 1
+                    self.stdout.write(f"Updated student: {sid} - {name}")
                 if not user.first_name and name:
                     user.first_name = name
                     user.save()
-                updated += 1
-            self.stdout.write(f"Seeded student: {sid} - {name} (major: {major}, college: {college}, chinese_level: {chinese_level}, class: {class_name}, gender: {gender}, phone: {phone}, country: {country})")
+                    updated += 1
+                    self.stdout.write(f"Updated student name: {sid} - {name}")
 
-        # Create staff user
-        staff_user, created = user_model.objects.get_or_create(username='staff', defaults={
-            'password': DEFAULT_PASSWORD_HASH,
-            'is_staff': True,
-        })
-        if created:
-            self.stdout.write("Created staff user 'staff' with password 000000")
-        else:
-            self.stdout.write("Staff user 'staff' already exists")
+        self.stdout.write(self.style.SUCCESS(f'Seeding students done. Created: {created}, Updated: {updated}'))

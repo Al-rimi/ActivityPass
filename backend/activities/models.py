@@ -11,9 +11,11 @@ class Activity(models.Model):
     # Stored translations for user-generated content
     title_i18n = models.JSONField(default=dict, blank=True)
     description_i18n = models.JSONField(default=dict, blank=True)
-    college_required = models.CharField(max_length=120, blank=True)
+    college_required = models.JSONField(default=list, blank=True)  # Changed to JSONField to store list or "all"
+    countries = models.JSONField(default=list, blank=True)  # New field for countries
     major_required = models.CharField(max_length=120, blank=True)
     chinese_level_min = models.CharField(max_length=20, blank=True)
+    location = models.CharField(max_length=200, blank=True)  # New field for location
     start_datetime = models.DateTimeField()
     end_datetime = models.DateTimeField()
     capacity = models.PositiveIntegerField(default=50)
