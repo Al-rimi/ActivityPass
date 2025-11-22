@@ -10,21 +10,21 @@
 
 A comprehensive, bilingual (English/中文) platform that streamlines extracurricular activity management for students and staff at Zhejiang Normal University.
 
-## 🎯 Project Overview
+## Project Overview
 
 ActivityPass revolutionizes how students discover, apply for, and participate in extracurricular activities while helping staff efficiently manage the entire process. The platform features AI-assisted eligibility checking, automated student provisioning, and comprehensive activity lifecycle management.
 
 ### Core Features
 
-- **🎓 Smart Student Management**: Automatic student profile creation, eligibility verification, and participation tracking
-- **📅 Intelligent Scheduling**: Conflict detection with class timetables, capacity management, and deadline enforcement
-- **🌐 Bilingual Interface**: Full English and Chinese language support with automatic detection
-- **🤖 AI-Powered Eligibility**: Rule-based and AI-assisted qualification scoring and recommendations
-- **📊 Comprehensive Analytics**: Activity participation statistics, student engagement metrics, and reporting
-- **🔐 Secure Authentication**: JWT-based authentication with role-based access control
-- **📱 Responsive Design**: Modern React interface with Tailwind CSS styling
+- **Smart Student Management**: Automatic student profile creation, eligibility verification, and participation tracking
+- **Intelligent Scheduling**: Conflict detection with class timetables, capacity management, and deadline enforcement
+- **Bilingual Interface**: Full English and Chinese language support with automatic detection
+- **AI-Powered Eligibility**: Rule-based and AI-assisted qualification scoring and recommendations
+- **Comprehensive Analytics**: Activity participation statistics, student engagement metrics, and reporting
+- **Secure Authentication**: JWT-based authentication with role-based access control
+- **Responsive Design**: Modern React interface with Tailwind CSS styling
 
-## 🏗️ Architecture
+## Architecture
 
 ### Tech Stack
 
@@ -64,7 +64,7 @@ ActivityPass/
 └── README.md             # This file
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -86,13 +86,13 @@ python run_all.py
 
 The script will:
 
-- ✅ Check for existing `.env` file or prompt for MySQL credentials
-- ✅ Create Python virtual environment
-- ✅ Install backend dependencies (shows package count)
-- ✅ Setup database and run migrations (detailed output)
-- ✅ Initialize application with sample data
-- ✅ Install frontend dependencies
-- ✅ Start both backend (port 8000) and frontend (port 3000) servers
+- Check for existing `.env` file or prompt for MySQL credentials
+- Create Python virtual environment
+- Install backend dependencies (shows package count)
+- Setup database and run migrations (detailed output)
+- Initialize application with sample data
+- Install frontend dependencies
+- Start both backend (port 8000) and frontend (port 3000) servers
 
 ### Manual Setup
 
@@ -128,7 +128,7 @@ npm install
 npm start
 ```
 
-## 🔧 Configuration
+## Configuration
 
 ### Environment Variables
 
@@ -161,7 +161,7 @@ VITE_AMAP_KEY=your_amap_api_key_here
 CREATE DATABASE activitypass CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-## 📚 API Documentation
+## API Documentation
 
 ### Authentication Endpoints
 
@@ -190,7 +190,7 @@ CREATE DATABASE activitypass CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 - `GET /api/admin/students/` - List all students
 - `GET /api/admin/activities/` - List all activities with stats
 
-## 🎨 Frontend Features
+## Frontend Features
 
 ### User Interface
 
@@ -220,7 +220,7 @@ function MyComponent() {
 }
 ```
 
-## 🛠️ Development
+## Development
 
 ### Available Scripts
 
@@ -262,7 +262,7 @@ python manage.py migrate
 python manage.py init_app
 ```
 
-## 🚀 Deployment
+## Deployment
 
 ### Production Checklist
 
@@ -293,7 +293,7 @@ services:
     build: ./frontend
 ```
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions! Please follow these guidelines:
 
@@ -326,9 +326,9 @@ cd frontend
 npm test -- --coverage
 ```
 
-## 📊 Project Status
+## Project Status
 
-### Current Features ✅
+### Current Features
 
 - [x] User authentication and authorization
 - [x] Student profile management
@@ -341,7 +341,7 @@ npm test -- --coverage
 - [x] API documentation
 - [x] Comprehensive testing
 
-### Planned Features 🚧
+### Planned Features
 
 - [ ] AI-powered recommendations
 - [ ] Advanced analytics dashboard
@@ -350,18 +350,18 @@ npm test -- --coverage
 - [ ] Advanced reporting features
 - [ ] Real-time notifications
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - **Zhejiang Normal University** for the hackathon opportunity
 - **Django Community** for the excellent web framework
 - **React Community** for the powerful frontend library
 - **Open Source Contributors** for the amazing tools and libraries
 
-## 📞 Support
+## Support
 
 For questions or support:
 
@@ -371,132 +371,4 @@ For questions or support:
 
 ---
 
-**Built with ❤️ for ZJNU Hackathon 2025-2026**
-
-## Repository Structure
-
-```
-backend/        # Django project (ActivityPass settings & apps)
-frontend/       # React frontend (public + src)
-reference/      # Legacy timetable parsing scripts (ignored by .gitignore for prod)
-README.md       # Project documentation
-LICENSE         # MIT License
-.gitignore      # Ignore patterns
-```
-
-## Getting Started
-
-### Prerequisites
-
-- Python 3.11+ (recommended)
-- Node.js 18+ and npm
-- (Future) PostgreSQL service for production
-
-### Backend Setup
-
-```pwsh
-cd backend
-python -m venv .venv
-\.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-```
-
-Create a MySQL database and set environment variables:
-
-```pwsh
-# In MySQL shell
-# CREATE DATABASE activitypass CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-# In repo root, create .env from template
-cd ..
-Copy-Item .env.example .env -Force
-# .env is already set to DB_PASSWORD=000000 for local dev; adjust if needed
-```
-
-Run migrations and start server:
-
-```pwsh
-cd backend
-python manage.py migrate
-python manage.py runserver
-```
-
-Server runs at http://127.0.0.1:8000/
-
-### Frontend Setup
-
-```pwsh
-cd frontend
-npm install
-npm start
-```
-
-App runs at http://localhost:3000/
-
-### Fullstack Development Convenience
-
-Run both Django API and React dev server (requires Node/npm installed and on PATH):
-
-```pwsh
-cd backend
-python manage.py runfullstack
-```
-
-Build React and serve via Django only (production-like single port):
-
-```pwsh
-cd backend
-python manage.py runfullstack --build
-```
-
-### Seeding Demo Data
-
-Create a staff user and sample activities:
-
-```pwsh
-cd backend
-python manage.py seed_demo
-```
-
-### Node.js on Windows
-
-Download installer from https://nodejs.org/en/download and reopen PowerShell so `npm` is available. Verify:
-
-```pwsh
-npm --version
-```
-
-## Next Steps
-
-- Define Django apps: users, activities, eligibility, timetable.
-- Implement timetable upload endpoint; integrate parsing logic adapted from `reference/`.
-- Introduce authentication (Django auth + JWT for SPA usage).
-- Draft eligibility service (class conflict, count cap, major filter, language requirement).
-- Add testing (pytest + React Testing Library) & CI workflow.
-
-## Environment Variables
-
-See `.env.example` for supported keys. A local `.env` is already created for you and is git-ignored.
-
-## AI Integration
-
-- A lightweight recommendation helper is available in `backend/ai/recommendation.py`.
-- It optionally uses `sentence-transformers` (MiniLM) to embed activity titles and find similar content. If not installed, it falls back to a simple keyword overlap method.
-- To enable embeddings:
-  ```pwsh
-  pip install sentence-transformers
-  ```
-  (Optional, not required for basic functionality.)
-
-## Contributing
-
-Contributions are welcome! Please open an issue describing the enhancement or bug. Ensure code follows PEP8 (backend) and ESLint (frontend) standards. Include tests for new logic.
-
-## License
-
-MIT © 2025 ActivityPass contributors
-
-## Acknowledgments
-
-- ZJNU Hackathon organizing committee.
-- Open-source community (Django, React, Testing Library).
+**Built for ZJNU Hackathon 2025-2026**
