@@ -1,9 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
 import { useTranslation } from 'react-i18next';
 import 'leaflet/dist/leaflet.css';
 
-// Load AMap JavaScript API
+// Load AMap JavaScript API (optional - only if API key is configured)
 const loadAMapScript = () => {
     return new Promise<void>((resolve, reject) => {
         if ((window as any).AMap && (window as any).AMap.Geocoder) {
@@ -15,7 +15,8 @@ const loadAMapScript = () => {
         const amapKey = import.meta.env.REACT_APP_AMAP_KEY || import.meta.env.VITE_AMAP_KEY;
 
         if (!amapKey || amapKey === 'your_amap_api_key_here') {
-            reject(new Error('AMap API key not configured. Please set REACT_APP_AMAP_KEY or VITE_AMAP_KEY environment variable.'));
+            // Skip loading if no valid API key is configured
+            resolve();
             return;
         }
 
@@ -77,11 +78,15 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
         setTempLocation(value);
     }, [value]);
 
-    // Load AMap script when component mounts
+    // Load AMap script when component mounts (optional - for enhanced geocoding)
     useEffect(() => {
-        loadAMapScript().catch(error => {
-            console.warn('Failed to load AMap script:', error);
-        });
+        const amapKey = import.meta.env.REACT_APP_AMAP_KEY || import.meta.env.VITE_AMAP_KEY;
+        if (amapKey && amapKey !== 'your_amap_api_key_here') {
+            loadAMapScript().catch(error => {
+                // Silently fail - AMap is optional, other geocoding services will work
+                console.debug('AMap script loading skipped or failed:', error.message);
+            });
+        }
     }, []);
 
     // Reverse geocoding function using services that work in China
