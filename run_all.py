@@ -28,6 +28,7 @@ Requires: Python 3.11+, Node.js & npm (for frontend), MySQL (if using MySQL engi
 from __future__ import annotations
 
 import argparse
+import getpass
 import os
 import shutil
 import stat
@@ -37,10 +38,21 @@ import time
 from pathlib import Path
 
 
-def run(cmd: list[str] | str, cwd: Path | None = None, env: dict[str, str] | None = None) -> int:
-    print(f"[run] {cmd}")
-    proc = subprocess.Popen(cmd, cwd=str(cwd) if cwd else None, env=env)
+def run(cmd: list[str] | str, cwd: Path | None = None, env: dict[str, str] | None = None, quiet: bool = False) -> int:
+    if not quiet:
+        print(f"[run] {cmd}")
+    proc = subprocess.Popen(cmd, cwd=str(cwd) if cwd else None, env=env, 
+                          stdout=subprocess.DEVNULL if quiet else None,
+                          stderr=subprocess.DEVNULL if quiet else None)
     return proc.wait()
+
+
+def run_with_output(cmd: list[str] | str, cwd: Path | None = None, env: dict[str, str] | None = None) -> tuple[int, str, str]:
+    """Run command and capture output for analysis."""
+    proc = subprocess.Popen(cmd, cwd=str(cwd) if cwd else None, env=env,
+                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    stdout, stderr = proc.communicate()
+    return proc.returncode, stdout, stderr
 
 
 def spawn(cmd: list[str] | str, cwd: Path | None = None, env: dict[str, str] | None = None) -> subprocess.Popen:
@@ -54,6 +66,48 @@ def npm_executable() -> str:
 
 def detect_node() -> bool:
     return shutil.which("node") is not None and shutil.which(npm_executable()) is not None
+
+
+def ensure_env_file(repo_root: Path):
+    """Check for .env file and create it if missing by prompting for MySQL credentials."""
+    env_file = repo_root / ".env"
+    env_example = repo_root / ".env.example"
+    
+    if env_file.exists():
+        print("[config] .env file found")
+        return
+    
+    if not env_example.exists():
+        print("[warn] .env.example not found; skipping .env creation")
+        return
+    
+    print("[config] .env file not found. Let's set up your database configuration.")
+    
+    # Prompt for MySQL credentials
+    db_user = input("Enter MySQL username (default: root): ").strip() or "root"
+    db_password = getpass.getpass("Enter MySQL password: ").strip()
+    
+    if not db_password:
+        print("[error] MySQL password is required")
+        sys.exit(1)
+    
+    # Read .env.example and create .env with user credentials
+    with open(env_example, 'r') as f:
+        example_content = f.read()
+    
+    # Replace the example values with user input
+    env_content = example_content.replace("DB_USER=root", f"DB_USER={db_user}")
+    env_content = env_content.replace("DB_PASSWORD=your-password-here", f"DB_PASSWORD={db_password}")
+    
+    # Generate a random secret key
+    import secrets
+    secret_key = secrets.token_urlsafe(50)
+    env_content = env_content.replace("DJANGO_SECRET_KEY=change-me-example", f"DJANGO_SECRET_KEY={secret_key}")
+    
+    with open(env_file, 'w') as f:
+        f.write(env_content)
+    
+    print(f"[config] .env file created successfully at {env_file}")
 
 
 def venv_python(venv_dir: Path) -> Path:
@@ -78,34 +132,62 @@ def ensure_venv(python_exec: str, backend_dir: Path, venv_dir: Path) -> Path:
 def install_backend_deps(py: Path, backend_dir: Path):
     req = backend_dir / "requirements.txt"
     if req.exists():
-        print("[backend] Installing dependencies")
-        code = run([str(py), "-m", "pip", "install", "--upgrade", "pip"]) or run([str(py), "-m", "pip", "install", "-r", str(req)])
-        if code != 0:
+        # Count packages in requirements.txt
+        with open(req, 'r') as f:
+            packages = [line.strip() for line in f if line.strip() and not line.strip().startswith('#')]
+        package_count = len(packages)
+        print(f"[backend] Checking Python dependencies ({package_count} packages)...")
+        
+        # Check if pip needs upgrade
+        code, _, _ = run_with_output([str(py), "-m", "pip", "list", "--outdated", "--format=json"])
+        if code == 0:
+            print("[backend] Python dependencies are up to date")
+            return
+            
+        # If we get here, try to install/upgrade
+        print("[backend] Installing/updating Python dependencies...")
+        code = run([str(py), "-m", "pip", "install", "--upgrade", "pip"], quiet=True)
+        if code == 0:
+            code = run([str(py), "-m", "pip", "install", "-r", str(req)], quiet=True)
+            if code == 0:
+                print("[backend] ✓ Python dependencies installed successfully")
+            else:
+                print("[backend] ✗ Failed to install Python dependencies")
+                sys.exit(code)
+        else:
+            print("[backend] ✗ Failed to upgrade pip")
             sys.exit(code)
     else:
         print("[backend] requirements.txt not found; skipping install")
 
 
 def migrate(py: Path, backend_dir: Path):
-    print("[backend] Applying migrations")
+    print("[backend] Applying database migrations...")
     code = run([str(py), "manage.py", "migrate"], cwd=backend_dir)
-    if code != 0:
+    if code == 0:
+        print("[backend] Database migrations applied")
+    else:
+        print("[backend] ✗ Database migration failed")
         sys.exit(code)
 
 
 def init_app(py: Path, backend_dir: Path):
-    print("[backend] Initializing app (migrate + seed + ensure admin)")
+    print("[backend] Initializing application (migrations + seeding)...")
     code = run([str(py), "manage.py", "init_app"], cwd=backend_dir)
-    if code != 0:
+    if code == 0:
+        print("[backend] Application initialized successfully")
+    else:
         print("[backend] init_app failed; falling back to migrate only")
         migrate(py, backend_dir)
 
 
 def seed_students(py: Path, backend_dir: Path):
-    print("[backend] Seeding students (if command exists)")
+    print("[backend] Seeding students...")
     code = run([str(py), "manage.py", "seed_students"], cwd=backend_dir)
-    if code != 0:
-        print("[warn] seed_students command failed or not implemented; continuing")
+    if code == 0:
+        print("[backend] Students seeded successfully")
+    else:
+        print("[backend] ⚠ seed_students command failed or not implemented; continuing")
 
 
 def start_backend(py: Path, backend_dir: Path, host: str, port: int) -> subprocess.Popen:
@@ -114,9 +196,22 @@ def start_backend(py: Path, backend_dir: Path, host: str, port: int) -> subproce
 
 
 def frontend_install(frontend_dir: Path):
-    print("[frontend] Installing npm dependencies")
-    code = run([npm_executable(), "install"], cwd=frontend_dir)
-    if code != 0:
+    print("[frontend] Checking npm dependencies...")
+    
+    # Check if node_modules exists and package-lock.json is recent
+    node_modules = frontend_dir / "node_modules"
+    package_lock = frontend_dir / "package-lock.json"
+    
+    if node_modules.exists() and package_lock.exists():
+        print("[frontend] ✓ Node.js dependencies are installed")
+        return
+        
+    print("[frontend] Installing npm dependencies...")
+    code = run([npm_executable(), "install", "--silent"], cwd=frontend_dir)
+    if code == 0:
+        print("[frontend] ✓ npm dependencies installed successfully")
+    else:
+        print("[frontend] ✗ Failed to install npm dependencies")
         sys.exit(code)
 
 
@@ -129,9 +224,12 @@ def frontend_start(frontend_dir: Path, port: int) -> subprocess.Popen:
 
 
 def frontend_build(frontend_dir: Path):
-    print("[frontend] Building production bundle")
-    code = run([npm_executable(), "run", "build"], cwd=frontend_dir)
-    if code != 0:
+    print("[frontend] Building production bundle...")
+    code = run([npm_executable(), "run", "build"], cwd=frontend_dir, quiet=True)
+    if code == 0:
+        print("[frontend] ✓ Production build completed successfully")
+    else:
+        print("[frontend] ✗ Production build failed")
         sys.exit(code)
 
 
@@ -190,6 +288,9 @@ def main():
     frontend_dir = (repo_root / args.frontend_dir).resolve()
     venv_dir = backend_dir / ".venv"
 
+    # Check and create .env file if needed
+    ensure_env_file(repo_root)
+
     if args.rebuild:
         print("[rebuild] Refreshing build artifacts (dependencies stay cached)")
         frontend_build_dir = frontend_dir / "build"
@@ -208,10 +309,23 @@ def main():
     else:
         init_app(py, backend_dir)
 
+    # Build frontend before starting backend if --build is specified
+    if not args.no_frontend and args.build:
+        if not frontend_dir.exists():
+            print(f"[warn] Frontend directory '{frontend_dir}' not found; skipping frontend")
+        elif not detect_node():
+            print("[warn] Node.js/npm not detected; skipping frontend")
+        else:
+            try:
+                frontend_install(frontend_dir)
+                frontend_build(frontend_dir)
+            except FileNotFoundError:
+                print("[error] npm command not found. Install Node.js (https://nodejs.org) and ensure npm is on your PATH.")
+
     backend_proc = start_backend(py, backend_dir, args.host, args.port)
 
     frontend_proc: subprocess.Popen | None = None
-    if not args.no_frontend:
+    if not args.no_frontend and not args.build:
         if not frontend_dir.exists():
             print(f"[warn] Frontend directory '{frontend_dir}' not found; skipping frontend")
         elif not detect_node():
@@ -222,10 +336,7 @@ def main():
             except FileNotFoundError:
                 print("[error] npm command not found. Install Node.js (https://nodejs.org) and ensure npm is on your PATH.")
             else:
-                if args.build:
-                    frontend_build(frontend_dir)
-                else:
-                    frontend_proc = frontend_start(frontend_dir, args.frontend_port)
+                frontend_proc = frontend_start(frontend_dir, args.frontend_port)
 
     print("\n[done] Automation started. Press Ctrl+C to terminate.")
     print("Backend PID:", backend_proc.pid)
