@@ -1099,8 +1099,8 @@ def main() -> None:
     
     # Paths
     script_dir = os.path.dirname(__file__)
-    pdf_folder = os.path.join(script_dir, "..", "reference", "pdf")
-    seed_file = os.path.join(script_dir, "..", "backend", "accounts", "seed_data", "courses.json")
+    pdf_folder = os.path.join(script_dir, "..", "..", "reference", "pdf")
+    seed_file = os.path.join(script_dir, "..", "..", "backend", "accounts", "seed_data", "courses.json")
     
     # Load existing courses
     if os.path.exists(seed_file):

@@ -121,8 +121,8 @@ MAJOR_TRANSLATION = {
 def main() -> None:
     # Paths
     script_dir = os.path.dirname(__file__)
-    csv_folder = os.path.join(script_dir, "..", "reference", "csv")
-    seed_file = os.path.join(script_dir, "..", "backend", "accounts", "seed_data", "students.json")
+    csv_folder = os.path.join(script_dir, "..", "..", "reference", "csv")
+    seed_file = os.path.join(script_dir, "..", "..", "backend", "accounts", "seed_data", "students.json")
     
     # Load existing students into a dict by ID
     existing_students = {}
