@@ -6,6 +6,12 @@
 # Reference analysis scripts (not part of deployable app)
 reference/
 
+# Deployment artifacts (created by deploy script)
+start.sh
+stop.sh
+health.sh
+public/
+
 ############################
 # Python
 __pycache__/
