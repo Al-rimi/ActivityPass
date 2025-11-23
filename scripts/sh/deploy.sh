@@ -38,26 +38,31 @@ if [[ $EUID -eq 0 ]]; then
    exit 1
 fi
 
-# Determine the best deployment directory for 1Panel
-if [ -d "/www/wwwroot" ]; then
-    DEPLOY_DIR="/www/wwwroot/activitypass"
-    print_status "Using 1Panel standard directory: $DEPLOY_DIR"
-elif [ -d "/var/www" ]; then
-    DEPLOY_DIR="/var/www/activitypass"
-    print_status "Using standard web directory: $DEPLOY_DIR"
-else
-    DEPLOY_DIR="/opt/activitypass"
-    print_warning "Using /opt/activitypass (1Panel may have limited access here)"
-fi
+# Ask for deployment details
+print_step "Configuring deployment..."
+read -p "Enter your domain name (e.g., example.com): " DOMAIN_NAME
+read -p "Enter deployment folder name (alias): " ALIAS
 
-# Create deployment directory
-print_step "Creating deployment directory..."
-sudo mkdir -p "$DEPLOY_DIR"
-sudo chown -R $USER:$USER "$DEPLOY_DIR"
+# Determine the deployment directories
+SITES_DIR="/opt/1panel/apps/openresty/openresty/www/sites"
+BACKEND_DIR="/www/wwwroot/${ALIAS}-backend"
+FRONTEND_DIR="${SITES_DIR}/${ALIAS}"
 
-# Clone repository
+print_status "Domain: $DOMAIN_NAME"
+print_status "Alias: $ALIAS"
+print_status "Frontend will be deployed to: $FRONTEND_DIR"
+print_status "Backend will be deployed to: $BACKEND_DIR"
+
+# Create deployment directories
+print_step "Creating deployment directories..."
+sudo mkdir -p "$FRONTEND_DIR"
+sudo mkdir -p "$BACKEND_DIR"
+sudo chown -R $USER:$USER "$FRONTEND_DIR"
+sudo chown -R $USER:$USER "$BACKEND_DIR"
+
+# Clone repository to backend directory
 print_step "Cloning repository..."
-cd "$DEPLOY_DIR"
+cd "$BACKEND_DIR"
 if [ ! -d ".git" ]; then
     git clone https://github.com/Al-rimi/ActivityPass.git .
 else
@@ -324,28 +329,11 @@ npm install
 npm run build
 cd ..
 
-# Create 1Panel-compatible directory structure
-print_step "Setting up 1Panel-compatible structure..."
-
-# Create public directory for 1Panel (if using /www/wwwroot)
-if [[ "$DEPLOY_DIR" == /www/wwwroot/* ]]; then
-    PUBLIC_DIR="${DEPLOY_DIR}/public"
-    sudo mkdir -p "$PUBLIC_DIR"
-
-    # Copy frontend build to public directory
-    sudo cp -r frontend/build/* "$PUBLIC_DIR/"
-
-    # Create symbolic links for backend static files
-    ln -sf "$DEPLOY_DIR/backend/static" "$PUBLIC_DIR/static"
-    ln -sf "$DEPLOY_DIR/backend/media" "$PUBLIC_DIR/media"
-else
-    PUBLIC_DIR="$DEPLOY_DIR/frontend/build"
-fi
-
-# Set proper permissions for 1Panel
-print_step "Setting permissions for 1Panel..."
-sudo chown -R www-data:www-data "$DEPLOY_DIR" 2>/dev/null || sudo chown -R nginx:nginx "$DEPLOY_DIR" 2>/dev/null || sudo chown -R $USER:$USER "$DEPLOY_DIR"
-sudo chmod -R 755 "$DEPLOY_DIR"
+# Deploy frontend to 1Panel sites directory
+print_step "Deploying frontend to 1Panel sites directory..."
+sudo cp -r frontend/build/* "$FRONTEND_DIR/"
+sudo chown -R www-data:www-data "$FRONTEND_DIR" 2>/dev/null || sudo chown -R nginx:nginx "$FRONTEND_DIR" 2>/dev/null || sudo chown -R $USER:$USER "$FRONTEND_DIR"
+sudo chmod -R 755 "$FRONTEND_DIR"
 
 # Create a simple startup script for 1Panel
 print_step "Creating 1Panel startup script..."
@@ -353,7 +341,7 @@ cat > start.sh << EOF
 #!/bin/bash
 # ActivityPass startup script for 1Panel
 
-cd $DEPLOY_DIR/backend
+cd $BACKEND_DIR/backend
 source .venv/bin/activate
 exec python manage.py runserver 127.0.0.1:8000
 EOF
@@ -389,27 +377,40 @@ chmod +x health.sh
 
 print_status "🎉 1Panel deployment completed!"
 print_status ""
-print_status "📁 Deployment Directory: $DEPLOY_DIR"
-print_status "🌐 Public Directory: $PUBLIC_DIR"
+print_status "📁 Deployment Directories:"
+print_status "   Frontend: $FRONTEND_DIR"
+print_status "   Backend: $BACKEND_DIR"
 print_status ""
-print_status "🔧 1Panel Configuration:"
+print_status "🔧 1Panel Website Configuration:"
 print_status "1. Go to 1Panel Web Interface (http://your-server-ip:9999)"
-print_status "2. Navigate to 'Website' → 'Add Site'"
+print_status "2. Navigate to 'Website' → 'Add Site' → 'Runtime'"
 print_status "3. Configure:"
-print_status "   - Domain: your-domain.com"
-print_status "   - Root Directory: $PUBLIC_DIR"
-print_status "   - Type: Reverse Proxy"
-print_status "   - Proxy Address: http://127.0.0.1:8000 (for API)"
+print_status "   - Group: Default"
+print_status "   - Type: Nginx"
+print_status "   - Runtime: (leave empty)"
+print_status "   - Primary domain: $DOMAIN_NAME"
+print_status "   - Alias: $ALIAS"
+print_status "   - Root Directory: Will be set automatically to $FRONTEND_DIR"
+print_status ""
+print_status "4. After creating the website, edit the Nginx configuration:"
+print_status "   - Add this location block for API proxying:"
+print_status "     location /api/ {"
+print_status "         proxy_pass http://127.0.0.1:8000;"
+print_status "         proxy_set_header Host \$host;"
+print_status "         proxy_set_header X-Real-IP \$remote_addr;"
+print_status "         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;"
+print_status "         proxy_set_header X-Forwarded-Proto \$scheme;"
+print_status "     }"
 print_status ""
 print_status "🚀 Manual Start Commands:"
-print_status "   cd $DEPLOY_DIR && ./start.sh    # Start backend"
-print_status "   cd $DEPLOY_DIR && ./stop.sh     # Stop backend"
-print_status "   cd $DEPLOY_DIR && ./health.sh   # Health check"
+print_status "   cd $BACKEND_DIR && ./start.sh    # Start backend"
+print_status "   cd $BACKEND_DIR && ./stop.sh     # Stop backend"
+print_status "   cd $BACKEND_DIR && ./health.sh   # Health check"
 print_status ""
 print_status "📊 Access URLs:"
-print_status "   Frontend: http://your-server-ip/"
-print_status "   API: http://your-server-ip/api/"
-print_status "   Admin: http://your-server-ip/admin/"
+print_status "   Frontend: http://$DOMAIN_NAME/"
+print_status "   API: http://$DOMAIN_NAME/api/"
+print_status "   Admin: http://$DOMAIN_NAME/admin/"
 print_status ""
 print_status "⚠️  Important: Change default admin password!"
 print_status "   Username: admin"
