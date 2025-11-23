@@ -54,7 +54,7 @@ ALIAS="$DOMAIN_NAME"
 
 # Determine the deployment directories
 DEPLOY_DIR="/www/wwwroot/activitypass"
-SITES_DIR="/www/sites"
+SITES_DIR="/opt/1panel/apps/openresty/openresty/www/sites"
 FRONTEND_DEPLOY_DIR="${SITES_DIR}/${ALIAS}/index"
 
 print_status "Alias: $ALIAS"
