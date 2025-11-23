@@ -55,7 +55,7 @@ ALIAS="$DOMAIN_NAME"
 # Determine the deployment directories
 DEPLOY_DIR="/www/wwwroot/activitypass"
 SITES_DIR="/www/sites"
-FRONTEND_DEPLOY_DIR="${SITES_DIR}/${ALIAS}/index"
+FRONTEND_DEPLOY_DIR="${SITES_DIR}/${ALIAS}"
 
 print_status "Alias: $ALIAS"
 print_status "Backend will be deployed to: $DEPLOY_DIR"
