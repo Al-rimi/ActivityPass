@@ -44,7 +44,7 @@ read -p "Enter deployment folder name (alias, preferably your domain name): " AL
 
 # Determine the deployment directories
 DEPLOY_DIR="/www/wwwroot/activitypass"
-SITES_DIR="/opt/1panel/apps/openresty/www/sites"
+SITES_DIR="/opt/1panel/apps/openresty/openresty/www/sites"
 FRONTEND_DEPLOY_DIR="${SITES_DIR}/${ALIAS}"
 
 print_status "Alias: $ALIAS"
