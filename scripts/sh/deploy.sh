@@ -317,9 +317,9 @@ cd ..
 
 # Deploy frontend to 1Panel sites directory
 print_step "Deploying frontend to 1Panel sites directory..."
-sudo cp -r frontend/build/* "$FRONTEND_DIR/"
-sudo chown -R www-data:www-data "$FRONTEND_DIR" 2>/dev/null || sudo chown -R nginx:nginx "$FRONTEND_DIR" 2>/dev/null || sudo chown -R $USER:$USER "$FRONTEND_DIR"
-sudo chmod -R 755 "$FRONTEND_DIR"
+sudo cp -r frontend/build/* "$FRONTEND_DEPLOY_DIR/"
+sudo chown -R www-data:www-data "$FRONTEND_DEPLOY_DIR" 2>/dev/null || sudo chown -R nginx:nginx "$FRONTEND_DEPLOY_DIR" 2>/dev/null || sudo chown -R $USER:$USER "$FRONTEND_DEPLOY_DIR"
+sudo chmod -R 755 "$FRONTEND_DEPLOY_DIR"
 
 # Create a simple startup script for 1Panel
 print_step "Creating 1Panel startup script..."
@@ -327,7 +327,7 @@ cat > start.sh << EOF
 #!/bin/bash
 # ActivityPass startup script for 1Panel
 
-cd $BACKEND_DIR/backend
+cd $DEPLOY_DIR/backend
 source .venv/bin/activate
 exec python manage.py runserver 127.0.0.1:8000
 EOF
