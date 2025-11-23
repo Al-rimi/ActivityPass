@@ -300,7 +300,15 @@ print_status "Running database migrations..."
 $PYTHON_CMD manage.py migrate
 
 print_status "Creating superuser..."
-echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_superuser('admin', 'admin@example.com', 'admin123')" | $PYTHON_CMD manage.py shell
+$PYTHON_CMD manage.py shell -c "
+from django.contrib.auth import get_user_model
+User = get_user_model()
+if not User.objects.filter(username='admin').exists():
+    User.objects.create_superuser('admin', 'admin@example.com', 'admin123')
+    print('Superuser created')
+else:
+    print('Superuser already exists')
+"
 
 print_status "Collecting static files..."
 $PYTHON_CMD manage.py collectstatic --noinput
@@ -325,7 +333,7 @@ if [[ "$DEPLOY_DIR" == /www/wwwroot/* ]]; then
     sudo mkdir -p "$PUBLIC_DIR"
 
     # Copy frontend build to public directory
-    cp -r frontend/build/* "$PUBLIC_DIR/"
+    sudo cp -r frontend/build/* "$PUBLIC_DIR/"
 
     # Create symbolic links for backend static files
     ln -sf "$DEPLOY_DIR/backend/static" "$PUBLIC_DIR/static"
