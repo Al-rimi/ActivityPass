@@ -38,37 +38,23 @@ if [[ $EUID -eq 0 ]]; then
    exit 1
 fi
 
-# Ask for deployment details
+# Ask for deployment folder name (alias)
 print_step "Configuring deployment..."
-read -p "Enter your domain name (e.g., example.com): " DOMAIN_NAME
-read -p "Enter deployment folder name (alias): " ALIAS
+read -p "Enter deployment folder name (alias, preferably your domain name): " ALIAS
 
 # Determine the deployment directories
+DEPLOY_DIR="/www/wwwroot/activitypass"
 SITES_DIR="/opt/1panel/apps/openresty/openresty/www/sites"
-BACKEND_DIR="/www/wwwroot/${ALIAS}-backend"
-FRONTEND_DIR="${SITES_DIR}/${ALIAS}"
+FRONTEND_DEPLOY_DIR="${SITES_DIR}/${ALIAS}"
 
-print_status "Domain: $DOMAIN_NAME"
 print_status "Alias: $ALIAS"
-print_status "Frontend will be deployed to: $FRONTEND_DIR"
-print_status "Backend will be deployed to: $BACKEND_DIR"
+print_status "Backend will be deployed to: $DEPLOY_DIR"
+print_status "Frontend will be deployed to: $FRONTEND_DEPLOY_DIR"
 
 # Create deployment directories
 print_step "Creating deployment directories..."
-sudo mkdir -p "$FRONTEND_DIR"
-sudo mkdir -p "$BACKEND_DIR"
-sudo chown -R $USER:$USER "$FRONTEND_DIR"
-sudo chown -R $USER:$USER "$BACKEND_DIR"
-
-# Clone repository to backend directory
-print_step "Cloning repository..."
-cd "$BACKEND_DIR"
-if [ ! -d ".git" ]; then
-    git clone https://github.com/Al-rimi/ActivityPass.git .
-else
-    print_status "Repository already exists, pulling latest changes..."
-    git pull origin main
-fi
+sudo mkdir -p "$FRONTEND_DEPLOY_DIR"
+sudo chown -R $USER:$USER "$FRONTEND_DEPLOY_DIR"
 
 # Update system and install dependencies
 print_step "Installing system dependencies..."
@@ -378,8 +364,8 @@ chmod +x health.sh
 print_status "🎉 1Panel deployment completed!"
 print_status ""
 print_status "📁 Deployment Directories:"
-print_status "   Frontend: $FRONTEND_DIR"
-print_status "   Backend: $BACKEND_DIR"
+print_status "   Backend: $DEPLOY_DIR"
+print_status "   Frontend: $FRONTEND_DEPLOY_DIR"
 print_status ""
 print_status "🔧 1Panel Website Configuration:"
 print_status "1. Go to 1Panel Web Interface (http://your-server-ip:9999)"
@@ -388,9 +374,9 @@ print_status "3. Configure:"
 print_status "   - Group: Default"
 print_status "   - Type: Nginx"
 print_status "   - Runtime: (leave empty)"
-print_status "   - Primary domain: $DOMAIN_NAME"
+print_status "   - Primary domain: $ALIAS (or your actual domain)"
 print_status "   - Alias: $ALIAS"
-print_status "   - Root Directory: Will be set automatically to $FRONTEND_DIR"
+print_status "   - Root Directory: Will be set automatically to $FRONTEND_DEPLOY_DIR"
 print_status ""
 print_status "4. After creating the website, edit the Nginx configuration:"
 print_status "   - Add this location block for API proxying:"
@@ -403,14 +389,14 @@ print_status "         proxy_set_header X-Forwarded-Proto \$scheme;"
 print_status "     }"
 print_status ""
 print_status "🚀 Manual Start Commands:"
-print_status "   cd $BACKEND_DIR && ./start.sh    # Start backend"
-print_status "   cd $BACKEND_DIR && ./stop.sh     # Stop backend"
-print_status "   cd $BACKEND_DIR && ./health.sh   # Health check"
+print_status "   cd $DEPLOY_DIR && ./start.sh    # Start backend"
+print_status "   cd $DEPLOY_DIR && ./stop.sh     # Stop backend"
+print_status "   cd $DEPLOY_DIR && ./health.sh   # Health check"
 print_status ""
 print_status "📊 Access URLs:"
-print_status "   Frontend: http://$DOMAIN_NAME/"
-print_status "   API: http://$DOMAIN_NAME/api/"
-print_status "   Admin: http://$DOMAIN_NAME/admin/"
+print_status "   Frontend: http://$ALIAS/"
+print_status "   API: http://$ALIAS/api/"
+print_status "   Admin: http://$ALIAS/admin/"
 print_status ""
 print_status "⚠️  Important: Change default admin password!"
 print_status "   Username: admin"
