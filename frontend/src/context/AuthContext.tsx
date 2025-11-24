@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { jwtDecode } from 'jwt-decode';
+import { useNavigate } from 'react-router-dom';
 
 export interface Tokens {
     access: string;
@@ -20,6 +21,7 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
+    const navigate = useNavigate();
     const [tokens, setTokens] = useState<Tokens | null>(() => {
         const stored = localStorage.getItem('ap_tokens');
         return stored ? JSON.parse(stored) as Tokens : null;
@@ -46,7 +48,15 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
             setMe(null);
             setMeLoading(true);
             fetch('/api/auth/me/', { headers: { Authorization: `Bearer ${tokens.access}` } })
-                .then(r => r.ok ? r.json() : Promise.reject(new Error('me failed')))
+                .then(r => {
+                    if (r.status === 403) {
+                        // Token is invalid or expired, logout and redirect to auth
+                        logout();
+                        navigate('/auth');
+                        return Promise.reject(new Error('Authentication failed'));
+                    }
+                    return r.ok ? r.json() : Promise.reject(new Error('me failed'));
+                })
                 .then(data => setMe(data))
                 .catch(() => setMe(null))
                 .finally(() => setMeLoading(false));
