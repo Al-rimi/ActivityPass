@@ -29,6 +29,15 @@ const AdminStudentsPage: React.FC = () => {
     const [form, setForm] = useState(defaultStudentForm());
     const openModal = () => {
         setForm(defaultStudentForm());
+        // Reset focus states
+        setStudentIdFocused(false);
+        setFullNameFocused(false);
+        setEmailFocused(false);
+        setPhoneFocused(false);
+        setMajorFocused(false);
+        setCollegeFocused(false);
+        setClassNameFocused(false);
+        setYearFocused(false);
         setModalOpen(true);
     };
 
@@ -43,6 +52,25 @@ const AdminStudentsPage: React.FC = () => {
     const [updating, setUpdating] = useState(false);
     const [viewModalOpen, setViewModalOpen] = useState(false);
     const [viewingStudent, setViewingStudent] = useState<AdminUser | null>(null);
+
+    // Focus states for floating labels
+    const [studentIdFocused, setStudentIdFocused] = useState(false);
+    const [fullNameFocused, setFullNameFocused] = useState(false);
+    const [emailFocused, setEmailFocused] = useState(false);
+    const [phoneFocused, setPhoneFocused] = useState(false);
+    const [majorFocused, setMajorFocused] = useState(false);
+    const [collegeFocused, setCollegeFocused] = useState(false);
+    const [classNameFocused, setClassNameFocused] = useState(false);
+    const [yearFocused, setYearFocused] = useState(false);
+
+    // Focus states for edit modal floating labels
+    const [editFullNameFocused, setEditFullNameFocused] = useState(false);
+    const [editEmailFocused, setEditEmailFocused] = useState(false);
+    const [editPhoneFocused, setEditPhoneFocused] = useState(false);
+    const [editMajorFocused, setEditMajorFocused] = useState(false);
+    const [editCollegeFocused, setEditCollegeFocused] = useState(false);
+    const [editClassNameFocused, setEditClassNameFocused] = useState(false);
+    const [editYearFocused, setEditYearFocused] = useState(false);
     const studentProfileFieldDefs = useMemo(() => ([
         { name: 'phone', label: t('admin.student.phone') },
         { name: 'major', label: t('admin.student.major') },
@@ -158,6 +186,14 @@ const AdminStudentsPage: React.FC = () => {
         setEditModalOpen(false);
         setEditingStudent(null);
         setEditForm(defaultStudentForm());
+        // Reset edit focus states
+        setEditFullNameFocused(false);
+        setEditEmailFocused(false);
+        setEditPhoneFocused(false);
+        setEditMajorFocused(false);
+        setEditCollegeFocused(false);
+        setEditClassNameFocused(false);
+        setEditYearFocused(false);
     };
 
     const openViewModal = (student: AdminUser) => {
@@ -311,12 +347,23 @@ const AdminStudentsPage: React.FC = () => {
 
                 <section className="p-5 border shadow-sm rounded-xl border-app-light-border dark:border-app-dark-border bg-app-light-surface dark:bg-app-dark-surface">
                     <div className="flex flex-col gap-3 sm:flex-row">
-                        <input
-                            value={search}
-                            onChange={e => setSearch(e.target.value)}
-                            placeholder={t('admin.searchStudents') || ''}
-                            className="flex-1 px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent focus:border-app-light-accent dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-app-dark-accent hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover"
-                        />
+                        <div className="relative flex-1">
+                            <div className="relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover">
+                                <input
+                                    value={search}
+                                    onChange={e => setSearch(e.target.value)}
+                                    className="w-full px-4 py-4 placeholder-transparent transition-colors duration-200 bg-app-light-input-bg dark:bg-app-dark-input-bg text-app-light-text-primary dark:text-app-dark-text-primary focus:outline-none rounded-lg"
+                                />
+                                <label
+                                    className={`absolute left-4 transition-all duration-200 ease-out pointer-events-none ${search
+                                        ? 'top-0.5 text-xs text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary font-medium transform -translate-y-0'
+                                        : 'top-1/2 text-base text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary transform -translate-y-1/2'
+                                        }`}
+                                >
+                                    {t('admin.searchStudents') || ''}
+                                </label>
+                            </div>
+                        </div>
                     </div>
                     <div className="mt-6 overflow-x-auto">
                         <table className="w-full text-sm text-left">
@@ -377,109 +424,187 @@ const AdminStudentsPage: React.FC = () => {
                             <form onSubmit={submitNewStudent} className="space-y-4" autoComplete="off">
                                 {/* Basic Info Row */}
                                 <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.table.studentId')}
-                                        </label>
-                                        <input
-                                            value={form.student_id}
-                                            onChange={e => setForm(prev => ({ ...prev, student_id: e.target.value }))}
-                                            required
-                                            className="w-full px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent focus:border-app-light-accent dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-app-dark-accent hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover"
-                                            placeholder={t('admin.table.studentId')}
-                                        />
+                                    <div className="relative">
+                                        <div className="relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover">
+                                            <input
+                                                id="student_id"
+                                                value={form.student_id}
+                                                onChange={e => setForm(prev => ({ ...prev, student_id: e.target.value }))}
+                                                onFocus={() => setStudentIdFocused(true)}
+                                                onBlur={() => setStudentIdFocused(false)}
+                                                required
+                                                className="w-full px-4 py-4 placeholder-transparent transition-colors duration-200 bg-app-light-input-bg dark:bg-app-dark-input-bg text-app-light-text-primary dark:text-app-dark-text-primary focus:outline-none rounded-lg"
+                                            />
+                                            <label
+                                                htmlFor="student_id"
+                                                className={`absolute left-4 transition-all duration-200 ease-out pointer-events-none ${studentIdFocused || form.student_id
+                                                    ? 'top-0.5 text-xs text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary font-medium transform -translate-y-0'
+                                                    : 'top-1/2 text-base text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary transform -translate-y-1/2'
+                                                    }`}
+                                            >
+                                                {t('admin.table.studentId')}
+                                            </label>
+                                        </div>
                                     </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('profile.name')}
-                                        </label>
-                                        <input
-                                            value={form.full_name}
-                                            onChange={e => setForm(prev => ({ ...prev, full_name: e.target.value }))}
-                                            className="w-full px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent focus:border-gray-400 dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-gray-500 hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover"
-                                            placeholder={t('profile.name')}
-                                        />
+                                    <div className="relative">
+                                        <div className="relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover">
+                                            <input
+                                                id="full_name"
+                                                value={form.full_name}
+                                                onChange={e => setForm(prev => ({ ...prev, full_name: e.target.value }))}
+                                                onFocus={() => setFullNameFocused(true)}
+                                                onBlur={() => setFullNameFocused(false)}
+                                                className="w-full px-4 py-4 placeholder-transparent transition-colors duration-200 bg-app-light-input-bg dark:bg-app-dark-input-bg text-app-light-text-primary dark:text-app-dark-text-primary focus:outline-none rounded-lg"
+                                            />
+                                            <label
+                                                htmlFor="full_name"
+                                                className={`absolute left-4 transition-all duration-200 ease-out pointer-events-none ${fullNameFocused || form.full_name
+                                                    ? 'top-0.5 text-xs text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary font-medium transform -translate-y-0'
+                                                    : 'top-1/2 text-base text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary transform -translate-y-1/2'
+                                                    }`}
+                                            >
+                                                {t('profile.name')}
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
 
                                 {/* Contact Info */}
                                 <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.table.email')}
-                                        </label>
-                                        <input
-                                            value={form.email}
-                                            onChange={e => setForm(prev => ({ ...prev, email: e.target.value }))}
-                                            type="email"
-                                            className="w-full px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent focus:border-gray-400 dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-gray-500 hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover"
-                                            placeholder={t('admin.table.email')}
-                                        />
+                                    <div className="relative">
+                                        <div className="relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover">
+                                            <input
+                                                id="email"
+                                                value={form.email}
+                                                onChange={e => setForm(prev => ({ ...prev, email: e.target.value }))}
+                                                onFocus={() => setEmailFocused(true)}
+                                                onBlur={() => setEmailFocused(false)}
+                                                type="email"
+                                                className="w-full px-4 py-4 placeholder-transparent transition-colors duration-200 bg-app-light-input-bg dark:bg-app-dark-input-bg text-app-light-text-primary dark:text-app-dark-text-primary focus:outline-none rounded-lg"
+                                            />
+                                            <label
+                                                htmlFor="email"
+                                                className={`absolute left-4 transition-all duration-200 ease-out pointer-events-none ${emailFocused || form.email
+                                                    ? 'top-0.5 text-xs text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary font-medium transform -translate-y-0'
+                                                    : 'top-1/2 text-base text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary transform -translate-y-1/2'
+                                                    }`}
+                                            >
+                                                {t('admin.table.email')}
+                                            </label>
+                                        </div>
                                     </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.student.phone')}
-                                        </label>
-                                        <input
-                                            value={form.phone}
-                                            onChange={e => setForm(prev => ({ ...prev, phone: e.target.value }))}
-                                            className="w-full px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent focus:border-gray-400 dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-gray-500 hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover"
-                                            placeholder={t('admin.student.phone')}
-                                        />
+                                    <div className="relative">
+                                        <div className="relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover">
+                                            <input
+                                                id="phone"
+                                                value={form.phone}
+                                                onChange={e => setForm(prev => ({ ...prev, phone: e.target.value }))}
+                                                onFocus={() => setPhoneFocused(true)}
+                                                onBlur={() => setPhoneFocused(false)}
+                                                className="w-full px-4 py-4 placeholder-transparent transition-colors duration-200 bg-app-light-input-bg dark:bg-app-dark-input-bg text-app-light-text-primary dark:text-app-dark-text-primary focus:outline-none rounded-lg"
+                                            />
+                                            <label
+                                                htmlFor="phone"
+                                                className={`absolute left-4 transition-all duration-200 ease-out pointer-events-none ${phoneFocused || form.phone
+                                                    ? 'top-0.5 text-xs text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary font-medium transform -translate-y-0'
+                                                    : 'top-1/2 text-base text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary transform -translate-y-1/2'
+                                                    }`}
+                                            >
+                                                {t('admin.student.phone')}
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
 
                                 {/* Academic Info */}
                                 <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.student.major')}
-                                        </label>
-                                        <input
-                                            value={form.major}
-                                            onChange={e => setForm(prev => ({ ...prev, major: e.target.value }))}
-                                            className="w-full px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent focus:border-gray-400 dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-gray-500 hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover"
-                                            placeholder={t('admin.student.major')}
-                                        />
+                                    <div className="relative">
+                                        <div className="relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover">
+                                            <input
+                                                id="major"
+                                                value={form.major}
+                                                onChange={e => setForm(prev => ({ ...prev, major: e.target.value }))}
+                                                onFocus={() => setMajorFocused(true)}
+                                                onBlur={() => setMajorFocused(false)}
+                                                className="w-full px-4 py-4 placeholder-transparent transition-colors duration-200 bg-app-light-input-bg dark:bg-app-dark-input-bg text-app-light-text-primary dark:text-app-dark-text-primary focus:outline-none rounded-lg"
+                                            />
+                                            <label
+                                                htmlFor="major"
+                                                className={`absolute left-4 transition-all duration-200 ease-out pointer-events-none ${majorFocused || form.major
+                                                    ? 'top-0.5 text-xs text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary font-medium transform -translate-y-0'
+                                                    : 'top-1/2 text-base text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary transform -translate-y-1/2'
+                                                    }`}
+                                            >
+                                                {t('admin.student.major')}
+                                            </label>
+                                        </div>
                                     </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.student.college')}
-                                        </label>
-                                        <input
-                                            value={form.college}
-                                            onChange={e => setForm(prev => ({ ...prev, college: e.target.value }))}
-                                            className="w-full px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent focus:border-gray-400 dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-gray-500 hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover"
-                                            placeholder={t('admin.student.college')}
-                                        />
+                                    <div className="relative">
+                                        <div className="relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover">
+                                            <input
+                                                id="college"
+                                                value={form.college}
+                                                onChange={e => setForm(prev => ({ ...prev, college: e.target.value }))}
+                                                onFocus={() => setCollegeFocused(true)}
+                                                onBlur={() => setCollegeFocused(false)}
+                                                className="w-full px-4 py-4 placeholder-transparent transition-colors duration-200 bg-app-light-input-bg dark:bg-app-dark-input-bg text-app-light-text-primary dark:text-app-dark-text-primary focus:outline-none rounded-lg"
+                                            />
+                                            <label
+                                                htmlFor="college"
+                                                className={`absolute left-4 transition-all duration-200 ease-out pointer-events-none ${collegeFocused || form.college
+                                                    ? 'top-0.5 text-xs text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary font-medium transform -translate-y-0'
+                                                    : 'top-1/2 text-base text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary transform -translate-y-1/2'
+                                                    }`}
+                                            >
+                                                {t('admin.student.college')}
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
 
                                 {/* Class and Year */}
                                 <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.student.class_name')}
-                                        </label>
-                                        <input
-                                            value={form.class_name}
-                                            onChange={e => setForm(prev => ({ ...prev, class_name: e.target.value }))}
-                                            className="w-full px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent focus:border-gray-400 dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-gray-500 hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover"
-                                            placeholder={t('admin.student.class_name')}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.student.year')}
-                                        </label>
-                                        <div className="relative">
+                                    <div className="relative">
+                                        <div className="relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover">
                                             <input
+                                                id="class_name"
+                                                value={form.class_name}
+                                                onChange={e => setForm(prev => ({ ...prev, class_name: e.target.value }))}
+                                                onFocus={() => setClassNameFocused(true)}
+                                                onBlur={() => setClassNameFocused(false)}
+                                                className="w-full px-4 py-4 placeholder-transparent transition-colors duration-200 bg-app-light-input-bg dark:bg-app-dark-input-bg text-app-light-text-primary dark:text-app-dark-text-primary focus:outline-none rounded-lg"
+                                            />
+                                            <label
+                                                htmlFor="class_name"
+                                                className={`absolute left-4 transition-all duration-200 ease-out pointer-events-none ${classNameFocused || form.class_name
+                                                    ? 'top-0.5 text-xs text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary font-medium transform -translate-y-0'
+                                                    : 'top-1/2 text-base text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary transform -translate-y-1/2'
+                                                    }`}
+                                            >
+                                                {t('admin.student.class_name')}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div className="relative">
+                                        <div className="relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover">
+                                            <input
+                                                id="year"
                                                 value={form.year}
                                                 onChange={e => setForm(prev => ({ ...prev, year: e.target.value }))}
+                                                onFocus={() => setYearFocused(true)}
+                                                onBlur={() => setYearFocused(false)}
                                                 type="number"
-                                                className="w-full px-3 py-2 pr-16 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent focus:border-gray-400 dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-gray-500 hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover"
-                                                placeholder={t('admin.student.year')}
+                                                className="w-full px-4 py-4 pr-16 placeholder-transparent transition-colors duration-200 bg-app-light-input-bg dark:bg-app-dark-input-bg text-app-light-text-primary dark:text-app-dark-text-primary focus:outline-none rounded-lg"
                                             />
+                                            <label
+                                                htmlFor="year"
+                                                className={`absolute left-4 transition-all duration-200 ease-out pointer-events-none ${yearFocused || form.year
+                                                    ? 'top-0.5 text-xs text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary font-medium transform -translate-y-0'
+                                                    : 'top-1/2 text-base text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary transform -translate-y-1/2'
+                                                    }`}
+                                            >
+                                                {t('admin.student.year')}
+                                            </label>
                                             <div className="absolute inset-y-0 right-0 flex flex-col">
                                                 <button
                                                     type="button"
@@ -508,13 +633,15 @@ const AdminStudentsPage: React.FC = () => {
 
                                 {/* Gender and Chinese Level */}
                                 <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.student.gender')}
-                                        </label>
+                                    <div className="relative">
                                         <CustomSelect
+                                            id="gender"
+                                            label={t('admin.student.gender')}
                                             value={form.gender}
                                             onChange={(value) => setForm(prev => ({ ...prev, gender: value }))}
+                                            focused={false}
+                                            onFocus={() => {}}
+                                            onBlur={() => {}}
                                             options={[
                                                 { value: '', label: t('admin.student.gender') },
                                                 { value: 'Male', label: t('admin.student.gender.male', { defaultValue: 'Male' }) },
@@ -522,13 +649,15 @@ const AdminStudentsPage: React.FC = () => {
                                             ]}
                                         />
                                     </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.student.chinese_level')}
-                                        </label>
+                                    <div className="relative">
                                         <CustomSelect
+                                            id="chinese_level"
+                                            label={t('admin.student.chinese_level')}
                                             value={form.chinese_level}
                                             onChange={(value) => setForm(prev => ({ ...prev, chinese_level: value }))}
+                                            focused={false}
+                                            onFocus={() => {}}
+                                            onBlur={() => {}}
                                             options={[
                                                 { value: '', label: t('admin.student.chinese_level') },
                                                 { value: 'HSK1', label: 'HSK 1' },
@@ -596,97 +725,165 @@ const AdminStudentsPage: React.FC = () => {
                                             className="w-full px-3 py-2 text-sm transition-colors border rounded-lg bg-app-light-surface-secondary border-app-light-border dark:bg-app-dark-surface-secondary dark:border-app-dark-border dark:text-app-dark-text-secondary"
                                         />
                                     </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('profile.name')}
-                                        </label>
-                                        <input
-                                            value={editForm.full_name}
-                                            onChange={e => setEditForm(prev => ({ ...prev, full_name: e.target.value }))}
-                                            className="w-full px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent focus:border-gray-400 dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-gray-500 hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover"
-                                            placeholder={t('profile.name')}
-                                        />
+                                    <div className="relative">
+                                        <div className="relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover">
+                                            <input
+                                                id="edit_full_name"
+                                                value={editForm.full_name}
+                                                onChange={e => setEditForm(prev => ({ ...prev, full_name: e.target.value }))}
+                                                onFocus={() => setEditFullNameFocused(true)}
+                                                onBlur={() => setEditFullNameFocused(false)}
+                                                className="w-full px-4 py-4 placeholder-transparent transition-colors duration-200 bg-app-light-input-bg dark:bg-app-dark-input-bg text-app-light-text-primary dark:text-app-dark-text-primary focus:outline-none rounded-lg"
+                                            />
+                                            <label
+                                                htmlFor="edit_full_name"
+                                                className={`absolute left-4 transition-all duration-200 ease-out pointer-events-none ${editFullNameFocused || editForm.full_name
+                                                    ? 'top-0.5 text-xs text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary font-medium transform -translate-y-0'
+                                                    : 'top-1/2 text-base text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary transform -translate-y-1/2'
+                                                    }`}
+                                            >
+                                                {t('profile.name')}
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
 
                                 {/* Contact Info */}
                                 <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.table.email')}
-                                        </label>
-                                        <input
-                                            value={editForm.email}
-                                            onChange={e => setEditForm(prev => ({ ...prev, email: e.target.value }))}
-                                            type="email"
-                                            className="w-full px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent focus:border-gray-400 dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-gray-500 hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover"
-                                            placeholder={t('admin.table.email')}
-                                        />
+                                    <div className="relative">
+                                        <div className="relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover">
+                                            <input
+                                                id="edit_email"
+                                                value={editForm.email}
+                                                onChange={e => setEditForm(prev => ({ ...prev, email: e.target.value }))}
+                                                onFocus={() => setEditEmailFocused(true)}
+                                                onBlur={() => setEditEmailFocused(false)}
+                                                type="email"
+                                                className="w-full px-4 py-4 placeholder-transparent transition-colors duration-200 bg-app-light-input-bg dark:bg-app-dark-input-bg text-app-light-text-primary dark:text-app-dark-text-primary focus:outline-none rounded-lg"
+                                            />
+                                            <label
+                                                htmlFor="edit_email"
+                                                className={`absolute left-4 transition-all duration-200 ease-out pointer-events-none ${editEmailFocused || editForm.email
+                                                    ? 'top-0.5 text-xs text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary font-medium transform -translate-y-0'
+                                                    : 'top-1/2 text-base text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary transform -translate-y-1/2'
+                                                    }`}
+                                            >
+                                                {t('admin.table.email')}
+                                            </label>
+                                        </div>
                                     </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.student.phone')}
-                                        </label>
-                                        <input
-                                            value={editForm.phone}
-                                            onChange={e => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
-                                            className="w-full px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent focus:border-gray-400 dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-gray-500 hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover"
-                                            placeholder={t('admin.student.phone')}
-                                        />
+                                    <div className="relative">
+                                        <div className="relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover">
+                                            <input
+                                                id="edit_phone"
+                                                value={editForm.phone}
+                                                onChange={e => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
+                                                onFocus={() => setEditPhoneFocused(true)}
+                                                onBlur={() => setEditPhoneFocused(false)}
+                                                className="w-full px-4 py-4 placeholder-transparent transition-colors duration-200 bg-app-light-input-bg dark:bg-app-dark-input-bg text-app-light-text-primary dark:text-app-dark-text-primary focus:outline-none rounded-lg"
+                                            />
+                                            <label
+                                                htmlFor="edit_phone"
+                                                className={`absolute left-4 transition-all duration-200 ease-out pointer-events-none ${editPhoneFocused || editForm.phone
+                                                    ? 'top-0.5 text-xs text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary font-medium transform -translate-y-0'
+                                                    : 'top-1/2 text-base text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary transform -translate-y-1/2'
+                                                    }`}
+                                            >
+                                                {t('admin.student.phone')}
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
 
                                 {/* Academic Info */}
                                 <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.student.major')}
-                                        </label>
-                                        <input
-                                            value={editForm.major}
-                                            onChange={e => setEditForm(prev => ({ ...prev, major: e.target.value }))}
-                                            className="w-full px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent focus:border-gray-400 dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-gray-500 hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover"
-                                            placeholder={t('admin.student.major')}
-                                        />
+                                    <div className="relative">
+                                        <div className="relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover">
+                                            <input
+                                                id="edit_major"
+                                                value={editForm.major}
+                                                onChange={e => setEditForm(prev => ({ ...prev, major: e.target.value }))}
+                                                onFocus={() => setEditMajorFocused(true)}
+                                                onBlur={() => setEditMajorFocused(false)}
+                                                className="w-full px-4 py-4 placeholder-transparent transition-colors duration-200 bg-app-light-input-bg dark:bg-app-dark-input-bg text-app-light-text-primary dark:text-app-dark-text-primary focus:outline-none rounded-lg"
+                                            />
+                                            <label
+                                                htmlFor="edit_major"
+                                                className={`absolute left-4 transition-all duration-200 ease-out pointer-events-none ${editMajorFocused || editForm.major
+                                                    ? 'top-0.5 text-xs text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary font-medium transform -translate-y-0'
+                                                    : 'top-1/2 text-base text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary transform -translate-y-1/2'
+                                                    }`}
+                                            >
+                                                {t('admin.student.major')}
+                                            </label>
+                                        </div>
                                     </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.student.college')}
-                                        </label>
-                                        <input
-                                            value={editForm.college}
-                                            onChange={e => setEditForm(prev => ({ ...prev, college: e.target.value }))}
-                                            className="w-full px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent focus:border-gray-400 dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-gray-500 hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover"
-                                            placeholder={t('admin.student.college')}
-                                        />
+                                    <div className="relative">
+                                        <div className="relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover">
+                                            <input
+                                                id="edit_college"
+                                                value={editForm.college}
+                                                onChange={e => setEditForm(prev => ({ ...prev, college: e.target.value }))}
+                                                onFocus={() => setEditCollegeFocused(true)}
+                                                onBlur={() => setEditCollegeFocused(false)}
+                                                className="w-full px-4 py-4 placeholder-transparent transition-colors duration-200 bg-app-light-input-bg dark:bg-app-dark-input-bg text-app-light-text-primary dark:text-app-dark-text-primary focus:outline-none rounded-lg"
+                                            />
+                                            <label
+                                                htmlFor="edit_college"
+                                                className={`absolute left-4 transition-all duration-200 ease-out pointer-events-none ${editCollegeFocused || editForm.college
+                                                    ? 'top-0.5 text-xs text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary font-medium transform -translate-y-0'
+                                                    : 'top-1/2 text-base text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary transform -translate-y-1/2'
+                                                    }`}
+                                            >
+                                                {t('admin.student.college')}
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
 
                                 {/* Class and Year */}
                                 <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.student.class_name')}
-                                        </label>
-                                        <input
-                                            value={editForm.class_name}
-                                            onChange={e => setEditForm(prev => ({ ...prev, class_name: e.target.value }))}
-                                            className="w-full px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent focus:border-gray-400 dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-gray-500 hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover"
-                                            placeholder={t('admin.student.class_name')}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.student.year')}
-                                        </label>
-                                        <div className="relative">
+                                    <div className="relative">
+                                        <div className="relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover">
                                             <input
+                                                id="edit_class_name"
+                                                value={editForm.class_name}
+                                                onChange={e => setEditForm(prev => ({ ...prev, class_name: e.target.value }))}
+                                                onFocus={() => setEditClassNameFocused(true)}
+                                                onBlur={() => setEditClassNameFocused(false)}
+                                                className="w-full px-4 py-4 placeholder-transparent transition-colors duration-200 bg-app-light-input-bg dark:bg-app-dark-input-bg text-app-light-text-primary dark:text-app-dark-text-primary focus:outline-none rounded-lg"
+                                            />
+                                            <label
+                                                htmlFor="edit_class_name"
+                                                className={`absolute left-4 transition-all duration-200 ease-out pointer-events-none ${editClassNameFocused || editForm.class_name
+                                                    ? 'top-0.5 text-xs text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary font-medium transform -translate-y-0'
+                                                    : 'top-1/2 text-base text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary transform -translate-y-1/2'
+                                                    }`}
+                                            >
+                                                {t('admin.student.class_name')}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div className="relative">
+                                        <div className="relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover">
+                                            <input
+                                                id="edit_year"
                                                 value={editForm.year}
                                                 onChange={e => setEditForm(prev => ({ ...prev, year: e.target.value }))}
+                                                onFocus={() => setEditYearFocused(true)}
+                                                onBlur={() => setEditYearFocused(false)}
                                                 type="number"
-                                                className="w-full px-3 py-2 pr-16 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent focus:border-gray-400 dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-gray-500 hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover"
-                                                placeholder={t('admin.student.year')}
+                                                className="w-full px-4 py-4 pr-16 placeholder-transparent transition-colors duration-200 bg-app-light-input-bg dark:bg-app-dark-input-bg text-app-light-text-primary dark:text-app-dark-text-primary focus:outline-none rounded-lg"
                                             />
+                                            <label
+                                                htmlFor="edit_year"
+                                                className={`absolute left-4 transition-all duration-200 ease-out pointer-events-none ${editYearFocused || editForm.year
+                                                    ? 'top-0.5 text-xs text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary font-medium transform -translate-y-0'
+                                                    : 'top-1/2 text-base text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary transform -translate-y-1/2'
+                                                    }`}
+                                            >
+                                                {t('admin.student.year')}
+                                            </label>
                                             <div className="absolute inset-y-0 right-0 flex flex-col">
                                                 <button
                                                     type="button"
@@ -715,13 +912,15 @@ const AdminStudentsPage: React.FC = () => {
 
                                 {/* Gender and Chinese Level */}
                                 <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.student.gender')}
-                                        </label>
+                                    <div className="relative">
                                         <CustomSelect
+                                            id="edit_gender"
+                                            label={t('admin.student.gender')}
                                             value={editForm.gender}
                                             onChange={(value) => setEditForm(prev => ({ ...prev, gender: value }))}
+                                            focused={false}
+                                            onFocus={() => {}}
+                                            onBlur={() => {}}
                                             options={[
                                                 { value: '', label: t('admin.student.gender') },
                                                 { value: 'Male', label: t('admin.student.gender.male', { defaultValue: 'Male' }) },
@@ -729,13 +928,15 @@ const AdminStudentsPage: React.FC = () => {
                                             ]}
                                         />
                                     </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.student.chinese_level')}
-                                        </label>
+                                    <div className="relative">
                                         <CustomSelect
+                                            id="edit_chinese_level"
+                                            label={t('admin.student.chinese_level')}
                                             value={editForm.chinese_level}
                                             onChange={(value) => setEditForm(prev => ({ ...prev, chinese_level: value }))}
+                                            focused={false}
+                                            onFocus={() => {}}
+                                            onBlur={() => {}}
                                             options={[
                                                 { value: '', label: t('admin.student.chinese_level') },
                                                 { value: 'HSK1', label: 'HSK 1' },
