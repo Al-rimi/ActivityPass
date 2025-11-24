@@ -264,7 +264,10 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
     const formatLocationDisplay = (location: Location | null) => {
         if (!location) return '';
         if (location.address) return location.address;
-        return `${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}`;
+        if (typeof location.lat === 'number' && typeof location.lng === 'number') {
+            return `${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}`;
+        }
+        return '';
     };
 
     // Component to handle map clicks and show markers

@@ -13,7 +13,7 @@ class ActivitySerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'description', 'title_i18n', 'description_i18n',
             'college_required', 'countries', 'major_required', 'chinese_level_min', 'location',
-            'start_datetime', 'end_datetime', 'capacity', 'created_by', 'created_by_username', 'created_at'
+            'start_datetime', 'end_datetime', 'capacity', 'created_by_username', 'created_at'
         ]
         read_only_fields = ['created_at', 'created_by_username']
 

@@ -17,7 +17,7 @@ class IsStaffOrReadOnly(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return True
-        return bool(request.user and request.user.is_staff)
+        return bool(request.user and (request.user.is_staff or request.user.is_superuser))
 
 
 class ActivityViewSet(viewsets.ModelViewSet):
@@ -55,7 +55,7 @@ class ParticipationViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        if self.request.user.is_staff:
+        if self.request.user.is_staff or self.request.user.is_superuser:
             return qs
         student_profile = getattr(self.request.user, 'student_profile', None)
         if student_profile:
@@ -76,7 +76,7 @@ class StudentCourseEventViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         qs = super().get_queryset()
         student_profile = getattr(self.request.user, 'student_profile', None)
-        if student_profile and not self.request.user.is_staff:
+        if student_profile and not (self.request.user.is_staff or self.request.user.is_superuser):
             return qs.filter(student=student_profile)
         return qs
 

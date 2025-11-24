@@ -61,7 +61,7 @@ export type AdminActivity = {
         lat: number;
         lng: number;
         address?: string;
-    } | null;
+    } | string | null;
     created_by: number;
     created_by_username: string;
     created_at: string;

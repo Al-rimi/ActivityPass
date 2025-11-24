@@ -294,7 +294,7 @@ const AdminActivitiesPage: React.FC = () => {
             start_datetime: activity.start_datetime || '',
             end_datetime: activity.end_datetime || '',
             capacity: activity.capacity || 50,
-            location: activity.location || null,
+            location: null, // Reset location for editing - user needs to re-select
         });
         setEditModalOpen(true);
     };
@@ -335,6 +335,14 @@ const AdminActivitiesPage: React.FC = () => {
                 (payload as any).countries = 'all';
             } else if (!form.countries.length) {
                 delete (payload as any).countries;
+            }
+
+            // Convert location object to string
+            if (form.location) {
+                const loc = form.location;
+                (payload as any).location = loc.address || `${loc.lat.toFixed(6)}, ${loc.lng.toFixed(6)}`;
+            } else {
+                (payload as any).location = '';
             }
 
             if (!form.description.trim()) delete (payload as any).description;
@@ -395,6 +403,14 @@ const AdminActivitiesPage: React.FC = () => {
             // Handle countries: if all countries selected, store "all", otherwise store the array
             if (Array.isArray(editForm.countries) && editForm.countries.length === COUNTRY_OPTIONS.length) {
                 payload.countries = 'all' as any;
+            }
+
+            // Convert location object to string
+            if (editForm.location) {
+                const loc = editForm.location;
+                payload.location = loc.address || `${loc.lat.toFixed(6)}, ${loc.lng.toFixed(6)}`;
+            } else {
+                payload.location = '';
             }
 
             const res = await fetch(`/api/activities/${editingActivity.id}/`, {

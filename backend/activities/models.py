@@ -28,12 +28,12 @@ class Activity(models.Model):
     def save(self, *args, **kwargs):
         # Populate translations for title/description
         try:
-            if self.title:
-                self.title_i18n = ensure_en_zh(self.title)
-            if self.description:
-                self.description_i18n = ensure_en_zh(self.description)
+            if self.title and not self.title_i18n:
+                self.title_i18n = {'en': self.title, 'zh': self.title}
+            if self.description and not self.description_i18n:
+                self.description_i18n = {'en': self.description, 'zh': self.description}
         except Exception:
-            # On any translation failure, fall back to duplicating original text
+            # On any error, fall back to duplicating original text
             if self.title and not self.title_i18n:
                 self.title_i18n = {'en': self.title, 'zh': self.title}
             if self.description and not self.description_i18n:
@@ -53,8 +53,8 @@ class StudentCourseEvent(models.Model):
 
     def save(self, *args, **kwargs):
         try:
-            if self.title:
-                self.title_i18n = ensure_en_zh(self.title)
+            if self.title and not self.title_i18n:
+                self.title_i18n = {'en': self.title, 'zh': self.title}
         except Exception:
             if self.title and not self.title_i18n:
                 self.title_i18n = {'en': self.title, 'zh': self.title}
