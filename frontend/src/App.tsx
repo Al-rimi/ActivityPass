@@ -294,7 +294,7 @@ const RoleAwareHome: React.FC = () => {
     if (meLoading || !me) {
         return (
             <main className="flex items-center justify-center flex-1">
-                <p className="text-sm text-gray-600 dark:text-gray-300">Loading dashboard…</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300">{t('app.loadingDashboard')}</p>
             </main>
         );
     }
@@ -335,7 +335,19 @@ const Footer: React.FC = () => {
 const App: React.FC = () => {
     const { t, i18n } = useTranslation();
     useEffect(() => {
-        document.title = t('app.title') + ' · ActivityPass';
+        document.title = t('app.windowTitle');
+
+        // Update meta description
+        const metaDescription = document.querySelector('meta[name="description"]');
+        if (metaDescription) {
+            metaDescription.setAttribute('content', t('app.description'));
+        }
+
+        // Update noscript content
+        const noscript = document.querySelector('noscript[data-i18n="app.noscript"]');
+        if (noscript) {
+            noscript.textContent = t('app.noscript');
+        }
     }, [i18n.language, t]);
     return (
         <div className="flex flex-col min-h-screen text-gray-900 bg-gray-50 dark:bg-gray-950 dark:text-gray-100">
@@ -358,11 +370,12 @@ const App: React.FC = () => {
 };
 
 const AdminRoute: React.FC<React.PropsWithChildren> = ({ children }) => {
+    const { t } = useTranslation();
     const { me, meLoading } = useAuth();
     if (meLoading) {
         return (
             <main className="flex items-center justify-center flex-1 py-10">
-                <p className="text-sm text-gray-600 dark:text-gray-400">Confirming admin access…</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('app.confirmingAdminAccess')}</p>
             </main>
         );
     }
@@ -372,11 +385,12 @@ const AdminRoute: React.FC<React.PropsWithChildren> = ({ children }) => {
 };
 
 const StaffRoute: React.FC<React.PropsWithChildren> = ({ children }) => {
+    const { t } = useTranslation();
     const { me, meLoading } = useAuth();
     if (meLoading) {
         return (
             <main className="flex items-center justify-center flex-1 py-10">
-                <p className="text-sm text-gray-600 dark:text-gray-400">Confirming staff access…</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('app.confirmingStaffAccess')}</p>
             </main>
         );
     }

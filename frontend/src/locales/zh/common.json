@@ -1,6 +1,7 @@
 {
     "app.title": "活动通",
     "app.titleShort": "活动通",
+    "app.windowTitle": "活动通",
     "app.subtitle": "AI辅助学生活动管理平台",
     "nav.home": "首页",
     "nav.login": "登录",
@@ -424,5 +425,15 @@
     "datetime.date": "日期",
     "datetime.time": "时间",
     "datetime.hour": "小时",
-    "datetime.minute": "分钟"
+    "datetime.minute": "分钟",
+    "admin.table.title": "标题",
+    "admin.table.startDate": "开始日期",
+    "admin.table.endDate": "结束日期",
+    "admin.table.capacity": "容量",
+    "admin.table.creator": "创建者",
+    "app.loadingDashboard": "正在加载控制台…",
+    "app.confirmingAdminAccess": "正在确认管理员权限…",
+    "app.confirmingStaffAccess": "正在确认教职工权限…",
+    "app.description": "活动通 – AI辅助学生活动管理平台",
+    "app.noscript": "您需要启用 JavaScript 才能运行此应用。"
 }

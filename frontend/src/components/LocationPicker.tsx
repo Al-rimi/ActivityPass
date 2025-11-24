@@ -411,7 +411,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
                                             </p>
                                             <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
                                                 {isLoadingAddress ? (
-                                                    <span>Loading address...</span>
+                                                    <span>{t('location.loadingAddress')}</span>
                                                 ) : (
                                                     formatLocationDisplay(tempLocation)
                                                 )}
