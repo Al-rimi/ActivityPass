@@ -7,6 +7,150 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontSize: {
+        // Standardized responsive typography scale using rem and clamp()
+        // Base font size: 16px (1rem), scale ratio: 1.25 (major third)
+
+        // Micro text - for captions, metadata, small labels
+        'xs': ['clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem)', {
+          lineHeight: '1.5',
+          letterSpacing: '0.025em'
+        }],
+
+        // Small text - for secondary information, form labels
+        'sm': ['clamp(0.875rem, 0.8rem + 0.375vw, 1rem)', {
+          lineHeight: '1.5',
+          letterSpacing: '0.025em'
+        }],
+
+        // Base text - for body text, paragraphs
+        'base': ['clamp(1rem, 0.9rem + 0.5vw, 1.125rem)', {
+          lineHeight: '1.6',
+          letterSpacing: '0.01em'
+        }],
+
+        // Large text - for emphasized content, lead paragraphs
+        'lg': ['clamp(1.125rem, 1rem + 0.625vw, 1.25rem)', {
+          lineHeight: '1.6',
+          letterSpacing: '0.005em'
+        }],
+
+        // Extra large - for section headings, important content
+        'xl': ['clamp(1.25rem, 1.125rem + 0.625vw, 1.5rem)', {
+          lineHeight: '1.4',
+          letterSpacing: '0'
+        }],
+
+        // 2XL - for page section titles, major headings
+        '2xl': ['clamp(1.5rem, 1.25rem + 1vw, 2rem)', {
+          lineHeight: '1.3',
+          letterSpacing: '-0.005em'
+        }],
+
+        // 3XL - for page titles, hero headings
+        '3xl': ['clamp(1.875rem, 1.5rem + 1.875vw, 2.5rem)', {
+          lineHeight: '1.2',
+          letterSpacing: '-0.01em'
+        }],
+
+        // 4XL - for major hero titles, landing pages
+        '4xl': ['clamp(2.25rem, 1.75rem + 2.5vw, 3.5rem)', {
+          lineHeight: '1.1',
+          letterSpacing: '-0.015em'
+        }],
+
+        // 5XL - for very large display text
+        '5xl': ['clamp(3rem, 2.25rem + 3.75vw, 5rem)', {
+          lineHeight: '1',
+          letterSpacing: '-0.02em'
+        }],
+
+        // 6XL - for maximum impact display text
+        '6xl': ['clamp(3.75rem, 2.75rem + 5vw, 7rem)', {
+          lineHeight: '0.95',
+          letterSpacing: '-0.025em'
+        }],
+
+        // Specialized sizes for specific use cases
+        'caption': ['clamp(0.6875rem, 0.65rem + 0.1875vw, 0.8125rem)', {
+          lineHeight: '1.4',
+          letterSpacing: '0.05em'
+        }],
+
+        'button': ['clamp(0.875rem, 0.8rem + 0.375vw, 1rem)', {
+          lineHeight: '1.2',
+          letterSpacing: '0.025em',
+          fontWeight: '500'
+        }],
+
+        'input': ['clamp(0.875rem, 0.8rem + 0.375vw, 1rem)', {
+          lineHeight: '1.5',
+          letterSpacing: '0.01em'
+        }],
+
+        'label': ['clamp(0.8125rem, 0.75rem + 0.3125vw, 0.9375rem)', {
+          lineHeight: '1.4',
+          letterSpacing: '0.025em',
+          fontWeight: '500'
+        }],
+
+        'overline': ['clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem)', {
+          lineHeight: '1.4',
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase'
+        }]
+      },
+      fontFamily: {
+        // Standardized font stacks for better cross-platform consistency
+        'sans': [
+          'system-ui',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'Segoe UI',
+          'Roboto',
+          'Helvetica Neue',
+          'Arial',
+          'Noto Sans',
+          'sans-serif',
+          'Apple Color Emoji',
+          'Segoe UI Emoji',
+          'Segoe UI Symbol',
+          'Noto Color Emoji'
+        ],
+        'mono': [
+          'SF Mono',
+          'Monaco',
+          'Inconsolata',
+          'Fira Code',
+          'Droid Sans Mono',
+          'Source Code Pro',
+          'Consolas',
+          'Roboto Mono',
+          'Liberation Mono',
+          'Courier New',
+          'monospace'
+        ]
+      },
+      spacing: {
+        // Responsive spacing scale that scales with viewport
+        'fluid-xs': 'clamp(0.5rem, 1vw, 0.75rem)',
+        'fluid-sm': 'clamp(0.75rem, 1.5vw, 1rem)',
+        'fluid-md': 'clamp(1rem, 2vw, 1.5rem)',
+        'fluid-lg': 'clamp(1.5rem, 3vw, 2rem)',
+        'fluid-xl': 'clamp(2rem, 4vw, 3rem)',
+        'fluid-2xl': 'clamp(3rem, 6vw, 4rem)',
+      },
+      screens: {
+        // Enhanced responsive breakpoints with better mobile coverage
+        'xs': '475px',
+        'sm': '640px',
+        'md': '768px',
+        'lg': '1024px',
+        'xl': '1280px',
+        '2xl': '1536px',
+        'tall': { 'raw': '(min-height: 800px)' },
+        'short': { 'raw': '(max-height: 600px)' },
+      },
       colors: {
         // app-inspired comprehensive color palette
         primary: {
