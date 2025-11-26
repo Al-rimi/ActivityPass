@@ -2,10 +2,13 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { AdminActivity } from '../types/admin';
-import MultiSelect from '../components/MultiSelect';
-import CustomSelect from '../components/CustomSelect';
-import DateTimePicker from '../components/DateTimePicker';
+import FloatingSelect from '../components/FloatingSelect';
+import FloatingInput from '../components/FloatingInput';
+import FloatingMultiSelect from '../components/FloatingMultiSelect';
+import FloatingTextarea from '../components/FloatingTextarea';
+import SelectPeriod from '../components/SelectPeriod';
 import LocationPicker from '../components/LocationPicker';
+import SearchInput from '../components/SearchInput';
 
 const COLLEGE_OPTIONS = [
     { value: '计算机科学与技术学院', labelKey: 'admin.college.computerScience' },
@@ -488,12 +491,15 @@ const AdminActivitiesPage: React.FC = () => {
 
                 <section className="p-5 border shadow-sm rounded-xl border-app-light-border dark:border-app-dark-border bg-app-light-surface dark:bg-app-dark-surface">
                     <div className="flex flex-col gap-3 sm:flex-row">
-                        <input
-                            value={search}
-                            onChange={e => setSearch(e.target.value)}
-                            placeholder={t('admin.searchActivities', { defaultValue: 'Search by title, description, or creator' }) || ''}
-                            className="flex-1 px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent focus:border-app-light-accent dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-app-dark-accent hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover"
-                        />
+                        <div className="relative flex-1">
+                            <SearchInput
+                                id="activity-search"
+                                label={t('admin.searchActivities', { defaultValue: 'Search activities...' })}
+                                value={search}
+                                onChange={setSearch}
+                                placeholder={t('admin.searchActivities', { defaultValue: 'Search by title, description, or creator' })}
+                            />
+                        </div>
                     </div>
                     <div className="mt-6 overflow-x-auto">
                         <table className="w-full text-sm text-left">
@@ -534,8 +540,8 @@ const AdminActivitiesPage: React.FC = () => {
             </div>
 
             {modalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                    <div className="w-full max-w-2xl border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
+                <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto bg-black/60 backdrop-blur-sm">
+                    <div className="w-full max-w-2xl my-8 border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
                         <div className="flex items-center justify-between p-4 pb-3">
                             <div>
                                 <h2 className="text-lg font-semibold text-app-light-text-primary dark:text-app-dark-text-primary">{t('admin.addActivity', { defaultValue: 'Add Activity' })}</h2>
@@ -550,151 +556,84 @@ const AdminActivitiesPage: React.FC = () => {
                             <form onSubmit={submitActivity} className="space-y-4" autoComplete="off">
                                 {/* Basic Info */}
                                 <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.activity.title', { defaultValue: 'Title' })}
-                                        </label>
-                                        <input
-                                            value={form.title}
-                                            onChange={e => setForm(prev => ({ ...prev, title: e.target.value }))}
-                                            required
-                                            className="w-full px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent focus:border-app-light-accent dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-app-dark-accent hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover"
-                                            placeholder={t('admin.activity.title')}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.activity.capacity', { defaultValue: 'Capacity' })}
-                                        </label>
-                                        <div className="relative">
-                                            <input
-                                                value={form.capacity}
-                                                onChange={e => setForm(prev => ({ ...prev, capacity: Number(e.target.value) || 50 }))}
-                                                type="number"
-                                                min="1"
-                                                className="w-full px-3 py-2 pr-16 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent focus:border-app-light-accent dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-app-dark-accent hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover"
-                                                placeholder={t('admin.activity.capacity')}
-                                            />
-                                            <div className="absolute inset-y-0 right-0 flex flex-col">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setForm(prev => ({ ...prev, capacity: (prev.capacity || 50) + 1 }))}
-                                                    className="flex-1 px-2 border-l text-app-light-text-secondary dark:text-app-dark-text-secondary border-app-light-border dark:border-app-dark-border"
-                                                    aria-label="Increase capacity"
-                                                >
-                                                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                        <path d="M12 19V5M5 12l7-7 7 7" />
-                                                    </svg>
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setForm(prev => ({ ...prev, capacity: Math.max(1, (prev.capacity || 50) - 1) }))}
-                                                    className="flex-1 px-2 border-t border-l text-app-light-text-secondary dark:text-app-dark-text-secondary border-app-light-border dark:border-app-dark-border"
-                                                    aria-label="Decrease capacity"
-                                                >
-                                                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                        <path d="M12 5v14M5 12l7 7 7-7" />
-                                                    </svg>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <FloatingInput
+                                        id="activity-title"
+                                        label={t('admin.activity.title', { defaultValue: 'Title' })}
+                                        value={form.title}
+                                        onChange={(value) => setForm(prev => ({ ...prev, title: value }))}
+                                        required
+                                    />
+                                    <FloatingInput
+                                        id="activity-capacity"
+                                        label={t('admin.activity.capacity', { defaultValue: 'Capacity' })}
+                                        value={form.capacity.toString()}
+                                        onChange={(value) => setForm(prev => ({ ...prev, capacity: Number(value) || 50 }))}
+                                        type="number"
+                                    />
                                 </div>
 
                                 {/* Description */}
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                        {t('admin.activity.description', { defaultValue: 'Description' })}
-                                    </label>
-                                    <textarea
-                                        value={form.description}
-                                        onChange={e => setForm(prev => ({ ...prev, description: e.target.value }))}
-                                        rows={3}
-                                        className="w-full px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent focus:border-app-light-accent dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-app-dark-accent hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover"
-                                        placeholder={t('admin.activity.description')}
-                                    />
-                                </div>
+                                <FloatingTextarea
+                                    id="activity-description"
+                                    label={t('admin.activity.description', { defaultValue: 'Description' })}
+                                    value={form.description}
+                                    onChange={(value) => setForm(prev => ({ ...prev, description: value }))}
+                                    rows={3}
+                                    placeholder={t('admin.activity.description')}
+                                />
 
-                                {/* Date/Time */}
-                                <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.activity.startDateTime', { defaultValue: 'Start Date & Time' })}
-                                        </label>
-                                        <DateTimePicker
-                                            value={form.start_datetime}
-                                            onChange={(value) => setForm(prev => ({ ...prev, start_datetime: value }))}
-                                            placeholder={t('admin.activity.selectStartDateTime', { defaultValue: 'Select start date and time...' })}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.activity.endDateTime', { defaultValue: 'End Date & Time' })}
-                                        </label>
-                                        <DateTimePicker
-                                            value={form.end_datetime}
-                                            onChange={(value) => setForm(prev => ({ ...prev, end_datetime: value }))}
-                                            placeholder={t('admin.activity.selectEndDateTime', { defaultValue: 'Select end date and time...' })}
-                                        />
-                                    </div>
-                                </div>
+                                {/* Date/Time Period */}
+                                <SelectPeriod
+                                    id="activity-period"
+                                    label={t('admin.activity.period', { defaultValue: 'Period' })}
+                                    startValue={form.start_datetime}
+                                    endValue={form.end_datetime}
+                                    onStartChange={(value) => setForm(prev => ({ ...prev, start_datetime: value }))}
+                                    onEndChange={(value) => setForm(prev => ({ ...prev, end_datetime: value }))}
+                                />
 
                                 {/* Location */}
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                        {t('admin.activity.location', { defaultValue: 'Location' })}
-                                    </label>
-                                    <LocationPicker
-                                        value={form.location}
-                                        onChange={(location) => setForm(prev => ({ ...prev, location }))}
-                                        placeholder={t('admin.activity.selectLocation', { defaultValue: 'Select activity location...' })}
-                                    />
-                                </div>
+                                <LocationPicker
+                                    id="activity-location"
+                                    label={t('admin.activity.location', { defaultValue: 'Location' })}
+                                    value={form.location}
+                                    onChange={(location) => setForm(prev => ({ ...prev, location }))}
+                                    placeholder={t('admin.activity.selectLocation', { defaultValue: 'Select activity location...' })}
+                                />
 
                                 {/* Requirements */}
                                 <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.activity.college', { defaultValue: 'College' })}
-                                        </label>
-                                        <MultiSelect
-                                            value={form.college_required}
-                                            onChange={(value) => setForm(prev => ({ ...prev, college_required: value }))}
-                                            options={COLLEGE_OPTIONS.map(option => ({
-                                                value: option.value,
-                                                label: t(option.labelKey, { defaultValue: option.value })
-                                            }))}
-                                            placeholder={t('admin.activity.selectColleges', { defaultValue: 'Select colleges...' })}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.activity.countries', { defaultValue: 'Countries' })}
-                                        </label>
-                                        <MultiSelect
-                                            value={form.countries}
-                                            onChange={(value) => setForm(prev => ({ ...prev, countries: value }))}
-                                            options={COUNTRY_OPTIONS.map(option => ({
-                                                value: option.value,
-                                                label: t(option.labelKey, { defaultValue: option.value })
-                                            }))}
-                                            placeholder={t('admin.activity.selectCountries', { defaultValue: 'Select countries...' })}
-                                            showSearch={true}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.activity.chineseLevelMin', { defaultValue: 'Min Chinese Level' })}
-                                        </label>
-                                        <CustomSelect
-                                            value={form.chinese_level_min}
-                                            onChange={(value) => setForm(prev => ({ ...prev, chinese_level_min: value }))}
-                                            options={CHINESE_LEVEL_OPTIONS.map(option => ({
-                                                value: option.value,
-                                                label: t(option.labelKey, { defaultValue: option.value })
-                                            }))}
-                                        />
-                                    </div>
+                                    <FloatingMultiSelect
+                                        id="activity-college"
+                                        label={t('admin.activity.college', { defaultValue: 'College' })}
+                                        value={form.college_required}
+                                        onChange={(value) => setForm(prev => ({ ...prev, college_required: value }))}
+                                        options={COLLEGE_OPTIONS.map(option => ({
+                                            value: option.value,
+                                            label: t(option.labelKey, { defaultValue: option.value })
+                                        }))}
+                                    />
+                                    <FloatingMultiSelect
+                                        id="activity-countries"
+                                        label={t('admin.activity.countries', { defaultValue: 'Countries' })}
+                                        value={form.countries}
+                                        onChange={(value) => setForm(prev => ({ ...prev, countries: value }))}
+                                        options={COUNTRY_OPTIONS.map(option => ({
+                                            value: option.value,
+                                            label: t(option.labelKey, { defaultValue: option.value })
+                                        }))}
+                                    />
+                                    <FloatingSelect
+                                        id="activity-chinese-level"
+                                        label={t('admin.activity.chineseLevelMin', { defaultValue: 'Min Chinese Level' })}
+                                        value={form.chinese_level_min}
+                                        onChange={(value) => setForm(prev => ({ ...prev, chinese_level_min: value }))}
+                                        options={CHINESE_LEVEL_OPTIONS.map(option => ({
+                                            value: option.value,
+                                            label: t(option.labelKey, { defaultValue: option.value })
+                                        }))}
+                                        hideSelectedTextWhen={(value) => value === ''}
+                                    />
                                 </div>
 
                                 {/* Form Actions */}
@@ -721,8 +660,8 @@ const AdminActivitiesPage: React.FC = () => {
             )}
 
             {editModalOpen && editingActivity && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                    <div className="w-full max-w-2xl border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
+                <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto bg-black/60 backdrop-blur-sm">
+                    <div className="w-full max-w-2xl my-8 border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
                         <div className="flex items-center justify-between p-4 pb-3">
                             <div>
                                 <p className="text-xs tracking-wider uppercase text-app-light-text-secondary dark:text-app-dark-text-secondary">
@@ -740,151 +679,83 @@ const AdminActivitiesPage: React.FC = () => {
                             <form onSubmit={submitEditActivity} className="space-y-4" autoComplete="off">
                                 {/* Basic Info */}
                                 <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.activity.title', { defaultValue: 'Title' })}
-                                        </label>
-                                        <input
-                                            value={editForm.title}
-                                            onChange={e => setEditForm(prev => ({ ...prev, title: e.target.value }))}
-                                            required
-                                            className="w-full px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent focus:border-app-light-accent dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-app-dark-accent hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover"
-                                            placeholder={t('admin.activity.title')}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.activity.capacity', { defaultValue: 'Capacity' })}
-                                        </label>
-                                        <div className="relative">
-                                            <input
-                                                value={editForm.capacity}
-                                                onChange={e => setEditForm(prev => ({ ...prev, capacity: Number(e.target.value) || 50 }))}
-                                                type="number"
-                                                min="1"
-                                                className="w-full px-3 py-2 pr-16 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent focus:border-app-light-accent dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-app-dark-accent hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover"
-                                                placeholder={t('admin.activity.capacity')}
-                                            />
-                                            <div className="absolute inset-y-0 right-0 flex flex-col">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setEditForm(prev => ({ ...prev, capacity: (prev.capacity || 50) + 1 }))}
-                                                    className="flex-1 px-2 border-l text-app-light-text-secondary dark:text-app-dark-text-secondary border-app-light-border dark:border-app-dark-border"
-                                                    aria-label="Increase capacity"
-                                                >
-                                                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                        <path d="M12 19V5M5 12l7-7 7 7" />
-                                                    </svg>
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setEditForm(prev => ({ ...prev, capacity: Math.max(1, (prev.capacity || 50) - 1) }))}
-                                                    className="flex-1 px-2 border-t border-l text-app-light-text-secondary dark:text-app-dark-text-secondary border-app-light-border dark:border-app-dark-border"
-                                                    aria-label="Decrease capacity"
-                                                >
-                                                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                        <path d="M12 5v14M5 12l7 7 7-7" />
-                                                    </svg>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <FloatingInput
+                                        id="edit-activity-title"
+                                        label={t('admin.activity.title', { defaultValue: 'Title' })}
+                                        value={editForm.title}
+                                        onChange={(value) => setEditForm(prev => ({ ...prev, title: value }))}
+                                        required
+                                    />
+                                    <FloatingInput
+                                        id="edit-activity-capacity"
+                                        label={t('admin.activity.capacity', { defaultValue: 'Capacity' })}
+                                        value={editForm.capacity.toString()}
+                                        onChange={(value) => setEditForm(prev => ({ ...prev, capacity: Number(value) || 50 }))}
+                                        type="number"
+                                    />
                                 </div>
 
                                 {/* Description */}
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                        {t('admin.activity.description', { defaultValue: 'Description' })}
-                                    </label>
-                                    <textarea
-                                        value={editForm.description}
-                                        onChange={e => setEditForm(prev => ({ ...prev, description: e.target.value }))}
-                                        rows={3}
-                                        className="w-full px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent focus:border-app-light-accent dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-app-dark-accent hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover"
-                                        placeholder={t('admin.activity.description')}
-                                    />
-                                </div>
+                                <FloatingTextarea
+                                    id="edit-activity-description"
+                                    label={t('admin.activity.description', { defaultValue: 'Description' })}
+                                    value={editForm.description}
+                                    onChange={(value) => setEditForm(prev => ({ ...prev, description: value }))}
+                                    rows={3}
+                                    placeholder={t('admin.activity.description')}
+                                />
 
-                                {/* Date/Time */}
-                                <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.activity.startDateTime', { defaultValue: 'Start Date & Time' })}
-                                        </label>
-                                        <DateTimePicker
-                                            value={editForm.start_datetime}
-                                            onChange={(value) => setEditForm(prev => ({ ...prev, start_datetime: value }))}
-                                            placeholder={t('admin.activity.selectStartDateTime', { defaultValue: 'Select start date and time...' })}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.activity.endDateTime', { defaultValue: 'End Date & Time' })}
-                                        </label>
-                                        <DateTimePicker
-                                            value={editForm.end_datetime}
-                                            onChange={(value) => setEditForm(prev => ({ ...prev, end_datetime: value }))}
-                                            placeholder={t('admin.activity.selectEndDateTime', { defaultValue: 'Select end date and time...' })}
-                                        />
-                                    </div>
-                                </div>
+                                {/* Date/Time Period */}
+                                <SelectPeriod
+                                    id="edit-activity-period"
+                                    label={t('admin.activity.period', { defaultValue: 'Period' })}
+                                    startValue={editForm.start_datetime}
+                                    endValue={editForm.end_datetime}
+                                    onStartChange={(value) => setEditForm(prev => ({ ...prev, start_datetime: value }))}
+                                    onEndChange={(value) => setEditForm(prev => ({ ...prev, end_datetime: value }))}
+                                />
 
                                 {/* Location */}
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                        {t('admin.activity.location', { defaultValue: 'Location' })}
-                                    </label>
-                                    <LocationPicker
-                                        value={editForm.location}
-                                        onChange={(location) => setEditForm(prev => ({ ...prev, location }))}
-                                        placeholder={t('admin.activity.selectLocation', { defaultValue: 'Select activity location...' })}
-                                    />
-                                </div>
+                                <LocationPicker
+                                    id="edit-activity-location"
+                                    label={t('admin.activity.location', { defaultValue: 'Location' })}
+                                    value={editForm.location}
+                                    onChange={(location) => setEditForm(prev => ({ ...prev, location }))}
+                                    placeholder={t('admin.activity.selectLocation', { defaultValue: 'Select activity location...' })}
+                                />
 
                                 {/* Requirements */}
                                 <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.activity.college', { defaultValue: 'College' })}
-                                        </label>
-                                        <MultiSelect
-                                            value={editForm.college_required}
-                                            onChange={(value) => setEditForm(prev => ({ ...prev, college_required: value }))}
-                                            options={COLLEGE_OPTIONS.map(option => ({
-                                                value: option.value,
-                                                label: t(option.labelKey, { defaultValue: option.value })
-                                            }))}
-                                            placeholder={t('admin.activity.selectColleges', { defaultValue: 'Select colleges...' })}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.activity.countries', { defaultValue: 'Countries' })}
-                                        </label>
-                                        <MultiSelect
-                                            value={editForm.countries}
-                                            onChange={(value) => setEditForm(prev => ({ ...prev, countries: value }))}
-                                            options={COUNTRY_OPTIONS.map(option => ({
-                                                value: option.value,
-                                                label: t(option.labelKey, { defaultValue: option.value })
-                                            }))}
-                                            placeholder={t('admin.activity.selectCountries', { defaultValue: 'Select countries...' })}
-                                            showSearch={true}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.activity.chineseLevelMin', { defaultValue: 'Min Chinese Level' })}
-                                        </label>
-                                        <CustomSelect
-                                            value={editForm.chinese_level_min}
-                                            onChange={(value: string) => setEditForm(prev => ({ ...prev, chinese_level_min: value }))}
-                                            options={CHINESE_LEVEL_OPTIONS.map(option => ({
-                                                value: option.value,
-                                                label: t(option.labelKey, { defaultValue: option.value })
-                                            }))}
-                                        />
-                                    </div>
+                                    <FloatingMultiSelect
+                                        id="edit-activity-college"
+                                        label={t('admin.activity.college', { defaultValue: 'College' })}
+                                        value={editForm.college_required}
+                                        onChange={(value) => setEditForm(prev => ({ ...prev, college_required: value }))}
+                                        options={COLLEGE_OPTIONS.map(option => ({
+                                            value: option.value,
+                                            label: t(option.labelKey, { defaultValue: option.value })
+                                        }))}
+                                    />
+                                    <FloatingMultiSelect
+                                        id="edit-activity-countries"
+                                        label={t('admin.activity.countries', { defaultValue: 'Countries' })}
+                                        value={editForm.countries}
+                                        onChange={(value) => setEditForm(prev => ({ ...prev, countries: value }))}
+                                        options={COUNTRY_OPTIONS.map(option => ({
+                                            value: option.value,
+                                            label: t(option.labelKey, { defaultValue: option.value })
+                                        }))}
+                                    />
+                                    <FloatingSelect
+                                        id="edit-activity-chinese-level-min"
+                                        label={t('admin.activity.chineseLevelMin', { defaultValue: 'Min Chinese Level' })}
+                                        value={editForm.chinese_level_min}
+                                        onChange={(value: string) => setEditForm(prev => ({ ...prev, chinese_level_min: value }))}
+                                        options={CHINESE_LEVEL_OPTIONS.map(option => ({
+                                            value: option.value,
+                                            label: t(option.labelKey, { defaultValue: option.value })
+                                        }))}
+                                    />
                                 </div>
 
                                 {/* Form Actions */}
@@ -911,8 +782,8 @@ const AdminActivitiesPage: React.FC = () => {
             )}
 
             {viewModalOpen && viewingActivity && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                    <div className="w-full max-w-2xl border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
+                <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto bg-black/60 backdrop-blur-sm">
+                    <div className="w-full max-w-2xl my-8 border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
                         <div className="flex items-center justify-between p-4 pb-3">
                             <div>
                                 <p className="text-xs tracking-wider uppercase text-app-light-text-secondary dark:text-app-dark-text-secondary">
@@ -930,115 +801,115 @@ const AdminActivitiesPage: React.FC = () => {
                             <div className="space-y-4">
                                 {/* Basic Info */}
                                 <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.activity.title', { defaultValue: 'Title' })}
-                                        </label>
-                                        <div className="w-full px-3 py-2 text-sm border rounded-lg bg-app-light-input-bg border-app-light-border dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text">
-                                            {viewingActivity.title || '—'}
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.activity.capacity', { defaultValue: 'Capacity' })}
-                                        </label>
-                                        <div className="w-full px-3 py-2 text-sm border rounded-lg bg-app-light-input-bg border-app-light-border dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text">
-                                            {viewingActivity.capacity || '—'}
-                                        </div>
-                                    </div>
+                                    <FloatingInput
+                                        id="view-activity-title"
+                                        label={t('admin.activity.title', { defaultValue: 'Title' })}
+                                        value={viewingActivity.title || ''}
+                                        onChange={() => { }}
+                                        disabled={true}
+                                    />
+                                    <FloatingInput
+                                        id="view-activity-capacity"
+                                        label={t('admin.activity.capacity', { defaultValue: 'Capacity' })}
+                                        value={viewingActivity.capacity?.toString() || ''}
+                                        onChange={() => { }}
+                                        disabled={true}
+                                    />
                                 </div>
 
                                 {/* Description */}
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                        {t('admin.activity.description', { defaultValue: 'Description' })}
-                                    </label>
-                                    <div className="w-full px-3 py-2 bg-app-light-input-bg border border-app-light-border rounded-lg dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text text-sm min-h-[60px]">
-                                        {viewingActivity.description || '—'}
-                                    </div>
-                                </div>
+                                <FloatingTextarea
+                                    id="view-activity-description"
+                                    label={t('admin.activity.description', { defaultValue: 'Description' })}
+                                    value={viewingActivity.description || ''}
+                                    onChange={() => { }}
+                                    rows={3}
+                                    disabled={true}
+                                />
 
-                                {/* Date/Time */}
-                                <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.activity.startDateTime', { defaultValue: 'Start Date & Time' })}
-                                        </label>
-                                        <div className="w-full px-3 py-2 text-sm border rounded-lg bg-app-light-input-bg border-app-light-border dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text">
-                                            {viewingActivity.start_datetime ? formatDateTime(viewingActivity.start_datetime) : '—'}
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.activity.endDateTime', { defaultValue: 'End Date & Time' })}
-                                        </label>
-                                        <div className="w-full px-3 py-2 text-sm border rounded-lg bg-app-light-input-bg border-app-light-border dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text">
-                                            {viewingActivity.end_datetime ? formatDateTime(viewingActivity.end_datetime) : '—'}
-                                        </div>
-                                    </div>
-                                </div>
+                                {/* Date/Time Period */}
+                                <SelectPeriod
+                                    id="view-activity-period"
+                                    label={t('admin.activity.period', { defaultValue: 'Period' })}
+                                    startValue={viewingActivity.start_datetime || ''}
+                                    endValue={viewingActivity.end_datetime || ''}
+                                    onStartChange={() => { }}
+                                    onEndChange={() => { }}
+                                    disabled={true}
+                                />
 
                                 {/* Location */}
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                        {t('admin.activity.location', { defaultValue: 'Location' })}
-                                    </label>
-                                    <div className="w-full px-3 py-2 text-sm border rounded-lg bg-app-light-input-bg border-app-light-border dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text">
-                                        {typeof viewingActivity.location === 'string' ? viewingActivity.location :
-                                            viewingActivity.location?.address ||
-                                            (viewingActivity.location?.lat && viewingActivity.location?.lng ?
-                                                `${viewingActivity.location.lat.toFixed(6)}, ${viewingActivity.location.lng.toFixed(6)}` : '—')}
-                                    </div>
-                                </div>
+                                <LocationPicker
+                                    id="view-activity-location"
+                                    label={t('admin.activity.location', { defaultValue: 'Location' })}
+                                    value={(() => {
+                                        if (!viewingActivity.location) return null;
+                                        if (typeof viewingActivity.location === 'string') {
+                                            // For string locations, create a Location object with dummy coordinates
+                                            return { lat: 0, lng: 0, address: viewingActivity.location };
+                                        }
+                                        return viewingActivity.location;
+                                    })()}
+                                    onChange={() => {}}
+                                    disabled={true}
+                                />
 
                                 {/* Requirements */}
                                 <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.activity.college', { defaultValue: 'College' })}
-                                        </label>
-                                        <div className="w-full px-3 py-2 text-sm border rounded-lg bg-app-light-input-bg border-app-light-border dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text">
-                                            {viewingActivity.college_required === 'all' ? t('admin.allColleges', { defaultValue: 'All Colleges' }) :
-                                                Array.isArray(viewingActivity.college_required) ? viewingActivity.college_required.join(', ') : '—'}
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.activity.countries', { defaultValue: 'Countries' })}
-                                        </label>
-                                        <div className="w-full px-3 py-2 text-sm border rounded-lg bg-app-light-input-bg border-app-light-border dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text">
-                                            {viewingActivity.countries === 'all' ? t('admin.allCountries', { defaultValue: 'All Countries' }) :
-                                                Array.isArray(viewingActivity.countries) ? viewingActivity.countries.join(', ') : '—'}
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.activity.chineseLevelMin', { defaultValue: 'Min Chinese Level' })}
-                                        </label>
-                                        <div className="w-full px-3 py-2 text-sm border rounded-lg bg-app-light-input-bg border-app-light-border dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text">
-                                            {viewingActivity.chinese_level_min || '—'}
-                                        </div>
-                                    </div>
+                                    <FloatingMultiSelect
+                                        id="view-activity-college"
+                                        label={t('admin.activity.college', { defaultValue: 'College' })}
+                                        value={viewingActivity.college_required === 'all' ? COLLEGE_OPTIONS.map(opt => opt.value) :
+                                            Array.isArray(viewingActivity.college_required) ? viewingActivity.college_required : []}
+                                        onChange={() => { }}
+                                        options={COLLEGE_OPTIONS.map(option => ({
+                                            value: option.value,
+                                            label: t(option.labelKey, { defaultValue: option.value })
+                                        }))}
+                                        disabled={true}
+                                    />
+                                    <FloatingMultiSelect
+                                        id="view-activity-countries"
+                                        label={t('admin.activity.countries', { defaultValue: 'Countries' })}
+                                        value={viewingActivity.countries === 'all' ? COUNTRY_OPTIONS.map(opt => opt.value) :
+                                            Array.isArray(viewingActivity.countries) ? viewingActivity.countries : []}
+                                        onChange={() => { }}
+                                        options={COUNTRY_OPTIONS.map(option => ({
+                                            value: option.value,
+                                            label: t(option.labelKey, { defaultValue: option.value })
+                                        }))}
+                                        disabled={true}
+                                    />
+                                    <FloatingSelect
+                                        id="view-activity-chinese-level"
+                                        label={t('admin.activity.chineseLevelMin', { defaultValue: 'Min Chinese Level' })}
+                                        value={viewingActivity.chinese_level_min || ''}
+                                        onChange={() => { }}
+                                        options={CHINESE_LEVEL_OPTIONS.map(option => ({
+                                            value: option.value,
+                                            label: t(option.labelKey, { defaultValue: option.value })
+                                        }))}
+                                        disabled={true}
+                                        hideSelectedTextWhen={(value) => value === ''}
+                                    />
                                 </div>
 
                                 {/* Metadata */}
                                 <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.table.creator', { defaultValue: 'Creator' })}
-                                        </label>
-                                        <div className="w-full px-3 py-2 text-sm border rounded-lg bg-app-light-input-bg border-app-light-border dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text">
-                                            {viewingActivity.created_by_username || '—'}
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.createdAt', { defaultValue: 'Created At' })}
-                                        </label>
-                                        <div className="w-full px-3 py-2 text-sm border rounded-lg bg-app-light-input-bg border-app-light-border dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text">
-                                            {viewingActivity.created_at ? formatDateTime(viewingActivity.created_at) : '—'}
-                                        </div>
-                                    </div>
+                                    <FloatingInput
+                                        id="view-activity-creator"
+                                        label={t('admin.table.creator', { defaultValue: 'Creator' })}
+                                        value={viewingActivity.created_by_username || ''}
+                                        onChange={() => { }}
+                                        disabled={true}
+                                    />
+                                    <FloatingInput
+                                        id="view-activity-created-at"
+                                        label={t('admin.createdAt', { defaultValue: 'Created At' })}
+                                        value={viewingActivity.created_at ? formatDateTime(viewingActivity.created_at) : ''}
+                                        onChange={() => { }}
+                                        disabled={true}
+                                    />
                                 </div>
 
                                 {/* Form Actions */}
