@@ -142,6 +142,7 @@ module.exports = {
       },
       screens: {
         // Enhanced responsive breakpoints with better mobile coverage
+        'xss': '375px',
         'xs': '475px',
         'sm': '640px',
         'md': '768px',
