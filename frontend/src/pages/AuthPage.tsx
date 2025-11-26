@@ -2,17 +2,17 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import FloatingInput from '../components/FloatingInput';
 
 const AuthPage: React.FC = () => {
     const { t } = useTranslation();
     const { login } = useAuth();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [usernameError, setUsernameError] = useState('');
     const [passwordError, setPasswordError] = useState('');
     const [submitting, setSubmitting] = useState(false);
-    const [usernameFocused, setUsernameFocused] = useState(false);
-    const [passwordFocused, setPasswordFocused] = useState(false);
     const navigate = useNavigate();
 
     const validateUsername = (value: string) => {
@@ -97,8 +97,7 @@ const AuthPage: React.FC = () => {
         }
     };
 
-    const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
+    const handleUsernameChange = (value: string) => {
         setUsername(value);
 
         // Clear error when user starts typing
@@ -107,8 +106,7 @@ const AuthPage: React.FC = () => {
         }
     };
 
-    const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
+    const handlePasswordChange = (value: string) => {
         setPassword(value);
 
         // Clear error when user starts typing
@@ -127,33 +125,14 @@ const AuthPage: React.FC = () => {
 
                     {/* Username/Student ID Input */}
                     <div className="relative">
-                        <div className={`relative group border-2 rounded-lg transition-colors duration-200 focus:outline-none ${usernameError
-                            ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
-                            : 'border-app-light-border dark:border-app-dark-border hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover'
-                            }`}>
-                            <input
-                                id="username"
-                                value={username}
-                                onChange={handleUsernameChange}
-                                onFocus={() => setUsernameFocused(true)}
-                                onBlur={() => setUsernameFocused(false)}
-                                className="w-full px-4 py-4 placeholder-transparent transition-colors duration-200 bg-app-light-input-bg dark:bg-app-dark-input-bg text-app-light-text-primary dark:text-app-dark-text-primary focus:outline-none rounded-lg"
-                                autoComplete="username"
-                            />
-                            <label
-                                htmlFor="username"
-                                className={`absolute left-4 transition-all duration-200 ease-out pointer-events-none ${usernameError
-                                    ? usernameFocused || username
-                                        ? 'top-0.5 text-xs text-red-500 font-medium transform -translate-y-0'
-                                        : 'top-1/2 text-base text-red-500 transform -translate-y-1/2'
-                                    : usernameFocused || username
-                                        ? 'top-0.5 text-xs text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary font-medium transform -translate-y-0'
-                                        : 'top-1/2 text-base text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary transform -translate-y-1/2'
-                                    }`}
-                            >
-                                {t('auth.studentIdOrUsername', { defaultValue: 'Student ID / Username' })}
-                            </label>
-                        </div>
+                        <FloatingInput
+                            id="username"
+                            label={t('auth.studentIdOrUsername', { defaultValue: 'Student ID / Username' })}
+                            value={username}
+                            onChange={handleUsernameChange}
+                            error={!!usernameError}
+                            autoComplete="username"
+                        />
                         {usernameError && (
                             <div className="flex items-center gap-2 mt-2 text-red-600 dark:text-red-400">
                                 <svg className="flex-shrink-0 w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -168,34 +147,34 @@ const AuthPage: React.FC = () => {
 
                     {/* Password Input */}
                     <div className="relative">
-                        <div className={`relative group border-2 rounded-lg transition-colors duration-200 focus:outline-none ${passwordError
-                            ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
-                            : 'border-app-light-border dark:border-app-dark-border hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover'
-                            }`}>
-                            <input
-                                id="password"
-                                type="password"
-                                value={password}
-                                onChange={handlePasswordChange}
-                                onFocus={() => setPasswordFocused(true)}
-                                onBlur={() => setPasswordFocused(false)}
-                                className="w-full px-4 py-4 placeholder-transparent transition-colors duration-200 bg-app-light-input-bg dark:bg-app-dark-input-bg text-app-light-text-primary dark:text-app-dark-text-primary focus:outline-none rounded-lg"
-                                autoComplete="current-password"
-                            />
-                            <label
-                                htmlFor="password"
-                                className={`absolute left-4 transition-all duration-200 ease-out pointer-events-none ${passwordError
-                                    ? passwordFocused || password
-                                        ? 'top-0.5 text-xs text-red-500 font-medium transform -translate-y-0'
-                                        : 'top-1/2 text-base text-red-500 transform -translate-y-1/2'
-                                    : passwordFocused || password
-                                        ? 'top-0.5 text-xs text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary font-medium transform -translate-y-0'
-                                        : 'top-1/2 text-base text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary transform -translate-y-1/2'
-                                    }`}
-                            >
-                                {t('login.password')}
-                            </label>
-                        </div>
+                        <FloatingInput
+                            id="password"
+                            label={t('login.password')}
+                            type={showPassword ? 'text' : 'password'}
+                            value={password}
+                            onChange={handlePasswordChange}
+                            error={!!passwordError}
+                            autoComplete="current-password"
+                            icon={
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="text-app-light-text-secondary dark:text-app-dark-text-secondary hover:text-app-light-text-primary dark:hover:text-app-dark-text-primary transition-colors duration-200 focus:outline-none rounded"
+                                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                >
+                                    {showPassword ? (
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.99902 3L20.999 21M9.8433 9.91364C9.32066 10.4536 8.99902 11.1892 8.99902 12C8.99902 13.6569 10.3422 15 11.999 15C12.8215 15 13.5667 14.669 14.1086 14.133M6.49902 6.64715C4.59972 7.90034 3.15305 9.78394 2.45703 12C3.73128 16.0571 7.52159 19 11.9992 19C13.9881 19 15.8414 18.4194 17.3988 17.4184M10.999 5.04939C11.328 5.01673 11.6617 5 11.9992 5C16.4769 5 20.2672 7.94291 21.5414 12C21.2607 12.894 20.8577 13.7338 20.3522 14.5" />
+                                        </svg>
+                                    ) : (
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                    )}
+                                </button>
+                            }
+                        />
                         {passwordError && (
                             <div className="flex items-center gap-2 mt-2 text-red-600 dark:text-red-400">
                                 <svg className="flex-shrink-0 w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
