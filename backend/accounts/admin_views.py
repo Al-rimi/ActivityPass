@@ -49,6 +49,48 @@ def _ensure_meta(user):
     return meta
 
 
+CHINESE_LEVEL_MAPPING = {
+    '全英文班': 6,
+    'HSK6': 6,
+    'HSK5': 5,
+    'HSK4': 4,
+    'HSK3': 3,
+    'HSK2': 2,
+    'HSK1': 1,
+    'CET6': 6,
+    'CET4': 4,
+    # Add more as needed
+}
+
+
+def _parse_chinese_level(value):
+    """Convert chinese_level string to integer."""
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str):
+        value = value.strip()
+        if not value:
+            return 0
+        return CHINESE_LEVEL_MAPPING.get(value, 0)
+    return 0
+
+
+def _rand_digits(n: int = 8) -> str:
+    return ''.join(random.choices(string.digits, k=n))
+
+
+def _rand_password(length: int = 8, include_symbols: bool = True) -> str:
+    alphabet = string.ascii_letters + string.digits
+    if include_symbols:
+        alphabet += SPECIAL_CHARS
+    return ''.join(random.choice(alphabet) for _ in range(length))
+
+
+def _ensure_meta(user):
+    meta, _ = AccountMeta.objects.get_or_create(user=user)
+    return meta
+
+
 class IsAdmin(permissions.BasePermission):
     def has_permission(self, request, view=None):
         return bool(request.user and request.user.is_authenticated and request.user.is_superuser)
@@ -119,9 +161,14 @@ class AdminUserSerializer(serializers.ModelSerializer):
             profile = getattr(instance, 'student_profile', None)
             if profile:
                 for field, value in profile_data.items():
+                    if field == 'chinese_level':
+                        value = _parse_chinese_level(value)
                     setattr(profile, field, value)
                 profile.save()
             else:
+                # Convert chinese_level for new profile creation
+                if 'chinese_level' in profile_data:
+                    profile_data['chinese_level'] = _parse_chinese_level(profile_data['chinese_level'])
                 StudentProfile.objects.create(user=instance, **profile_data)
         if meta_data is not None:
             meta = _ensure_meta(instance)
@@ -263,7 +310,7 @@ def create_student(request):
     college = (request.data.get('college') or '').strip()
     class_name = (request.data.get('class_name') or '').strip()
     gender = (request.data.get('gender') or '').strip()
-    chinese_level = (request.data.get('chinese_level') or '').strip()
+    chinese_level = _parse_chinese_level(request.data.get('chinese_level') or '')
     year = request.data.get('year')
     if not student_id:
         return Response({'detail': 'student_id required'}, status=400)

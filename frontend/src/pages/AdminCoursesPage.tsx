@@ -2,7 +2,10 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { AdminCourse } from '../types/admin';
-import CustomSelect from '../components/CustomSelect';
+import FloatingInput from '../components/FloatingInput';
+import FloatingSelect from '../components/FloatingSelect';
+import FloatingMultiSelect from '../components/FloatingMultiSelect';
+import SearchInput from '../components/SearchInput';
 import CustomDatePicker from '../components/CustomDatePicker';
 
 const defaultCourseForm = () => ({
@@ -14,7 +17,7 @@ const defaultCourseForm = () => ({
     term: '',
     academic_year: '',
     first_week_monday: '',
-    day_of_week: '1',
+    day_of_week: '',
     periods: [] as number[],
     week_pattern: [] as number[],
 });
@@ -361,27 +364,34 @@ const AdminCoursesPage: React.FC = () => {
 
                 <section className="p-5 border shadow-sm bg-app-light-surface border-app-light-border rounded-xl dark:border-app-dark-border dark:bg-app-dark-surface">
                     <div className="grid gap-3 sm:grid-cols-3">
-                        <input
+                        <SearchInput
+                            id="course-search"
+                            label={t('admin.searchCourses', { defaultValue: 'Search courses...' })}
                             value={search}
-                            onChange={e => setSearch(e.target.value)}
-                            placeholder={t('admin.searchStudents', { defaultValue: 'Search…' }) || ''}
-                            className="px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent hover:border-app-light-border-hover focus:border-app-light-accent dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-app-dark-accent dark:hover:border-app-dark-border-hover"
+                            onChange={setSearch}
+                            placeholder={t('admin.searchCourses', { defaultValue: 'Search courses...' })}
                         />
-                        <CustomSelect
+                        <FloatingSelect
+                            id="term-filter"
+                            label={t('admin.course.term')}
                             value={termFilter}
                             onChange={setTermFilter}
                             options={[
                                 { value: '', label: t('admin.course.term') },
                                 ...termOptions.map(term => ({ value: term, label: term }))
                             ]}
+                            hideSelectedTextWhen={(value) => value === ''}
                         />
-                        <CustomSelect
+                        <FloatingSelect
+                            id="day-filter"
+                            label={t('admin.course.day')}
                             value={dayFilter}
                             onChange={setDayFilter}
                             options={[
                                 { value: '', label: t('admin.course.day') },
                                 ...weekdayKeys.map(key => ({ value: String(key), label: formatDay(key) }))
                             ]}
+                            hideSelectedTextWhen={(value) => value === ''}
                         />
                     </div>
 
@@ -450,8 +460,8 @@ const AdminCoursesPage: React.FC = () => {
             </div>
 
             {modalOpen && (
-                <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-8 bg-black/60 backdrop-blur-sm">
-                    <div className="w-full max-w-2xl mt-8 mb-8 border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
+                <div className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+                    <div className="w-full max-w-2xl my-8 border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
                         <div className="flex items-center justify-between p-4 pb-3">
                             <div>
                                 <p className="text-xs tracking-wider uppercase text-app-light-text-secondary dark:text-app-dark-text-secondary">
@@ -469,175 +479,108 @@ const AdminCoursesPage: React.FC = () => {
                             <form onSubmit={submitCourse} className="space-y-4" autoComplete="off">
                                 {/* Basic Info Row */}
                                 <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.courseForm.code')}
-                                        </label>
-                                        <input
-                                            value={form.code}
-                                            onChange={e => setForm(prev => ({ ...prev, code: e.target.value }))}
-                                            className="w-full px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent hover:border-app-light-border-hover focus:border-app-light-accent dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-app-dark-accent dark:hover:border-app-dark-border-hover"
-                                            placeholder={t('admin.courseForm.code')}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.courseForm.type')}
-                                        </label>
-                                        <CustomSelect
-                                            value={form.course_type}
-                                            onChange={(value) => setForm(prev => ({ ...prev, course_type: value }))}
-                                            options={[
-                                                { value: '', label: t('admin.courseForm.type') },
-                                                { value: 'Theory', label: t('admin.courseForm.type.theory') },
-                                                { value: 'Technical', label: t('admin.courseForm.type.technical') },
-                                                { value: 'Practice', label: t('admin.courseForm.type.practice') },
-                                                { value: 'Experiment', label: t('admin.courseForm.type.experiment') },
-                                            ]}
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Title */}
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                        {t('admin.courseForm.title')}
-                                    </label>
-                                    <input
-                                        value={form.title}
-                                        onChange={e => setForm(prev => ({ ...prev, title: e.target.value }))}
-                                        required
-                                        className="w-full px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent hover:border-app-light-border-hover focus:border-app-light-accent dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-app-dark-accent dark:hover:border-app-dark-border-hover"
-                                        placeholder={t('admin.courseForm.title')}
+                                    <FloatingInput
+                                        id="course-code"
+                                        label={t('admin.courseForm.code')}
+                                        value={form.code}
+                                        onChange={(value) => setForm(prev => ({ ...prev, code: value }))}
+                                    />
+                                    <FloatingSelect
+                                        id="course-type"
+                                        label={t('admin.courseForm.type')}
+                                        value={form.course_type}
+                                        onChange={(value: string) => setForm(prev => ({ ...prev, course_type: value }))}
+                                        options={[
+                                            { value: '', label: t('admin.courseForm.type') },
+                                            { value: 'Theory', label: t('admin.courseForm.type.theory') },
+                                            { value: 'Technical', label: t('admin.courseForm.type.technical') },
+                                            { value: 'Practice', label: t('admin.courseForm.type.practice') },
+                                            { value: 'Experiment', label: t('admin.courseForm.type.experiment') },
+                                        ]}
+                                        hideSelectedTextWhen={(value) => value === ''}
                                     />
                                 </div>
 
+                                {/* Title */}
+                                <FloatingInput
+                                    id="course-title"
+                                    label={t('admin.courseForm.title')}
+                                    value={form.title}
+                                    onChange={(value) => setForm(prev => ({ ...prev, title: value }))}
+                                    required
+                                />
+
                                 {/* Teacher and Location */}
                                 <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.courseForm.teacher')}
-                                        </label>
-                                        <input
-                                            value={form.teacher}
-                                            onChange={e => setForm(prev => ({ ...prev, teacher: e.target.value }))}
-                                            className="w-full px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent hover:border-app-light-border-hover focus:border-app-light-accent dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-app-dark-accent dark:hover:border-app-dark-border-hover"
-                                            placeholder={t('admin.courseForm.teacher')}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.courseForm.location')}
-                                        </label>
-                                        <input
-                                            value={form.location}
-                                            onChange={e => setForm(prev => ({ ...prev, location: e.target.value }))}
-                                            className="w-full px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent hover:border-app-light-border-hover focus:border-app-light-accent dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-app-dark-accent dark:hover:border-app-dark-border-hover"
-                                            placeholder={t('admin.courseForm.location')}
-                                        />
-                                    </div>
+                                    <FloatingInput
+                                        id="course-teacher"
+                                        label={t('admin.courseForm.teacher')}
+                                        value={form.teacher}
+                                        onChange={(value) => setForm(prev => ({ ...prev, teacher: value }))}
+                                    />
+                                    <FloatingInput
+                                        id="course-location"
+                                        label={t('admin.courseForm.location')}
+                                        value={form.location}
+                                        onChange={(value) => setForm(prev => ({ ...prev, location: value }))}
+                                    />
                                 </div>
 
                                 {/* Term, Date, Day */}
                                 <div className="grid gap-4 sm:grid-cols-3">
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.courseForm.term')}
-                                        </label>
-                                        <CustomSelect
-                                            value={form.term}
-                                            onChange={handleTermChange}
-                                            options={[
-                                                { value: '', label: t('admin.courseForm.term') },
-                                                { value: 'first', label: t('admin.courseForm.term.first') },
-                                                { value: 'second', label: t('admin.courseForm.term.second') },
-                                            ]}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.courseForm.academicYear', { defaultValue: 'Academic Year' })}
-                                        </label>
-                                        <CustomSelect
-                                            value={form.academic_year}
-                                            onChange={handleAcademicYearChange}
-                                            options={[
-                                                { value: '', label: t('admin.courseForm.academicYear', { defaultValue: 'Academic Year' }) },
-                                                ...generateAcademicYearOptions
-                                            ]}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.courseForm.day')}
-                                        </label>
-                                        <CustomSelect
-                                            value={form.day_of_week}
-                                            onChange={(value) => setForm(prev => ({ ...prev, day_of_week: value }))}
-                                            options={weekdayKeys.map(key => ({
-                                                value: String(key),
-                                                label: formatDay(key)
-                                            }))}
-                                        />
-                                    </div>
+                                    <FloatingSelect
+                                        id="course-term"
+                                        label={t('admin.courseForm.term')}
+                                        value={form.term}
+                                        onChange={handleTermChange}
+                                        options={[
+                                            { value: '', label: t('admin.courseForm.term') },
+                                            { value: 'first', label: t('admin.courseForm.term.first') },
+                                            { value: 'second', label: t('admin.courseForm.term.second') },
+                                        ]}
+                                        hideSelectedTextWhen={(value) => value === ''}
+                                    />
+                                    <FloatingSelect
+                                        id="academic-year"
+                                        label={t('admin.courseForm.academicYear', { defaultValue: 'Academic Year' })}
+                                        value={form.academic_year}
+                                        onChange={handleAcademicYearChange}
+                                        options={[
+                                            { value: '', label: t('admin.courseForm.academicYear', { defaultValue: 'Academic Year' }) },
+                                            ...generateAcademicYearOptions
+                                        ]}
+                                        hideSelectedTextWhen={(value) => value === ''}
+                                    />
+                                    <FloatingSelect
+                                        id="day-of-week"
+                                        label={t('admin.course.day')}
+                                        value={form.day_of_week}
+                                        onChange={(value: string) => setForm(prev => ({ ...prev, day_of_week: value }))}
+                                        options={[
+                                            { value: '', label: t('admin.course.day') },
+                                            ...weekdayKeys.map(key => ({ value: String(key), label: formatDay(key) }))
+                                        ]}
+                                        hideSelectedTextWhen={(value) => value === ''}
+                                    />
                                 </div>
 
                                 {/* Sessions and Weeks */}
                                 <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.courseForm.periods')}
-                                        </label>
-                                        <div className="flex gap-1 p-3 bg-app-light-input-bg border border-app-light-border rounded-lg dark:bg-app-dark-input-bg dark:border-app-dark-border overflow-x-auto">
-                                            {Array.from({ length: 13 }, (_, i) => i + 1).map(session => (
-                                                <button
-                                                    key={session}
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setForm(prev => ({
-                                                            ...prev,
-                                                            periods: prev.periods.includes(session)
-                                                                ? prev.periods.filter(p => p !== session)
-                                                                : [...prev.periods, session].sort((a, b) => a - b)
-                                                        }));
-                                                    }}
-                                                    className={`flex items-center justify-center flex-1 min-w-[2rem] h-8 text-xs font-medium rounded transition-all duration-200 ${form.periods.includes(session)
-                                                        ? 'bg-app-light-accent text-app-light-text-on-accent'
-                                                        : 'bg-app-light-surface text-app-light-text-primary border border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover'
-                                                        }`}
-                                                >
-                                                    {session}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.courseForm.weeks')}
-                                        </label>
-                                        <div className="flex gap-1 p-3 bg-app-light-input-bg border border-app-light-border rounded-lg dark:bg-app-dark-input-bg dark:border-app-dark-border overflow-x-auto">
-                                            {Array.from({ length: 17 }, (_, i) => i + 1).map(week => (
-                                                <button
-                                                    key={week}
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setForm(prev => ({
-                                                            ...prev,
-                                                            week_pattern: prev.week_pattern.includes(week)
-                                                                ? prev.week_pattern.filter(w => w !== week)
-                                                                : [...prev.week_pattern, week].sort((a, b) => a - b)
-                                                        }));
-                                                    }}
-                                                    className={`flex items-center justify-center flex-1 min-w-[2rem] h-8 text-xs font-medium rounded transition-all duration-200 ${form.week_pattern.includes(week)
-                                                        ? 'bg-app-light-accent text-app-light-text-on-accent'
-                                                        : 'bg-app-light-surface text-app-light-text-primary border border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover'
-                                                        }`}
-                                                >
-                                                    {week}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
+                                    <FloatingMultiSelect
+                                        id="course-periods"
+                                        label={t('admin.courseForm.periods')}
+                                        value={form.periods.map(String)}
+                                        onChange={(value) => setForm(prev => ({ ...prev, periods: value.map(Number) }))}
+                                        options={Array.from({ length: 13 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }))}
+                                    />
+                                    <FloatingMultiSelect
+                                        id="course-weeks"
+                                        label={t('admin.courseForm.weeks')}
+                                        value={form.week_pattern.map(String)}
+                                        onChange={(value) => setForm(prev => ({ ...prev, week_pattern: value.map(Number) }))}
+                                        options={Array.from({ length: 17 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }))}
+                                        showSearch={true}
+                                    />
                                 </div>
 
                                 {/* Form Actions */}
@@ -664,8 +607,8 @@ const AdminCoursesPage: React.FC = () => {
             )}
 
             {viewModalOpen && viewingCourse && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                    <div className="w-full max-w-2xl border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
+                <div className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+                    <div className="w-full max-w-2xl my-8 border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
                         <div className="flex items-center justify-between p-4 pb-3">
                             <div>
                                 <h2 className="text-lg font-semibold text-app-light-text-primary dark:text-app-dark-text-primary">{viewingCourse.title}</h2>
@@ -680,128 +623,110 @@ const AdminCoursesPage: React.FC = () => {
                             <div className="space-y-4">
                                 {/* Basic Info Row */}
                                 <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.courseForm.code')}
-                                        </label>
-                                        <div className="w-full px-3 py-2 text-sm border rounded-lg bg-app-light-surface border-app-light-border dark:bg-app-dark-surface dark:border-app-dark-border dark:text-app-dark-text">
-                                            {viewingCourse.code || '—'}
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.courseForm.type')}
-                                        </label>
-                                        <div className="w-full px-3 py-2 text-sm border rounded-lg bg-app-light-surface border-app-light-border dark:bg-app-dark-surface dark:border-app-dark-border dark:text-app-dark-text">
-                                            {viewingCourse.course_type === 'Theory' ? t('admin.courseForm.type.theory') :
-                                                viewingCourse.course_type === 'Technical' ? t('admin.courseForm.type.technical') :
-                                                    viewingCourse.course_type === 'Practice' ? t('admin.courseForm.type.practice') :
-                                                        viewingCourse.course_type === 'Experiment' ? t('admin.courseForm.type.experiment') :
-                                                            viewingCourse.course_type || '—'}
-                                        </div>
-                                    </div>
+                                    <FloatingInput
+                                        id="view-course-code"
+                                        label={t('admin.courseForm.code')}
+                                        value={viewingCourse.code || ''}
+                                        onChange={() => { }}
+                                        disabled={true}
+                                    />
+                                    <FloatingSelect
+                                        id="view-course-type"
+                                        label={t('admin.courseForm.type')}
+                                        value={viewingCourse.course_type || ''}
+                                        onChange={() => { }}
+                                        options={[
+                                            { value: 'Theory', label: t('admin.courseForm.type.theory') },
+                                            { value: 'Technical', label: t('admin.courseForm.type.technical') },
+                                            { value: 'Practice', label: t('admin.courseForm.type.practice') },
+                                            { value: 'Experiment', label: t('admin.courseForm.type.experiment') },
+                                        ]}
+                                        disabled={true}
+                                    />
                                 </div>
 
                                 {/* Title */}
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                        {t('admin.courseForm.title')}
-                                    </label>
-                                    <div className="w-full px-3 py-2 text-sm border rounded-lg bg-app-light-surface border-app-light-border dark:bg-app-dark-surface dark:border-app-dark-border dark:text-app-dark-text">
-                                        {viewingCourse.title || '—'}
-                                    </div>
-                                </div>
+                                <FloatingInput
+                                    id="view-course-title"
+                                    label={t('admin.courseForm.title')}
+                                    value={viewingCourse.title || ''}
+                                    onChange={() => { }}
+                                    disabled={true}
+                                />
 
                                 {/* Teacher and Location */}
                                 <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.courseForm.teacher')}
-                                        </label>
-                                        <div className="w-full px-3 py-2 text-sm border rounded-lg bg-app-light-surface border-app-light-border dark:bg-app-dark-surface dark:border-app-dark-border dark:text-app-dark-text">
-                                            {viewingCourse.teacher || '—'}
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.courseForm.location')}
-                                        </label>
-                                        <div className="w-full px-3 py-2 text-sm border rounded-lg bg-app-light-surface border-app-light-border dark:bg-app-dark-surface dark:border-app-dark-border dark:text-app-dark-text">
-                                            {viewingCourse.location || '—'}
-                                        </div>
-                                    </div>
+                                    <FloatingInput
+                                        id="view-course-teacher"
+                                        label={t('admin.courseForm.teacher')}
+                                        value={viewingCourse.teacher || ''}
+                                        onChange={() => { }}
+                                        disabled={true}
+                                    />
+                                    <FloatingInput
+                                        id="view-course-location"
+                                        label={t('admin.courseForm.location')}
+                                        value={viewingCourse.location || ''}
+                                        onChange={() => { }}
+                                        disabled={true}
+                                    />
                                 </div>
 
                                 {/* Term, Academic Year, Day */}
                                 <div className="grid gap-4 sm:grid-cols-3">
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.courseForm.term')}
-                                        </label>
-                                        <div className="w-full px-3 py-2 text-sm border rounded-lg bg-app-light-surface border-app-light-border dark:bg-app-dark-surface dark:border-app-dark-border dark:text-app-dark-text">
-                                            {viewingCourse.term === 'first' ? t('admin.courseForm.term.first') :
-                                                viewingCourse.term === 'second' ? t('admin.courseForm.term.second') : viewingCourse.term || '—'}
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.courseForm.academicYear')}
-                                        </label>
-                                        <div className="w-full px-3 py-2 text-sm border rounded-lg bg-app-light-surface border-app-light-border dark:bg-app-dark-surface dark:border-app-dark-border dark:text-app-dark-text">
-                                            {(() => {
-                                                const academicYear = calculateAcademicYearFromDate(viewingCourse.first_week_monday || '');
-                                                return academicYear || '—';
-                                            })()}
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.courseForm.day')}
-                                        </label>
-                                        <div className="w-full px-3 py-2 text-sm border rounded-lg bg-app-light-surface border-app-light-border dark:bg-app-dark-surface dark:border-app-dark-border dark:text-app-dark-text">
-                                            {formatDay(viewingCourse.day_of_week)}
-                                        </div>
-                                    </div>
+                                    <FloatingSelect
+                                        id="view-course-term"
+                                        label={t('admin.courseForm.term')}
+                                        value={viewingCourse.term || ''}
+                                        onChange={() => { }}
+                                        options={[
+                                            { value: 'first', label: t('admin.courseForm.term.first') },
+                                            { value: 'second', label: t('admin.courseForm.term.second') },
+                                        ]}
+                                        disabled={true}
+                                    />
+                                    <FloatingInput
+                                        id="view-course-academic-year"
+                                        label={t('admin.courseForm.academicYear')}
+                                        value={(() => {
+                                            const academicYear = calculateAcademicYearFromDate(viewingCourse.first_week_monday || '');
+                                            return academicYear || '';
+                                        })()}
+                                        onChange={() => { }}
+                                        disabled={true}
+                                    />
+                                    <FloatingSelect
+                                        id="view-course-day"
+                                        label={t('admin.course.day')}
+                                        value={String(viewingCourse.day_of_week || 1)}
+                                        onChange={() => { }}
+                                        options={weekdayKeys.map(key => ({
+                                            value: String(key),
+                                            label: formatDay(key)
+                                        }))}
+                                        disabled={true}
+                                    />
                                 </div>
 
                                 {/* Sessions and Weeks */}
                                 <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.courseForm.periods')}
-                                        </label>
-                                        <div className="flex gap-1 p-3 bg-app-light-surface border border-app-light-border rounded-lg dark:bg-app-dark-surface dark:border-app-dark-border overflow-x-auto">
-                                            {Array.from({ length: 13 }, (_, i) => i + 1).map(session => (
-                                                <div
-                                                    key={session}
-                                                    className={`flex items-center justify-center flex-1 min-w-[2rem] h-8 text-xs font-medium rounded transition-all duration-200 ${viewingCourse.periods?.includes(session)
-                                                        ? 'bg-app-light-accent text-app-light-text-on-accent'
-                                                        : 'bg-app-light-surface text-app-light-text-secondary border border-app-light-border dark:bg-app-dark-surface dark:text-app-dark-text-secondary dark:border-app-dark-border'
-                                                        }`}
-                                                >
-                                                    {session}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.courseForm.weeks')}
-                                        </label>
-                                        <div className="flex gap-1 p-3 bg-app-light-surface border border-app-light-border rounded-lg dark:bg-app-dark-surface dark:border-app-dark-border overflow-x-auto">
-                                            {Array.from({ length: 17 }, (_, i) => i + 1).map(week => (
-                                                <div
-                                                    key={week}
-                                                    className={`flex items-center justify-center flex-1 min-w-[2rem] h-8 text-xs font-medium rounded transition-all duration-200 ${viewingCourse.week_pattern?.includes(week)
-                                                        ? 'bg-app-light-accent text-app-light-text-on-accent'
-                                                        : 'bg-app-light-surface text-app-light-text-secondary border border-app-light-border dark:bg-app-dark-surface dark:text-app-dark-text-secondary dark:border-app-dark-border'
-                                                        }`}
-                                                >
-                                                    {week}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
+                                    <FloatingMultiSelect
+                                        id="view-course-periods"
+                                        label={t('admin.courseForm.periods')}
+                                        value={(viewingCourse.periods || []).map(String)}
+                                        onChange={() => { }}
+                                        options={Array.from({ length: 13 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }))}
+                                        disabled={true}
+                                    />
+                                    <FloatingMultiSelect
+                                        id="view-course-weeks"
+                                        label={t('admin.courseForm.weeks')}
+                                        value={(viewingCourse.week_pattern || []).map(String)}
+                                        onChange={() => { }}
+                                        options={Array.from({ length: 17 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }))}
+                                        disabled={true}
+                                        showSearch={true}
+                                    />
                                 </div>
 
                                 {/* Form Actions */}
@@ -841,8 +766,8 @@ const AdminCoursesPage: React.FC = () => {
             )}
 
             {showDatePicker && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                    <div className="w-full max-w-md border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
+                <div className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+                    <div className="w-full max-w-md my-8 border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
                         <div className="flex items-center justify-between p-4 pb-3">
                             <div>
                                 <h2 className="text-lg font-semibold text-app-light-text-primary dark:text-app-dark-text-primary">
@@ -860,16 +785,12 @@ const AdminCoursesPage: React.FC = () => {
                                 <p className="text-sm text-app-light-text-secondary dark:text-app-dark-text-secondary">
                                     {t('admin.selectFirstWeekMondayDescription')}
                                 </p>
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                        {t('admin.firstWeekMonday')}
-                                    </label>
-                                    <CustomDatePicker
-                                        value={selectedDate}
-                                        onChange={setSelectedDate}
-                                        placeholder={t('admin.selectDate')}
-                                    />
-                                </div>
+                                <CustomDatePicker
+                                    id="first-week-monday"
+                                    label={t('admin.firstWeekMonday')}
+                                    value={selectedDate}
+                                    onChange={setSelectedDate}
+                                />
                                 <div className="flex flex-col-reverse pt-3 space-y-2 space-y-reverse border-t sm:flex-row sm:justify-end sm:space-x-3 sm:space-y-0 border-app-light-border dark:border-app-dark-border">
                                     <button
                                         type="button"

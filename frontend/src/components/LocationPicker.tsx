@@ -60,17 +60,24 @@ interface LocationPickerProps {
     onChange: (location: Location | null) => void;
     placeholder?: string;
     className?: string;
+    label?: string;
+    id?: string;
+    disabled?: boolean;
 }
 
 const LocationPicker: React.FC<LocationPickerProps> = ({
     value,
     onChange,
     placeholder = '',
-    className = ''
+    className = '',
+    label = '',
+    id,
+    disabled = false
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [tempLocation, setTempLocation] = useState<Location | null>(value);
     const [isLoadingAddress, setIsLoadingAddress] = useState(false);
+    const [focused, setFocused] = useState(false);
     const { t, i18n } = useTranslation();
     const mapRef = useRef<L.Map | null>(null);
 
@@ -356,25 +363,53 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
 
     return (
         <div className={`relative ${className}`}>
-
-            <button
-                type="button"
-                onClick={() => setIsOpen(true)}
-                className="w-full px-3 py-2 bg-app-light-input-bg border border-app-light-border rounded-lg focus:ring-1 focus:ring-app-light-accent hover:border-app-light-border-hover focus:border-app-light-accent dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-app-dark-accent dark:hover:border-app-dark-border-hover transition-all duration-200 text-sm text-left flex items-center justify-between min-h-[2.5rem]"
-            >
-                <span className={value ? '' : 'text-gray-500 dark:text-gray-400'}>
-                    {value ? formatLocationDisplay(value) : placeholder}
-                </span>
-                <svg
-                    className="flex-shrink-0 w-4 h-4 ml-2 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+            <div className={`relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover ${disabled ? 'bg-app-light-surface-secondary dark:bg-app-dark-surface-secondary' : 'bg-app-light-input-bg dark:bg-app-dark-input-bg'}`}>
+                <button
+                    id={id}
+                    type="button"
+                    onClick={() => !disabled && setIsOpen(true)}
+                    onFocus={() => setFocused(true)}
+                    onBlur={() => setFocused(false)}
+                    disabled={disabled}
+                    className={`w-full px-4 pt-5 pb-3 text-app-light-text-primary dark:text-app-dark-text-primary focus:outline-none rounded-lg text-left flex items-center justify-between h-[3.5rem] relative ${disabled ? 'text-app-light-text-secondary dark:text-app-dark-text-secondary' : 'bg-transparent hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover'}`}
                 >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-            </button>
+                    <div className="flex-1 pr-6 overflow-hidden relative">
+                        {value ? (
+                            <div className="relative w-full">
+                                <span className="block overflow-hidden whitespace-nowrap text-app-light-text-primary dark:text-app-dark-text-primary">
+                                    {formatLocationDisplay(value)}
+                                </span>
+                                {/* Gradient overlay for overflow like multi-select inputs */}
+                                <div className={`absolute inset-y-0 right-0 w-8 bg-gradient-to-l ${disabled ? 'from-app-light-surface-secondary to-transparent dark:from-app-dark-surface-secondary' : 'from-app-light-input-bg to-transparent dark:from-app-dark-input-bg'} pointer-events-none`}></div>
+                            </div>
+                        ) : (
+                            <span className="text-app-light-text-secondary dark:text-app-dark-text-secondary">
+                                {label !== undefined ? '' : placeholder}
+                            </span>
+                        )}
+                    </div>
+                    <svg
+                        className="w-4 h-4 text-app-light-text-secondary absolute right-3 top-1/2 transform -translate-y-1/2 dark:text-app-dark-text-secondary flex-shrink-0"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                </button>
+                {label && (
+                    <label
+                        htmlFor={id}
+                        className={`absolute left-4 transition-all duration-200 ease-out pointer-events-none ${(value && (value.address || (value.lat && value.lng)))
+                            ? 'top-0.5 text-xs text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary font-medium transform -translate-y-0'
+                            : 'top-1/2 text-base text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary transform -translate-y-1/2'
+                            } ${disabled ? 'text-app-light-text-secondary dark:text-app-dark-text-secondary' : ''}`}
+                    >
+                        {label}
+                    </label>
+                )}
+            </div>
 
             {isOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -416,11 +451,11 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
                                                 {isLoadingAddress ? (
                                                     <span>{t('location.loadingAddress')}</span>
                                                 ) : (
-                                                    formatLocationDisplay(tempLocation)
+                                                    tempLocation ? formatLocationDisplay(tempLocation) : ''
                                                 )}
                                             </p>
                                         </div>
-                                        {tempLocation.address && (
+                                        {tempLocation?.address && (
                                             <div className="text-xs text-app-light-text-secondary dark:text-app-dark-text-secondary">
                                                 {tempLocation.lat.toFixed(6)}, {tempLocation.lng.toFixed(6)}
                                             </div>

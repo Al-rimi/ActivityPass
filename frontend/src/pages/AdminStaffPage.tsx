@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { AdminUser, SecurityPreferences } from '../types/admin';
-import CustomSelect from '../components/CustomSelect';
+import FloatingInput from '../components/FloatingInput';
+import SearchInput from '../components/SearchInput';
 
 const defaultStaffForm = () => ({
     username: '',
@@ -235,12 +236,10 @@ const AdminStaffPage: React.FC = () => {
     return (
         <main className="flex-1 px-4 py-8 sm:px-6 lg:px-10">
             <div className="flex flex-col gap-6">
-                <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <h1 className="text-2xl font-semibold">{t('admin.manageStaff')}</h1>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-3">
-                        <button type="button" onClick={openModal} className="px-4 py-2 text-sm text-white transition-colors rounded-md bg-app-light-accent hover:bg-app-light-accent-hover dark:bg-app-dark-accent dark:hover:bg-app-dark-accent-hover">
+                <header className="flex items-center justify-between gap-3">
+                    <h1 className="flex-shrink-0 text-xl font-semibold">{t('admin.manageStaff')}</h1>
+                    <div className="flex items-center flex-shrink-0 gap-3">
+                        <button type="button" onClick={openModal} className="px-3 py-2 text-sm text-white transition-colors rounded-md bg-app-light-accent hover:bg-app-light-accent-hover dark:bg-app-dark-accent dark:hover:bg-app-dark-accent-hover whitespace-nowrap">
                             {t('admin.addStaff')}
                         </button>
                         <button
@@ -248,9 +247,9 @@ const AdminStaffPage: React.FC = () => {
                             onClick={handleToggleStaffEnforcement}
                             disabled={securityLoading || togglingSecurity || !securityPrefs}
                             aria-pressed={securityPrefs?.force_staff_change_default}
-                            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${securityPrefs?.force_staff_change_default
-                                ? 'bg-app-light-accent text-app-light-text-on-accent border border-app-light-accent'
-                                : 'border border-app-light-border dark:border-app-dark-border text-app-light-text-primary dark:text-app-dark-text-primary bg-app-light-surface dark:bg-app-dark-surface hover:bg-app-light-surface-hover dark:hover:bg-app-dark-surface-hover'} disabled:opacity-60`}
+                            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${securityPrefs?.force_staff_change_default
+                                ? 'bg-app-light-accent text-app-light-text-primary border border-app-light-accent hover:bg-app-light-accent-hover dark:bg-app-dark-accent dark:hover:bg-app-dark-accent-hover dark:text-app-dark-text-primary dark:border-app-dark-accent'
+                                : 'border border-app-light-border dark:border-app-dark-border text-app-light-text-primary dark:text-app-dark-text-primary hover:bg-app-light-surface-hover dark:hover:bg-app-dark-surface-hover'} disabled:opacity-60`}
                         >
                             {securityPrefs?.force_staff_change_default ? t('admin.promptStaffToggleOff') : t('admin.promptStaffToggleOn')}
                         </button>
@@ -265,12 +264,14 @@ const AdminStaffPage: React.FC = () => {
 
                 <section className="p-5 border shadow-sm rounded-xl border-app-light-border dark:border-app-dark-border bg-app-light-surface dark:bg-app-dark-surface">
                     <div className="flex flex-col gap-3 sm:flex-row">
-                        <input
-                            value={search}
-                            onChange={e => setSearch(e.target.value)}
-                            placeholder={t('admin.searchStaff', { defaultValue: 'Search by name, username, or email' }) || ''}
-                            className="flex-1 px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent hover:border-app-light-border-hover focus:border-app-light-accent dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-app-dark-accent dark:hover:border-app-dark-border-hover"
-                        />
+                        <div className="relative flex-1">
+                            <SearchInput
+                                id="search"
+                                label={t('admin.searchStaff')}
+                                value={search}
+                                onChange={setSearch}
+                            />
+                        </div>
                     </div>
                     <div className="mt-6 overflow-x-auto">
                         <table className="w-full text-sm text-left">
@@ -309,8 +310,8 @@ const AdminStaffPage: React.FC = () => {
             </div>
 
             {modalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                    <div className="w-full max-w-lg border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
+                <div className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+                    <div className="w-full max-w-lg my-8 border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
                         <div className="flex items-center justify-between p-4 pb-3">
                             <div>
                                 <h2 className="text-lg font-semibold text-app-light-text-primary dark:text-app-dark-text-primary">{t('admin.addStaff', { defaultValue: 'Add staff' })}</h2>
@@ -323,58 +324,38 @@ const AdminStaffPage: React.FC = () => {
                         </div>
                         <div className="px-4 pb-4">
                             <form onSubmit={submitStaff} className="space-y-4" autoComplete="off">
-                                {/* Basic Info Row */}
-                                <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.newStaffUsername')}
-                                        </label>
-                                        <input
-                                            value={form.username}
-                                            onChange={e => setForm(prev => ({ ...prev, username: e.target.value }))}
-                                            required
-                                            className="w-full px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent hover:border-app-light-border-hover focus:border-app-light-accent dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-app-dark-accent dark:hover:border-app-dark-border-hover"
-                                            placeholder={t('admin.newStaffUsername')}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('profile.name')}
-                                        </label>
-                                        <input
-                                            value={form.full_name}
-                                            onChange={e => setForm(prev => ({ ...prev, full_name: e.target.value }))}
-                                            className="w-full px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent hover:border-app-light-border-hover focus:border-app-light-accent dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-app-dark-accent dark:hover:border-app-dark-border-hover"
-                                            placeholder={t('profile.name')}
-                                        />
-                                    </div>
-                                </div>
+                                {/* Username */}
+                                <FloatingInput
+                                    id="username"
+                                    label={t('admin.newStaffUsername')}
+                                    value={form.username}
+                                    onChange={(value: string) => setForm(prev => ({ ...prev, username: value }))}
+                                    required
+                                />
 
-                                {/* Contact Info */}
+                                {/* Full Name */}
+                                <FloatingInput
+                                    id="full_name"
+                                    label={t('profile.name')}
+                                    value={form.full_name}
+                                    onChange={(value: string) => setForm(prev => ({ ...prev, full_name: value }))}
+                                />
+
+                                {/* Phone and Email Row */}
                                 <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.table.email')}
-                                        </label>
-                                        <input
-                                            value={form.email}
-                                            onChange={e => setForm(prev => ({ ...prev, email: e.target.value }))}
-                                            type="email"
-                                            className="w-full px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent hover:border-app-light-border-hover focus:border-app-light-accent dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-app-dark-accent dark:hover:border-app-dark-border-hover"
-                                            placeholder={t('admin.table.email')}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.table.phone')}
-                                        </label>
-                                        <input
-                                            value={form.phone}
-                                            onChange={e => setForm(prev => ({ ...prev, phone: e.target.value }))}
-                                            className="w-full px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent hover:border-app-light-border-hover focus:border-app-light-accent dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-app-dark-accent dark:hover:border-app-dark-border-hover"
-                                            placeholder={t('admin.table.phone')}
-                                        />
-                                    </div>
+                                    <FloatingInput
+                                        id="phone"
+                                        label={t('admin.table.phone')}
+                                        value={form.phone}
+                                        onChange={(value: string) => setForm(prev => ({ ...prev, phone: value }))}
+                                    />
+                                    <FloatingInput
+                                        id="email"
+                                        label={t('admin.table.email')}
+                                        value={form.email}
+                                        onChange={(value: string) => setForm(prev => ({ ...prev, email: value }))}
+                                        type="email"
+                                    />
                                 </div>
 
                                 {/* Form Actions */}
@@ -401,8 +382,8 @@ const AdminStaffPage: React.FC = () => {
             )}
 
             {editModalOpen && editingStaff && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                    <div className="w-full max-w-lg border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
+                <div className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+                    <div className="w-full max-w-lg my-8 border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
                         <div className="flex items-center justify-between p-4 pb-3">
                             <div>
                                 <p className="text-xs tracking-wider uppercase text-app-light-text-secondary dark:text-app-dark-text-secondary">
@@ -419,54 +400,36 @@ const AdminStaffPage: React.FC = () => {
                         <div className="px-4 pb-4">
                             <form onSubmit={submitEditStaff} className="space-y-4" autoComplete="off">
                                 {/* Username (disabled) */}
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                        {t('admin.table.username')}
-                                    </label>
-                                    <input
-                                        value={editForm.username}
-                                        disabled
-                                        className="w-full px-3 py-2 text-sm transition-colors border rounded-lg bg-app-light-surface-secondary border-app-light-border text-app-light-text-secondary dark:bg-app-dark-surface-secondary dark:border-app-dark-border dark:text-app-dark-text-secondary"
-                                    />
-                                </div>
+                                <FloatingInput
+                                    id="edit_staff_username"
+                                    label={t('admin.table.username')}
+                                    value={editForm.username}
+                                    onChange={() => { }}
+                                    disabled={true}
+                                />
 
-                                {/* Basic Info Row */}
+                                {/* Full Name */}
+                                <FloatingInput
+                                    id="edit_full_name"
+                                    label={t('profile.name')}
+                                    value={editForm.full_name}
+                                    onChange={(value: string) => setEditForm(prev => ({ ...prev, full_name: value }))}
+                                />
+
+                                {/* Phone and Email Row */}
                                 <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('profile.name')}
-                                        </label>
-                                        <input
-                                            value={editForm.full_name}
-                                            onChange={e => setEditForm(prev => ({ ...prev, full_name: e.target.value }))}
-                                            className="w-full px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent hover:border-app-light-border-hover focus:border-app-light-accent dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-app-dark-accent dark:hover:border-app-dark-border-hover"
-                                            placeholder={t('profile.name')}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.table.email')}
-                                        </label>
-                                        <input
-                                            value={editForm.email}
-                                            onChange={e => setEditForm(prev => ({ ...prev, email: e.target.value }))}
-                                            type="email"
-                                            className="w-full px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent hover:border-app-light-border-hover focus:border-app-light-accent dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-app-dark-accent dark:hover:border-app-dark-border-hover"
-                                            placeholder={t('admin.table.email')}
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Phone */}
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                        {t('admin.table.phone')}
-                                    </label>
-                                    <input
+                                    <FloatingInput
+                                        id="edit_phone"
+                                        label={t('admin.table.phone')}
                                         value={editForm.phone}
-                                        onChange={e => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
-                                        className="w-full px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent hover:border-app-light-border-hover focus:border-app-light-accent dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-app-dark-accent dark:hover:border-app-dark-border-hover"
-                                        placeholder={t('admin.table.phone')}
+                                        onChange={(value: string) => setEditForm(prev => ({ ...prev, phone: value }))}
+                                    />
+                                    <FloatingInput
+                                        id="edit_email"
+                                        label={t('admin.table.email')}
+                                        value={editForm.email}
+                                        onChange={(value: string) => setEditForm(prev => ({ ...prev, email: value }))}
+                                        type="email"
                                     />
                                 </div>
 
@@ -504,8 +467,8 @@ const AdminStaffPage: React.FC = () => {
             )}
 
             {viewModalOpen && viewingStaff && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                    <div className="w-full max-w-lg border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
+                <div className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+                    <div className="w-full max-w-lg my-8 border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
                         <div className="flex items-center justify-between p-4 pb-3">
                             <div>
                                 <p className="text-xs tracking-wider uppercase text-app-light-text-secondary dark:text-app-dark-text-secondary">
@@ -521,44 +484,41 @@ const AdminStaffPage: React.FC = () => {
                         </div>
                         <div className="px-4 pb-4">
                             <div className="space-y-4">
-                                {/* Username (disabled) */}
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                        {t('admin.table.username')}
-                                    </label>
-                                    <div className="w-full px-3 py-2 text-sm border rounded-lg bg-app-light-surface-secondary border-app-light-border dark:bg-app-dark-surface-secondary dark:border-app-dark-border dark:text-app-dark-text">
-                                        {viewingStaff.username || '—'}
-                                    </div>
-                                </div>
+                                {/* Username (read-only) */}
+                                <FloatingInput
+                                    id="view_staff_username"
+                                    label={t('admin.table.username')}
+                                    value={viewingStaff.username || ''}
+                                    onChange={() => { }}
+                                    disabled={true}
+                                />
 
-                                {/* Basic Info Row */}
+                                {/* Full Name */}
+                                <FloatingInput
+                                    id="view_staff_full_name"
+                                    label={t('profile.name')}
+                                    value={viewingStaff.first_name || ''}
+                                    onChange={() => { }}
+                                    disabled={true}
+                                />
+
+                                {/* Phone and Email Row */}
                                 <div className="grid gap-4 sm:grid-cols-2">
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('profile.name')}
-                                        </label>
-                                        <div className="w-full px-3 py-2 text-sm border rounded-lg bg-app-light-surface-secondary border-app-light-border dark:bg-app-dark-surface-secondary dark:border-app-dark-border dark:text-app-dark-text">
-                                            {viewingStaff.first_name || '—'}
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                            {t('admin.table.email')}
-                                        </label>
-                                        <div className="w-full px-3 py-2 text-sm border rounded-lg bg-app-light-surface-secondary border-app-light-border dark:bg-app-dark-surface-secondary dark:border-app-dark-border dark:text-app-dark-text">
-                                            {viewingStaff.email || '—'}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Phone */}
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
-                                        {t('admin.table.phone')}
-                                    </label>
-                                    <div className="w-full px-3 py-2 text-sm border rounded-lg bg-app-light-surface-secondary border-app-light-border dark:bg-app-dark-surface-secondary dark:border-app-dark-border dark:text-app-dark-text">
-                                        {viewingStaff.phone || '—'}
-                                    </div>
+                                    <FloatingInput
+                                        id="view_staff_phone"
+                                        label={t('admin.table.phone')}
+                                        value={viewingStaff.phone || ''}
+                                        onChange={() => { }}
+                                        disabled={true}
+                                    />
+                                    <FloatingInput
+                                        id="view_staff_email"
+                                        label={t('admin.table.email')}
+                                        value={viewingStaff.email || ''}
+                                        onChange={() => { }}
+                                        disabled={true}
+                                        type="email"
+                                    />
                                 </div>
 
                                 {/* Form Actions */}

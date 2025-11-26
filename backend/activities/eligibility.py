@@ -51,20 +51,23 @@ def check_chinese_level(student: StudentProfile, activity: Activity) -> bool:
         return True
     if not student.chinese_level:
         return False
-    # naive: HSK6 > HSK5 etc.
-    try:
-        def parse(level: str):
-            if level.upper().startswith('HSK'):
-                return ('HSK', int(level[3:]))
-            return (level.upper(), 0)
-
-        req_prefix, req_num = parse(activity.chinese_level_min)
-        stu_prefix, stu_num = parse(student.chinese_level)
-        if req_prefix != stu_prefix:
+    # Parse activity requirement
+    req_level = activity.chinese_level_min.strip().upper()
+    if req_level.startswith('HSK'):
+        try:
+            req_num = int(req_level[3:])
+        except (ValueError, IndexError):
             return False
-        return stu_num >= req_num
-    except Exception:
-        return False
+    elif req_level == 'CET6':
+        req_num = 6
+    elif req_level == 'CET4':
+        req_num = 4
+    elif req_level == '全英文班':
+        req_num = 6
+    else:
+        return False  # Unknown format
+    # student.chinese_level is now an integer
+    return student.chinese_level >= req_num
 
 
 def check_activity_cap(student: StudentProfile, max_per_year: int = 7) -> bool:

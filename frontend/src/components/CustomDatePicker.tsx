@@ -6,15 +6,20 @@ interface CustomDatePickerProps {
     onChange: (value: string) => void;
     placeholder?: string;
     className?: string;
+    label?: string;
+    id?: string;
 }
 
 const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
     value,
     onChange,
     placeholder = '',
-    className = ''
+    className = '',
+    label = '',
+    id
 }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [focused, setFocused] = useState(false);
     const [currentDate, setCurrentDate] = useState(new Date());
     const pickerRef = useRef<HTMLDivElement>(null);
     const { t, i18n } = useTranslation();
@@ -104,17 +109,22 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
         : ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
     return (
-        <div ref={pickerRef} className={`relative ${className}`}>
+        <div ref={pickerRef} className={`relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover bg-app-light-input-bg dark:bg-app-dark-input-bg ${className}`}>
             <button
+                id={id}
                 type="button"
-                onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center justify-between w-full px-3 py-2 text-sm text-left transition-all duration-200 border rounded-lg bg-app-light-input-bg border-app-light-border focus:ring-1 focus:ring-app-light-accent focus:border-app-light-accent dark:bg-app-dark-input-bg dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-app-dark-accent hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover"
+                onClick={() => {
+                    setIsOpen(!isOpen);
+                    setFocused(true);
+                }}
+                onBlur={() => setFocused(false)}
+                className="w-full px-4 pt-5 pb-3 text-app-light-text-primary dark:text-app-dark-text-primary focus:outline-none rounded-lg text-left flex items-center justify-between h-[3.5rem] relative bg-transparent hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover"
             >
                 <span className={value ? 'text-app-light-text-primary dark:text-app-dark-text-primary' : 'text-app-light-text-secondary dark:text-app-dark-text-secondary'}>
                     {value ? formatDisplayDate(value) : placeholder}
                 </span>
                 <svg
-                    className="w-4 h-4 text-app-light-text-secondary dark:text-app-dark-text-secondary"
+                    className="w-4 h-4 text-app-light-text-secondary absolute right-3 top-1/2 transform -translate-y-1/2 dark:text-app-dark-text-secondary flex-shrink-0"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -122,9 +132,20 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
             </button>
+            {label && (
+                <label
+                    htmlFor={id}
+                    className={`absolute left-4 transition-all duration-200 ease-out pointer-events-none ${focused || value
+                        ? 'top-0.5 text-xs text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary font-medium transform -translate-y-0'
+                        : 'top-1/2 text-base text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary transform -translate-y-1/2'
+                        }`}
+                >
+                    {label}
+                </label>
+            )}
 
             {isOpen && (
-                <div className="absolute z-50 w-64 mt-1 border rounded-lg shadow-lg bg-app-light-surface border-app-light-border dark:bg-app-dark-surface dark:border-app-dark-border">
+                <div className="absolute z-50 w-full mt-1 border rounded-lg shadow-lg bg-app-light-surface border-app-light-border dark:bg-app-dark-surface dark:border-app-dark-border">
                     {/* Header */}
                     <div className="flex items-center justify-between p-3 border-b border-app-light-border dark:border-app-dark-border">
                         <button
@@ -161,23 +182,33 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
 
                     {/* Calendar grid */}
                     <div className="grid grid-cols-7 gap-1 p-2">
-                        {getDaysInMonth(currentDate).map((day, index) => (
-                            <button
-                                key={index}
-                                type="button"
-                                onClick={() => day && handleDateSelect(day)}
-                                disabled={!day}
-                                className={`text-center text-sm py-2 rounded-md transition-colors ${day
-                                    ? `hover:bg-app-light-surface-hover dark:hover:bg-app-dark-surface-hover ${formatDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), day)) === value
-                                        ? 'bg-app-light-accent text-app-light-text-on-accent hover:bg-app-light-accent-hover dark:bg-app-dark-accent dark:text-app-dark-text-on-accent dark:hover:bg-app-dark-accent-hover'
-                                        : 'text-app-light-text-primary dark:text-app-dark-text-primary'
-                                    }`
-                                    : ''
-                                    }`}
-                            >
-                                {day}
-                            </button>
-                        ))}
+                        {getDaysInMonth(currentDate).map((day, index) => {
+                            const today = new Date();
+                            const isToday = day && day === today.getDate() &&
+                                currentDate.getMonth() === today.getMonth() &&
+                                currentDate.getFullYear() === today.getFullYear();
+                            const isSelected = day && formatDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), day)) === value;
+
+                            return (
+                                <button
+                                    key={index}
+                                    type="button"
+                                    onClick={() => day && handleDateSelect(day)}
+                                    disabled={!day}
+                                    className={`text-center text-sm py-2 rounded-md transition-colors ${day
+                                        ? `hover:bg-app-light-surface-hover dark:hover:bg-app-dark-surface-hover ${isSelected
+                                            ? 'bg-app-light-accent text-app-light-text-on-accent hover:bg-app-light-accent-hover dark:bg-app-dark-accent dark:text-app-dark-text-on-accent dark:hover:bg-app-dark-accent-hover'
+                                            : isToday
+                                                ? 'ring-1 ring-app-light-accent text-app-light-accent dark:ring-app-dark-accent dark:text-app-dark-accent'
+                                                : 'text-app-light-text-primary dark:text-app-dark-text-primary'
+                                        }`
+                                        : ''
+                                        }`}
+                                >
+                                    {day}
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
             )}
