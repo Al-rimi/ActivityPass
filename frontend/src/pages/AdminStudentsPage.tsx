@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
-import { AdminUser, SecurityPreferences } from '../types/admin';
+import { AdminUser } from '../types/admin';
 import FloatingInput from '../components/FloatingInput';
 import FloatingSelect from '../components/FloatingSelect';
 import YearInput from '../components/YearInput';
@@ -37,9 +37,6 @@ const AdminStudentsPage: React.FC = () => {
 
     const [creating, setCreating] = useState(false);
     const [resettingUserId, setResettingUserId] = useState<number | null>(null);
-    const [securityPrefs, setSecurityPrefs] = useState<SecurityPreferences | null>(null);
-    const [securityLoading, setSecurityLoading] = useState(false);
-    const [togglingSecurity, setTogglingSecurity] = useState(false);
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [editingStudent, setEditingStudent] = useState<AdminUser | null>(null);
     const [editForm, setEditForm] = useState(defaultStudentForm());
@@ -75,22 +72,6 @@ const AdminStudentsPage: React.FC = () => {
         'Content-Type': 'application/json',
         Authorization: tokens ? `Bearer ${tokens.access}` : '',
     }), [tokens]);
-
-    const loadSecurityPrefs = useCallback(async () => {
-        if (!tokens) return;
-        setSecurityLoading(true);
-        try {
-            const res = await fetch('/api/admin/security/preferences/', { headers: authHeaders });
-            if (!res.ok) throw new Error('security_failed');
-            const data = await res.json();
-            setSecurityPrefs(data);
-        } catch (err) {
-            console.error(err);
-            setNotice({ type: 'error', text: t('admin.promptError') });
-        } finally {
-            setSecurityLoading(false);
-        }
-    }, [tokens, authHeaders, t]);
 
     const filterStudents = useCallback((query: string, dataset: AdminUser[]) => {
         const q = query.trim().toLowerCase();
@@ -180,9 +161,8 @@ const AdminStudentsPage: React.FC = () => {
     useEffect(() => {
         if (tokens) {
             loadStudents();
-            loadSecurityPrefs();
         }
-    }, [tokens, loadStudents, loadSecurityPrefs]);
+    }, [tokens, loadStudents]);
 
     useEffect(() => {
         setStudents(filterStudents(search, allStudents));
@@ -321,33 +301,6 @@ const AdminStudentsPage: React.FC = () => {
         }
     };
 
-    const handleToggleStudentEnforcement = async () => {
-        const nextEnabled = !(securityPrefs?.force_students_change_default);
-        setTogglingSecurity(true);
-        try {
-            const res = await fetch('/api/admin/security/toggle/', {
-                method: 'POST',
-                headers: authHeaders,
-                body: JSON.stringify({ role: 'student', enabled: nextEnabled }),
-            });
-            if (!res.ok) throw new Error('toggle_failed');
-            const data = await res.json();
-            setSecurityPrefs(prev => ({
-                force_students_change_default: data.enabled,
-                force_staff_change_default: prev?.force_staff_change_default ?? false,
-            }));
-            setNotice({
-                type: 'info',
-                text: data.enabled ? t('admin.promptStudentsEnabled', { count: data.flagged }) : t('admin.promptStudentsDisabled'),
-            });
-        } catch (err) {
-            console.error(err);
-            setNotice({ type: 'error', text: t('admin.promptError') });
-        } finally {
-            setTogglingSecurity(false);
-        }
-    };
-
     const loadStudentActivities = useCallback(async (student: AdminUser) => {
         setLoadingActivities(true);
         try {
@@ -406,17 +359,6 @@ const AdminStudentsPage: React.FC = () => {
                     <div className="flex items-center gap-3 flex-shrink-0">
                         <button type="button" onClick={openModal} className="px-3 py-2 text-sm text-white transition-colors rounded-md bg-app-light-accent hover:bg-app-light-accent-hover dark:bg-app-dark-accent dark:hover:bg-app-dark-accent-hover whitespace-nowrap">
                             {t('admin.addStudent')}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleToggleStudentEnforcement}
-                            disabled={securityLoading || togglingSecurity || !securityPrefs}
-                            aria-pressed={securityPrefs?.force_students_change_default}
-                            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${securityPrefs?.force_students_change_default
-                                ? 'bg-app-light-accent text-app-light-text-primary border border-app-light-accent hover:bg-app-light-accent-hover dark:bg-app-dark-accent dark:hover:bg-app-dark-accent-hover dark:text-app-dark-text-primary dark:border-app-dark-accent'
-                                : 'border border-app-light-border dark:border-app-dark-border text-app-light-text-primary dark:text-app-dark-text-primary hover:bg-app-light-surface-hover dark:hover:bg-app-dark-surface-hover'} disabled:opacity-60`}
-                        >
-                            {securityPrefs?.force_students_change_default ? t('admin.promptStudentsToggleOff') : t('admin.promptStudentsToggleOn')}
                         </button>
                     </div>
                 </header>
