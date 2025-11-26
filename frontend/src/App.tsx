@@ -157,7 +157,7 @@ const Navbar: React.FC = () => {
                     <div className="flex items-center gap-4">
                         <Link to="/" className="text-xl font-semibold tracking-tight lg:text-2xl">{t('app.title')}</Link>
                         {me && (
-                            <p className="hidden text-xs text-app-light-text-secondary dark:text-app-dark-text-secondary sm:block">
+                            <p className="text-xs text-app-light-text-secondary dark:text-app-dark-text-secondary">
                                 {t('nav.welcomeBack', { defaultValue: 'Welcome back', name: me.first_name || me.username })}
                             </p>
                         )}

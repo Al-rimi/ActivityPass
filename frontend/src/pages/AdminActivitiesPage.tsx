@@ -470,12 +470,10 @@ const AdminActivitiesPage: React.FC = () => {
     return (
         <main className="flex-1 px-4 py-8 sm:px-6 lg:px-10">
             <div className="flex flex-col gap-6">
-                <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <h1 className="text-2xl font-semibold">{t('admin.manageActivities', { defaultValue: 'Manage Activities' })}</h1>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-3">
-                        <button type="button" onClick={openModal} className="px-4 py-2 text-sm text-white transition-colors rounded-md bg-app-light-accent hover:bg-app-light-accent-hover dark:bg-app-dark-accent dark:hover:bg-app-dark-accent-hover">
+                <header className="flex items-center justify-between gap-3">
+                    <h1 className="flex-shrink-0 text-xl font-semibold">{t('admin.manageActivities', { defaultValue: 'Manage Activities' })}</h1>
+                    <div className="flex items-center flex-shrink-0 gap-3">
+                        <button type="button" onClick={openModal} className="px-3 py-2 text-sm text-white transition-colors rounded-md bg-app-light-accent hover:bg-app-light-accent-hover dark:bg-app-dark-accent dark:hover:bg-app-dark-accent-hover whitespace-nowrap">
                             {t('admin.addActivity', { defaultValue: 'Add Activity' })}
                         </button>
                     </div>

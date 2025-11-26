@@ -343,12 +343,10 @@ const AdminCoursesPage: React.FC = () => {
     return (
         <main className="flex-1 px-4 py-8 sm:px-6 lg:px-10">
             <div className="flex flex-col gap-6">
-                <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <h1 className="text-2xl font-semibold">{t('admin.manageCourses', { defaultValue: 'Manage courses' })}</h1>
-                    </div>
-                    <div className="flex gap-2">
-                        <button type="button" onClick={openCreateModal} className="px-4 py-2 text-sm transition-colors border border-transparent rounded-lg text-app-light-text-on-accent bg-app-light-accent hover:bg-app-light-accent-hover focus:ring-2 focus:ring-app-light-accent focus:ring-offset-2 dark:bg-app-dark-accent dark:text-app-dark-text-on-accent dark:hover:bg-app-dark-accent-hover dark:focus:ring-app-dark-accent">
+                <header className="flex items-center justify-between gap-3">
+                    <h1 className="text-xl font-semibold flex-shrink-0">{t('admin.manageCourses', { defaultValue: 'Manage courses' })}</h1>
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                        <button type="button" onClick={openCreateModal} className="px-3 py-2 text-sm transition-colors border border-transparent rounded-lg text-app-light-text-on-accent bg-app-light-accent hover:bg-app-light-accent-hover focus:ring-2 focus:ring-app-light-accent focus:ring-offset-2 dark:bg-app-dark-accent dark:text-app-dark-text-on-accent dark:hover:bg-app-dark-accent-hover dark:focus:ring-app-dark-accent whitespace-nowrap">
                             {t('admin.addCourse', { defaultValue: 'Add course' })}
                         </button>
                     </div>
