@@ -384,8 +384,7 @@ const AdminStudentsPage: React.FC = () => {
                         <table className="w-full text-xs xss:text-sm text-left table-fixed">
                             <thead>
                                 <tr className="text-app-light-textSecondary dark:text-app-dark-textSecondary">
-                                    <th className="px-4 py-2 whitespace-nowrap w-32">{t('admin.table.studentId')}</th>
-                                    <th className="px-4 py-2 whitespace-nowrap min-w-0 flex-1 xss:min-w-16">{t('admin.table.name')}</th>
+                                    <th className="px-4 py-2 whitespace-nowrap min-w-0 flex-1 xss:min-w-16">{t('admin.table.student')}</th>
                                     <th className="p-0.5 xss:px-1 sm:px-4 py-2 whitespace-nowrap text-center w-16 xss:w-20">{t('admin.table.activities')}</th>
                                     <th className="p-0.5 xss:px-1 sm:px-4 py-2 whitespace-nowrap text-center w-16 xss:w-20">{t('admin.table.courses')}</th>
                                 </tr>
@@ -393,28 +392,22 @@ const AdminStudentsPage: React.FC = () => {
                             <tbody>
                                 {!students.length && !loading && (
                                     <tr>
-                                        <td colSpan={4} className="py-6 text-center text-app-light-textSecondary dark:text-app-dark-textSecondary">{t('admin.noStudents', { defaultValue: 'No students found.' })}</td>
+                                        <td colSpan={3} className="py-6 text-center text-app-light-textSecondary dark:text-app-dark-textSecondary">{t('admin.noStudents', { defaultValue: 'No students found.' })}</td>
                                     </tr>
                                 )}
                                 {students.map(student => (
                                     <tr key={student.id} className="border-t border-app-light-border dark:border-app-dark-border">
-                                        <td className="px-4 py-2 font-mono text-xs xss:text-sm whitespace-nowrap w-32">
-                                            <button
-                                                type="button"
-                                                onClick={() => openViewModal(student)}
-                                                className="w-full text-left text-app-light-text-primary hover:text-app-light-text-secondary dark:text-app-dark-text-primary dark:hover:text-app-dark-text-secondary block"
-                                            >
-                                                {student.student_profile?.student_id || '—'}
-                                            </button>
-                                        </td>
                                         <td className="px-4 py-2 min-w-0 flex-1 xss:min-w-16">
                                             <button
                                                 type="button"
                                                 onClick={() => openViewModal(student)}
-                                                className="w-full text-left text-app-light-text-primary hover:text-app-light-text-secondary dark:text-app-dark-text-primary dark:hover:text-app-dark-text-secondary whitespace-nowrap block overflow-hidden relative"
+                                                className="w-full text-left block"
                                             >
-                                                <span className="block">{student.first_name || '—'}</span>
-                                                <span className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-app-light-surface to-transparent dark:from-app-dark-surface"></span>
+                                                <p className="font-medium text-app-light-text-primary hover:text-app-light-text-secondary dark:text-app-dark-text-primary dark:hover:text-app-dark-text-secondary">{student.student_profile?.student_id || '—'}</p>
+                                                <div className="whitespace-nowrap block overflow-hidden relative">
+                                                    <p className="text-xs text-app-light-text-secondary dark:text-app-dark-text-secondary">{student.first_name || '—'}</p>
+                                                    <span className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-app-light-surface to-transparent dark:from-app-dark-surface"></span>
+                                                </div>
                                             </button>
                                         </td>
                                         <td className="p-0.5 xss:px-4 py-2 whitespace-nowrap text-center w-16 xss:w-20">

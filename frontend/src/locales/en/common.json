@@ -193,6 +193,7 @@
     "admin.studentCreateError": "Unable to create student.",
     "admin.createStudent": "Create student",
     "admin.table.studentId": "Student ID",
+    "admin.table.student": "Student",
     "admin.staffNumber": "Staff number",
     "admin.editStudent": "Edit student",
     "admin.editStaff": "Edit staff",
