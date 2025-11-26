@@ -197,8 +197,6 @@ const CHINESE_LEVEL_OPTIONS = [
     { value: 'HSK4', labelKey: 'admin.chineseLevel.hsk4' },
     { value: 'HSK5', labelKey: 'admin.chineseLevel.hsk5' },
     { value: 'HSK6', labelKey: 'admin.chineseLevel.hsk6' },
-    { value: 'CET4', labelKey: 'admin.chineseLevel.cet4' },
-    { value: 'CET6', labelKey: 'admin.chineseLevel.cet6' },
     { value: 'Native', labelKey: 'admin.chineseLevel.native' },
 ];
 
