@@ -71,7 +71,11 @@ const persistPreferences = (prefs: Preferences, userId?: number) => {
 
 const applyThemeClass = (mode: ThemeMode) => {
     if (typeof document === 'undefined') return;
+    document.documentElement.classList.add('disable-transitions');
     document.documentElement.classList.toggle('dark', mode === 'dark');
+    // Force reflow to apply the class
+    document.documentElement.offsetHeight;
+    document.documentElement.classList.remove('disable-transitions');
 };
 
 const applyLanguage = (language: LanguageCode) => {

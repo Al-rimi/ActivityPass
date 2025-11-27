@@ -394,3 +394,13 @@ input:-webkit-autofill:active {
 .app-slide-in {
   animation: app-slide-in 0.3s ease-out;
 }
+
+/* Disable transitions temporarily for instant theme changes */
+.disable-transitions * {
+    transition: none !important;
+}
+
+/* Ensure theme toggle thumb always animates */
+.theme-toggle-thumb {
+    transition: transform 0.2s ease-out !important;
+}

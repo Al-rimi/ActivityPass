@@ -36,7 +36,7 @@ const ThemeToggle: React.FC = () => {
             </span>
             {/* Thumb */}
             <span
-                className={`absolute top-1 left-1 inline-block h-6 w-6 rounded-full bg-app-light-accent dark:bg-app-dark-accent shadow transition-transform duration-300 ease-out ${theme === 'dark' ? 'translate-x-8' : 'translate-x-0'}`}
+                className={`absolute top-1 left-1 inline-block h-6 w-6 rounded-full bg-app-light-accent dark:bg-app-dark-accent shadow theme-toggle-thumb ${theme === 'dark' ? 'translate-x-8' : 'translate-x-0'}`}
             />
         </button>
     );
