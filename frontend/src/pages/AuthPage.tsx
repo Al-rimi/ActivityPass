@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import FloatingInput from '../components/FloatingInput';
+import Logo from '../components/Logo';
 
 const AuthPage: React.FC = () => {
     const { t } = useTranslation();
@@ -120,8 +121,11 @@ const AuthPage: React.FC = () => {
     return (
         <main className="flex items-center justify-center flex-1 px-4 py-6" style={minHeightStyle}>
             <section className="w-full max-w-md border shadow-sm rounded-xl border-app-light-border dark:border-app-dark-border bg-app-light-surface dark:bg-app-dark-surface p-7">
-                <form onSubmit={submitLogin} className="space-y-6">
+                <div className="flex flex-col items-center gap-4 mb-6">
+                    <Logo width={64} height={64} />
                     <h1 className="text-2xl font-semibold text-app-light-text-primary dark:text-app-dark-text-primary">{t('nav.login')}</h1>
+                </div>
+                <form onSubmit={submitLogin} className="space-y-6">
 
                     {/* Username/Student ID Input */}
                     <div className="relative">

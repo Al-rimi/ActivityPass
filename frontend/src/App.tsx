@@ -16,6 +16,7 @@ import AdminStaffPage from './pages/AdminStaffPage';
 import AdminCoursesPage from './pages/AdminCoursesPage';
 import AdminActivitiesPage from './pages/AdminActivitiesPage';
 import StaffDashboardPage from './pages/StaffDashboardPage';
+import Logo from './components/Logo';
 
 const setDocumentCssVar = (name: string, value: number) => {
     if (typeof document === 'undefined') return;
@@ -155,7 +156,10 @@ const Navbar: React.FC = () => {
             <div className="w-full px-4 sm:px-6">
                 <div className="flex items-center justify-between h-16 gap-4 lg:h-20">
                     <div className="flex items-center gap-4">
-                        <Link to="/" className="text-xl font-semibold tracking-tight lg:text-2xl">{t('app.title')}</Link>
+                        <Link to="/" className="flex items-center gap-3 text-xl font-semibold tracking-tight lg:text-2xl">
+                            <Logo width={32} height={32} className="flex-shrink-0" />
+                            {t('app.title')}
+                        </Link>
                         {me && (
                             <p className="text-xs text-app-light-text-secondary dark:text-app-dark-text-secondary">
                                 {t('nav.welcomeBack', { defaultValue: 'Welcome back', name: me.first_name || me.username })}
