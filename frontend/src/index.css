@@ -72,8 +72,8 @@ body {
 
 /* Slight global font size bump */
 html {
-  /* Responsive base font size that scales with viewport */
-  font-size: clamp(16px, 2.5vw, 18px);
+  /* Standard base font size */
+  font-size: 16px;
   /* Ensure smooth font rendering across platforms */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -83,7 +83,7 @@ html {
 /* Responsive typography utilities */
 @media (max-width: 640px) {
   html {
-    font-size: 16px; /* Fixed size for mobile to prevent zoom issues */
+    font-size: 14px; /* Smaller size for mobile devices */
   }
 }
 
@@ -99,23 +99,23 @@ body {
 /* Typography scale custom properties for programmatic access */
 :root {
   /* Typography scale using rem units */
-  --font-size-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
-  --font-size-sm: clamp(0.875rem, 0.8rem + 0.375vw, 1rem);
-  --font-size-base: clamp(1rem, 0.9rem + 0.5vw, 1.125rem);
-  --font-size-lg: clamp(1.125rem, 1rem + 0.625vw, 1.25rem);
-  --font-size-xl: clamp(1.25rem, 1.125rem + 0.625vw, 1.5rem);
-  --font-size-2xl: clamp(1.5rem, 1.25rem + 1vw, 2rem);
-  --font-size-3xl: clamp(1.875rem, 1.5rem + 1.875vw, 2.5rem);
-  --font-size-4xl: clamp(2.25rem, 1.75rem + 2.5vw, 3.5rem);
-  --font-size-5xl: clamp(3rem, 2.25rem + 3.75vw, 5rem);
-  --font-size-6xl: clamp(3.75rem, 2.75rem + 5vw, 7rem);
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+  --font-size-5xl: 3rem;
+  --font-size-6xl: 3.75rem;
 
   /* Specialized sizes */
-  --font-size-caption: clamp(0.6875rem, 0.65rem + 0.1875vw, 0.8125rem);
-  --font-size-button: clamp(0.875rem, 0.8rem + 0.375vw, 1rem);
-  --font-size-input: clamp(0.875rem, 0.8rem + 0.375vw, 1rem);
-  --font-size-label: clamp(0.8125rem, 0.75rem + 0.3125vw, 0.9375rem);
-  --font-size-overline: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+  --font-size-caption: 0.6875rem;
+  --font-size-button: 0.875rem;
+  --font-size-input: 0.875rem;
+  --font-size-label: 0.8125rem;
+  --font-size-overline: 0.75rem;
 
   /* Line heights */
   --line-height-tight: 1.2;

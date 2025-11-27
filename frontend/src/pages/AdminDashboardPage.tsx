@@ -131,12 +131,12 @@ const AdminDashboardPage: React.FC = () => {
                         card.to ? (
                             <Link key={card.label} to={card.to} className="p-5 transition border shadow-sm rounded-xl border-app-light-border dark:border-app-dark-border bg-app-light-surface dark:bg-app-dark-surface hover:border-app-light-border dark:hover:border-app-dark-border focus:outline-none focus:ring-1 focus:ring-offset-2 focus:ring-app-light-accent dark:focus:ring-app-dark-accent">
                                 <p className="text-sm text-app-light-text-tertiary dark:text-app-dark-text-tertiary">{card.label}</p>
-                                <p className="mt-2 text-2xl font-semibold">{card.value}</p>
+                                <p className="mt-2 text-xl font-semibold">{card.value}</p>
                             </Link>
                         ) : (
                             <article key={card.label} className="p-5 border shadow-sm rounded-xl border-app-light-border dark:border-app-dark-border bg-app-light-surface dark:bg-app-dark-surface">
                                 <p className="text-sm text-app-light-text-tertiary dark:text-app-dark-text-tertiary">{card.label}</p>
-                                <p className="mt-2 text-2xl font-semibold">{card.value}</p>
+                                <p className="mt-2 text-xl font-semibold">{card.value}</p>
                             </article>
                         )
                     ))}

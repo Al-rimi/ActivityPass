@@ -1,42 +1,43 @@
-# Responsive Typography System
+# Standardized Typography System
 
-This application uses a standardized, responsive typography system designed to work consistently across all devices and screen sizes.
+This application uses a standardized typography system designed for consistent appearance across desktop and mobile devices, similar to popular web applications like YouTube and WeChat.
 
 ## Key Features
 
-- **Fluid Typography**: Uses `clamp()` functions to scale smoothly between minimum and maximum sizes
-- **Relative Units**: All sizes use `rem` units for better accessibility and scaling
+- **Standard Font Sizes**: Fixed `rem` units for predictable sizing
+- **Device-Specific Scaling**: 16px base on desktop, 14px on mobile
+- **Relative Units**: All sizes use `rem` units for accessibility and scaling
 - **Modular Scale**: Font sizes follow a 1.25 ratio (major third) for visual harmony
-- **Cross-Platform Fonts**: Optimized font stacks for consistent rendering across platforms
+- **Cross-Platform Fonts**: Optimized font stacks for consistent rendering
 
 ## Font Size Scale
 
-| Class       | Min Size | Max Size | Use Case                            |
-| ----------- | -------- | -------- | ----------------------------------- |
-| `text-xs`   | 12px     | 14px     | Captions, metadata, small labels    |
-| `text-sm`   | 14px     | 16px     | Secondary text, form labels         |
-| `text-base` | 16px     | 18px     | Body text, paragraphs               |
-| `text-lg`   | 18px     | 20px     | Lead paragraphs, emphasized content |
-| `text-xl`   | 20px     | 24px     | Section headings                    |
-| `text-2xl`  | 24px     | 32px     | Page section titles                 |
-| `text-3xl`  | 30px     | 40px     | Page titles, hero headings          |
-| `text-4xl`  | 36px     | 56px     | Major hero titles                   |
-| `text-5xl`  | 48px     | 80px     | Large display text                  |
-| `text-6xl`  | 60px     | 112px    | Maximum impact display              |
+| Class       | Desktop | Mobile | Use Case                            |
+| ----------- | ------- | ------ | ----------------------------------- |
+| `text-xs`   | 12px    | 10.5px | Captions, metadata, small labels    |
+| `text-sm`   | 14px    | 12.25px| Secondary text, form labels         |
+| `text-base` | 16px    | 14px   | Body text, paragraphs               |
+| `text-lg`   | 18px    | 15.75px| Lead paragraphs, emphasized content |
+| `text-xl`   | 20px    | 17.5px | Section headings                    |
+| `text-2xl`  | 24px    | 21px   | Page section titles                 |
+| `text-3xl`  | 30px    | 26.25px| Page titles, hero headings          |
+| `text-4xl`  | 36px    | 31.5px | Major hero titles                   |
+| `text-5xl`  | 48px    | 42px   | Large display text                  |
+| `text-6xl`  | 60px    | 52.5px | Maximum impact display              |
 
 ## Specialized Sizes
 
-- `text-caption`: For image captions and small metadata
-- `text-button`: Optimized for button text
-- `text-input`: For form input text
-- `text-label`: For form labels
-- `text-overline`: For uppercase labels and tags
+- `text-caption`: For image captions and small metadata (11px / 9.625px)
+- `text-button`: Optimized for button text (14px / 12.25px)
+- `text-input`: For form input text (14px / 12.25px)
+- `text-label`: For form labels (13px / 11.375px)
+- `text-overline`: For uppercase labels and tags (12px / 10.5px)
 
 ## Responsive Behavior
 
-- **Mobile (< 640px)**: Fixed base font size (16px) to prevent zoom issues
-- **Tablet/Desktop**: Fluid scaling based on viewport width
-- **Large screens**: Capped maximum sizes to maintain readability
+- **Desktop/Laptop**: 16px base font size for standard web experience
+- **Mobile (≤640px)**: 14px base font size for better mobile readability
+- **No viewport scaling**: Consistent sizes regardless of screen width
 
 ## Usage Guidelines
 
@@ -75,7 +76,13 @@ This application uses a standardized, responsive typography system designed to w
 - Line heights optimized for readability at each size
 - Letter spacing adjusted for better legibility
 
+## Implementation
+
+- **Base Font Size**: Set via CSS `html { font-size: 16px; }` with mobile override
+- **Tailwind Config**: Fixed `rem` values instead of `clamp()` functions
+- **CSS Custom Properties**: Available for programmatic access
+
 ## Customization
 
-Font sizes can be customized in `tailwind.config.js` under the `fontSize` extension. The clamp functions ensure smooth scaling while maintaining minimum and maximum bounds for optimal readability.</content>
+Font sizes can be customized in `tailwind.config.js` under the `fontSize` extension. All values are fixed `rem` units that scale with the base font size.</content>
 <parameter name="filePath">c:\Users\ggak7\Documents\CST\2025-2026\1st Semester\hakathon 2025-2026\ActivityPass\frontend\TYPOGRAPHY.md

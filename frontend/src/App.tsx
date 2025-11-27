@@ -156,7 +156,7 @@ const Navbar: React.FC = () => {
             <div className="w-full px-4 sm:px-6">
                 <div className="flex items-center justify-between h-16 gap-4 lg:h-20">
                     <div className="flex items-center gap-4">
-                        <Link to="/" className="flex items-center gap-3 text-xl font-semibold tracking-tight lg:text-2xl">
+                        <Link to="/" className="flex items-center gap-3 text-lg font-semibold tracking-tight lg:text-xl">
                             <Logo width={32} height={32} className="flex-shrink-0" />
                             {t('app.title')}
                         </Link>
