@@ -64,6 +64,16 @@ const Navbar: React.FC = () => {
         setSidebarOpen(false);
     }, [loc.pathname]);
 
+    useEffect(() => {
+        const originalOverflow = document.body.style.overflow;
+        if (sidebarOpen) {
+            document.body.style.overflow = 'hidden';
+        }
+        return () => {
+            document.body.style.overflow = originalOverflow;
+        };
+    }, [sidebarOpen]);
+
     const normalizePath = (path: string) => {
         if (!path) return '/';
         const withLeading = path.startsWith('/') ? path : `/${path}`;

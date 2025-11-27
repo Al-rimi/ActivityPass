@@ -474,6 +474,17 @@ const AdminCoursesPage: React.FC = () => {
         // If no identifier, modals stay closed
     }, [identifier, action, courses]);
 
+    useEffect(() => {
+        const isAnyModalOpen = modalOpen || viewModalOpen || deleteConfirmModalOpen || showDatePicker;
+        const originalOverflow = document.body.style.overflow;
+        if (isAnyModalOpen) {
+            document.body.style.overflow = 'hidden';
+        }
+        return () => {
+            document.body.style.overflow = originalOverflow;
+        };
+    }, [modalOpen, viewModalOpen, deleteConfirmModalOpen, showDatePicker]);
+
     return (
         <main className="flex-1 px-4 py-8 sm:px-6 lg:px-10">
             <div className="flex flex-col gap-6">
@@ -592,158 +603,160 @@ const AdminCoursesPage: React.FC = () => {
             </div>
 
             {modalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                    <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
-                        <div className="flex items-center justify-between p-4 pb-3">
-                            <div>
-                                <p className="text-xs tracking-wider uppercase text-app-light-text-secondary dark:text-app-dark-text-secondary">
-                                    {editingCourse ? t('admin.editCourse') : t('admin.addCourse')}
-                                </p>
-                                <h2 className="text-lg font-semibold text-app-light-text-primary dark:text-app-dark-text-primary">{form.title || t('admin.course.title')}</h2>
+                <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm">
+                    <div className="flex items-center justify-center min-h-full p-4">
+                        <div className="w-full max-w-2xl border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
+                            <div className="flex items-center justify-between p-4 pb-3">
+                                <div>
+                                    <p className="text-xs tracking-wider uppercase text-app-light-text-secondary dark:text-app-dark-text-secondary">
+                                        {editingCourse ? t('admin.editCourse') : t('admin.addCourse')}
+                                    </p>
+                                    <h2 className="text-lg font-semibold text-app-light-text-primary dark:text-app-dark-text-primary">{form.title || t('admin.course.title')}</h2>
+                                </div>
+                                <button type="button" onClick={() => {
+                                    if (!editingCourse) {
+                                        // Save current form data before closing
+                                        localStorage.setItem('admin-course-add-form', JSON.stringify(form));
+                                    }
+                                    editingCourse ? navigate(`/admin/courses/${editingCourse.id}`) : navigate('/admin/courses');
+                                }} className="p-2 transition-colors rounded-lg text-app-light-text-secondary hover:text-app-light-text-primary dark:text-app-dark-text-secondary dark:hover:text-app-dark-text-primary hover:bg-app-light-surface-hover dark:hover:bg-app-dark-surface-hover" aria-label={t('common.close')}>
+                                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
                             </div>
-                            <button type="button" onClick={() => {
-                                if (!editingCourse) {
-                                    // Save current form data before closing
-                                    localStorage.setItem('admin-course-add-form', JSON.stringify(form));
-                                }
-                                editingCourse ? navigate(`/admin/courses/${editingCourse.id}`) : navigate('/admin/courses');
-                            }} className="p-2 transition-colors rounded-lg text-app-light-text-secondary hover:text-app-light-text-primary dark:text-app-dark-text-secondary dark:hover:text-app-dark-text-primary hover:bg-app-light-surface-hover dark:hover:bg-app-dark-surface-hover" aria-label={t('common.close')}>
-                                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-                        <div className="px-4 pb-4">
-                            <form onSubmit={submitCourse} className="space-y-4" autoComplete="off">
-                                {/* Basic Info Row */}
-                                <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="px-4 pb-4">
+                                <form onSubmit={submitCourse} className="space-y-4" autoComplete="off">
+                                    {/* Basic Info Row */}
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <FloatingInput
+                                            id="course-code"
+                                            label={t('admin.courseForm.code')}
+                                            value={form.code}
+                                            onChange={(value) => setForm(prev => ({ ...prev, code: value }))}
+                                        />
+                                        <FloatingSelect
+                                            id="course-type"
+                                            label={t('admin.courseForm.type')}
+                                            value={form.course_type}
+                                            onChange={(value: string) => setForm(prev => ({ ...prev, course_type: value }))}
+                                            options={[
+                                                { value: '', label: t('admin.courseForm.type') },
+                                                { value: 'Theory', label: t('admin.courseForm.type.theory') },
+                                                { value: 'Technical', label: t('admin.courseForm.type.technical') },
+                                                { value: 'Practice', label: t('admin.courseForm.type.practice') },
+                                                { value: 'Experiment', label: t('admin.courseForm.type.experiment') },
+                                            ]}
+                                            hideSelectedTextWhen={(value) => value === ''}
+                                        />
+                                    </div>
+
+                                    {/* Title */}
                                     <FloatingInput
-                                        id="course-code"
-                                        label={t('admin.courseForm.code')}
-                                        value={form.code}
-                                        onChange={(value) => setForm(prev => ({ ...prev, code: value }))}
+                                        id="course-title"
+                                        label={t('admin.courseForm.title')}
+                                        value={form.title}
+                                        onChange={(value) => setForm(prev => ({ ...prev, title: value }))}
+                                        required
                                     />
-                                    <FloatingSelect
-                                        id="course-type"
-                                        label={t('admin.courseForm.type')}
-                                        value={form.course_type}
-                                        onChange={(value: string) => setForm(prev => ({ ...prev, course_type: value }))}
-                                        options={[
-                                            { value: '', label: t('admin.courseForm.type') },
-                                            { value: 'Theory', label: t('admin.courseForm.type.theory') },
-                                            { value: 'Technical', label: t('admin.courseForm.type.technical') },
-                                            { value: 'Practice', label: t('admin.courseForm.type.practice') },
-                                            { value: 'Experiment', label: t('admin.courseForm.type.experiment') },
-                                        ]}
-                                        hideSelectedTextWhen={(value) => value === ''}
-                                    />
-                                </div>
 
-                                {/* Title */}
-                                <FloatingInput
-                                    id="course-title"
-                                    label={t('admin.courseForm.title')}
-                                    value={form.title}
-                                    onChange={(value) => setForm(prev => ({ ...prev, title: value }))}
-                                    required
-                                />
+                                    {/* Teacher and Location */}
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <FloatingInput
+                                            id="course-teacher"
+                                            label={t('admin.courseForm.teacher')}
+                                            value={form.teacher}
+                                            onChange={(value) => setForm(prev => ({ ...prev, teacher: value }))}
+                                        />
+                                        <FloatingInput
+                                            id="course-location"
+                                            label={t('admin.courseForm.location')}
+                                            value={form.location}
+                                            onChange={(value) => setForm(prev => ({ ...prev, location: value }))}
+                                        />
+                                    </div>
 
-                                {/* Teacher and Location */}
-                                <div className="grid gap-4 sm:grid-cols-2">
-                                    <FloatingInput
-                                        id="course-teacher"
-                                        label={t('admin.courseForm.teacher')}
-                                        value={form.teacher}
-                                        onChange={(value) => setForm(prev => ({ ...prev, teacher: value }))}
-                                    />
-                                    <FloatingInput
-                                        id="course-location"
-                                        label={t('admin.courseForm.location')}
-                                        value={form.location}
-                                        onChange={(value) => setForm(prev => ({ ...prev, location: value }))}
-                                    />
-                                </div>
+                                    {/* Term, Date, Day */}
+                                    <div className="grid gap-4 sm:grid-cols-3">
+                                        <FloatingSelect
+                                            id="course-term"
+                                            label={t('admin.courseForm.term')}
+                                            value={form.term}
+                                            onChange={handleTermChange}
+                                            options={[
+                                                { value: '', label: t('admin.courseForm.term') },
+                                                { value: 'first', label: t('admin.courseForm.term.first') },
+                                                { value: 'second', label: t('admin.courseForm.term.second') },
+                                            ]}
+                                            hideSelectedTextWhen={(value) => value === ''}
+                                        />
+                                        <FloatingSelect
+                                            id="academic-year"
+                                            label={t('admin.courseForm.academicYear', { defaultValue: 'Academic Year' })}
+                                            value={form.academic_year}
+                                            onChange={handleAcademicYearChange}
+                                            options={[
+                                                { value: '', label: t('admin.courseForm.academicYear', { defaultValue: 'Academic Year' }) },
+                                                ...generateAcademicYearOptions
+                                            ]}
+                                            hideSelectedTextWhen={(value) => value === ''}
+                                        />
+                                        <FloatingSelect
+                                            id="day-of-week"
+                                            label={t('admin.course.day')}
+                                            value={form.day_of_week}
+                                            onChange={(value: string) => setForm(prev => ({ ...prev, day_of_week: value }))}
+                                            options={[
+                                                { value: '', label: t('admin.course.day') },
+                                                ...weekdayKeys.map(key => ({ value: String(key), label: formatDay(key) }))
+                                            ]}
+                                            hideSelectedTextWhen={(value) => value === ''}
+                                        />
+                                    </div>
 
-                                {/* Term, Date, Day */}
-                                <div className="grid gap-4 sm:grid-cols-3">
-                                    <FloatingSelect
-                                        id="course-term"
-                                        label={t('admin.courseForm.term')}
-                                        value={form.term}
-                                        onChange={handleTermChange}
-                                        options={[
-                                            { value: '', label: t('admin.courseForm.term') },
-                                            { value: 'first', label: t('admin.courseForm.term.first') },
-                                            { value: 'second', label: t('admin.courseForm.term.second') },
-                                        ]}
-                                        hideSelectedTextWhen={(value) => value === ''}
-                                    />
-                                    <FloatingSelect
-                                        id="academic-year"
-                                        label={t('admin.courseForm.academicYear', { defaultValue: 'Academic Year' })}
-                                        value={form.academic_year}
-                                        onChange={handleAcademicYearChange}
-                                        options={[
-                                            { value: '', label: t('admin.courseForm.academicYear', { defaultValue: 'Academic Year' }) },
-                                            ...generateAcademicYearOptions
-                                        ]}
-                                        hideSelectedTextWhen={(value) => value === ''}
-                                    />
-                                    <FloatingSelect
-                                        id="day-of-week"
-                                        label={t('admin.course.day')}
-                                        value={form.day_of_week}
-                                        onChange={(value: string) => setForm(prev => ({ ...prev, day_of_week: value }))}
-                                        options={[
-                                            { value: '', label: t('admin.course.day') },
-                                            ...weekdayKeys.map(key => ({ value: String(key), label: formatDay(key) }))
-                                        ]}
-                                        hideSelectedTextWhen={(value) => value === ''}
-                                    />
-                                </div>
+                                    {/* Sessions and Weeks */}
+                                    <div className="space-y-4">
+                                        <FloatingMultiSelect
+                                            id="course-periods"
+                                            label={t('admin.courseForm.periods')}
+                                            value={form.periods.map(String)}
+                                            onChange={(value) => setForm(prev => ({ ...prev, periods: value.map(Number) }))}
+                                            options={Array.from({ length: 13 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }))}
+                                        />
+                                        <FloatingMultiSelect
+                                            id="course-weeks"
+                                            label={t('admin.courseForm.weeks')}
+                                            value={form.week_pattern.map(String)}
+                                            onChange={(value) => setForm(prev => ({ ...prev, week_pattern: value.map(Number) }))}
+                                            options={Array.from({ length: 17 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }))}
+                                            showSearch={true}
+                                        />
+                                    </div>
 
-                                {/* Sessions and Weeks */}
-                                <div className="space-y-4">
-                                    <FloatingMultiSelect
-                                        id="course-periods"
-                                        label={t('admin.courseForm.periods')}
-                                        value={form.periods.map(String)}
-                                        onChange={(value) => setForm(prev => ({ ...prev, periods: value.map(Number) }))}
-                                        options={Array.from({ length: 13 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }))}
-                                    />
-                                    <FloatingMultiSelect
-                                        id="course-weeks"
-                                        label={t('admin.courseForm.weeks')}
-                                        value={form.week_pattern.map(String)}
-                                        onChange={(value) => setForm(prev => ({ ...prev, week_pattern: value.map(Number) }))}
-                                        options={Array.from({ length: 17 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }))}
-                                        showSearch={true}
-                                    />
-                                </div>
-
-                                {/* Form Actions */}
-                                <div className="flex flex-col-reverse pt-3 space-y-2 space-y-reverse border-t sm:flex-row sm:justify-end sm:space-x-3 sm:space-y-0 border-app-light-border dark:border-app-dark-border">
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            if (!editingCourse) {
-                                                localStorage.removeItem('admin-course-add-form');
-                                            }
-                                            editingCourse ? navigate(`/admin/courses/${editingCourse.id}`) : navigate('/admin/courses');
-                                        }}
-                                        className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
-                                    >
-                                        {t('common.cancel')}
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        disabled={saving}
-                                        className="w-full px-4 py-2 text-sm font-medium transition-colors border border-transparent rounded-lg sm:w-auto text-app-light-text-on-accent bg-app-light-accent hover:bg-app-light-accent-hover disabled:opacity-50 disabled:cursor-not-allowed dark:bg-app-dark-accent dark:text-app-dark-text-on-accent dark:hover:bg-app-dark-accent-hover"
-                                    >
-                                        {saving ? t('profile.saving') : t('common.save')}
-                                    </button>
-                                </div>
-                            </form>
+                                    {/* Form Actions */}
+                                    <div className="flex flex-col-reverse pt-3 space-y-2 space-y-reverse border-t sm:flex-row sm:justify-end sm:space-x-3 sm:space-y-0 border-app-light-border dark:border-app-dark-border">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                if (!editingCourse) {
+                                                    localStorage.removeItem('admin-course-add-form');
+                                                }
+                                                editingCourse ? navigate(`/admin/courses/${editingCourse.id}`) : navigate('/admin/courses');
+                                            }}
+                                            className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
+                                        >
+                                            {t('common.cancel')}
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            disabled={saving}
+                                            className="w-full px-4 py-2 text-sm font-medium transition-colors border border-transparent rounded-lg sm:w-auto text-app-light-text-on-accent bg-app-light-accent hover:bg-app-light-accent-hover disabled:opacity-50 disabled:cursor-not-allowed dark:bg-app-dark-accent dark:text-app-dark-text-on-accent dark:hover:bg-app-dark-accent-hover"
+                                        >
+                                            {saving ? t('profile.saving') : t('common.save')}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -752,152 +765,154 @@ const AdminCoursesPage: React.FC = () => {
 
 
             {viewModalOpen && viewingCourse && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                    <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
-                        <div className="flex items-center justify-between p-4 pb-3">
-                            <div>
-                                <p className="text-xs tracking-wider uppercase text-app-light-text-secondary dark:text-app-dark-text-secondary">
-                                    {t('admin.viewCourse', { defaultValue: 'View Course' })}
-                                </p>
-                                <h2 className="text-lg font-semibold text-app-light-text-primary dark:text-app-dark-text-primary">{viewingCourse.title}</h2>
+                <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm">
+                    <div className="flex items-center justify-center min-h-full p-4">
+                        <div className="w-full max-w-2xl border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
+                            <div className="flex items-center justify-between p-4 pb-3">
+                                <div>
+                                    <p className="text-xs tracking-wider uppercase text-app-light-text-secondary dark:text-app-dark-text-secondary">
+                                        {t('admin.viewCourse', { defaultValue: 'View Course' })}
+                                    </p>
+                                    <h2 className="text-lg font-semibold text-app-light-text-primary dark:text-app-dark-text-primary">{viewingCourse.title}</h2>
+                                </div>
+                                <button type="button" onClick={() => navigate(getViewClosePath())} className="p-2 transition-colors rounded-lg text-app-light-text-secondary hover:text-app-light-text-primary dark:text-app-dark-text-secondary dark:hover:text-app-dark-text-primary hover:bg-app-light-surface-hover dark:hover:bg-app-dark-surface-hover" aria-label={t('common.close')}>
+                                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
                             </div>
-                            <button type="button" onClick={() => navigate(getViewClosePath())} className="p-2 transition-colors rounded-lg text-app-light-text-secondary hover:text-app-light-text-primary dark:text-app-dark-text-secondary dark:hover:text-app-dark-text-primary hover:bg-app-light-surface-hover dark:hover:bg-app-dark-surface-hover" aria-label={t('common.close')}>
-                                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-                        <div className="px-4 pb-4">
-                            <div className="space-y-4">
-                                {/* Basic Info Row */}
-                                <div className="grid gap-4 sm:grid-cols-2">
-                                    <FloatingInput
-                                        id="view-course-code"
-                                        label={t('admin.courseForm.code')}
-                                        value={viewingCourse.code || ''}
-                                        onChange={() => { }}
-                                        disabled={true}
-                                    />
-                                    <FloatingSelect
-                                        id="view-course-type"
-                                        label={t('admin.courseForm.type')}
-                                        value={viewingCourse.course_type || ''}
-                                        onChange={() => { }}
-                                        options={[
-                                            { value: 'Theory', label: t('admin.courseForm.type.theory') },
-                                            { value: 'Technical', label: t('admin.courseForm.type.technical') },
-                                            { value: 'Practice', label: t('admin.courseForm.type.practice') },
-                                            { value: 'Experiment', label: t('admin.courseForm.type.experiment') },
-                                        ]}
-                                        disabled={true}
-                                        hideSelectedTextWhen={(value) => value === ''}
-                                    />
-                                </div>
-
-                                {/* Title */}
-                                <FloatingInput
-                                    id="view-course-title"
-                                    label={t('admin.courseForm.title')}
-                                    value={viewingCourse.title || ''}
-                                    onChange={() => { }}
-                                    disabled={true}
-                                />
-
-                                {/* Teacher and Location */}
-                                <div className="grid gap-4 sm:grid-cols-2">
-                                    <FloatingInput
-                                        id="view-course-teacher"
-                                        label={t('admin.courseForm.teacher')}
-                                        value={viewingCourse.teacher || ''}
-                                        onChange={() => { }}
-                                        disabled={true}
-                                    />
-                                    <FloatingInput
-                                        id="view-course-location"
-                                        label={t('admin.courseForm.location')}
-                                        value={viewingCourse.location || ''}
-                                        onChange={() => { }}
-                                        disabled={true}
-                                    />
-                                </div>
-
-                                {/* Term, Date, Day */}
-                                <div className="grid gap-4 sm:grid-cols-3">
-                                    <FloatingSelect
-                                        id="view-course-term"
-                                        label={t('admin.courseForm.term')}
-                                        value={viewingCourse.term || ''}
-                                        onChange={() => { }}
-                                        options={[
-                                            { value: 'first', label: t('admin.courseForm.term.first') },
-                                            { value: 'second', label: t('admin.courseForm.term.second') },
-                                        ]}
-                                        disabled={true}
-                                        hideSelectedTextWhen={(value) => value === ''}
-                                    />
-                                    <FloatingInput
-                                        id="view-academic-year"
-                                        label={t('admin.courseForm.academicYear', { defaultValue: 'Academic Year' })}
-                                        value={calculateAcademicYearFromDate(viewingCourse.first_week_monday || '')}
-                                        onChange={() => { }}
-                                        disabled={true}
-                                    />
-                                    <FloatingSelect
-                                        id="view-day-of-week"
-                                        label={t('admin.course.day')}
-                                        value={String(viewingCourse.day_of_week || 1)}
-                                        onChange={() => { }}
-                                        options={weekdayKeys.map(key => ({ value: String(key), label: formatDay(key) }))}
-                                        disabled={true}
-                                        hideSelectedTextWhen={(value) => value === ''}
-                                    />
-                                </div>
-
-                                {/* Sessions and Weeks */}
+                            <div className="px-4 pb-4">
                                 <div className="space-y-4">
-                                    <FloatingMultiSelect
-                                        id="view-course-periods"
-                                        label={t('admin.courseForm.periods')}
-                                        value={(viewingCourse.periods || []).map(String)}
-                                        onChange={() => { }}
-                                        options={Array.from({ length: 13 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }))}
-                                        disabled={true}
-                                    />
-                                    <FloatingMultiSelect
-                                        id="view-course-weeks"
-                                        label={t('admin.courseForm.weeks')}
-                                        value={(viewingCourse.week_pattern || []).map(String)}
-                                        onChange={() => { }}
-                                        options={Array.from({ length: 17 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }))}
-                                        disabled={true}
-                                        showSearch={true}
-                                    />
-                                </div>
+                                    {/* Basic Info Row */}
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <FloatingInput
+                                            id="view-course-code"
+                                            label={t('admin.courseForm.code')}
+                                            value={viewingCourse.code || ''}
+                                            onChange={() => { }}
+                                            disabled={true}
+                                        />
+                                        <FloatingSelect
+                                            id="view-course-type"
+                                            label={t('admin.courseForm.type')}
+                                            value={viewingCourse.course_type || ''}
+                                            onChange={() => { }}
+                                            options={[
+                                                { value: 'Theory', label: t('admin.courseForm.type.theory') },
+                                                { value: 'Technical', label: t('admin.courseForm.type.technical') },
+                                                { value: 'Practice', label: t('admin.courseForm.type.practice') },
+                                                { value: 'Experiment', label: t('admin.courseForm.type.experiment') },
+                                            ]}
+                                            disabled={true}
+                                            hideSelectedTextWhen={(value) => value === ''}
+                                        />
+                                    </div>
 
-                                {/* Form Actions */}
-                                <div className="flex flex-col-reverse pt-3 space-y-2 space-y-reverse border-t sm:flex-row sm:justify-between sm:space-x-3 sm:space-y-0 border-app-light-border dark:border-app-dark-border">
-                                    <button
-                                        type="button"
-                                        onClick={() => navigate(`/admin/courses/${viewingCourse.id}/delete`)}
-                                        className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-error bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-error dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
-                                    >
-                                        {t('common.delete')}
-                                    </button>
-                                    <div className="flex flex-col-reverse space-y-2 space-y-reverse sm:flex-row sm:space-x-3 sm:space-y-0">
+                                    {/* Title */}
+                                    <FloatingInput
+                                        id="view-course-title"
+                                        label={t('admin.courseForm.title')}
+                                        value={viewingCourse.title || ''}
+                                        onChange={() => { }}
+                                        disabled={true}
+                                    />
+
+                                    {/* Teacher and Location */}
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <FloatingInput
+                                            id="view-course-teacher"
+                                            label={t('admin.courseForm.teacher')}
+                                            value={viewingCourse.teacher || ''}
+                                            onChange={() => { }}
+                                            disabled={true}
+                                        />
+                                        <FloatingInput
+                                            id="view-course-location"
+                                            label={t('admin.courseForm.location')}
+                                            value={viewingCourse.location || ''}
+                                            onChange={() => { }}
+                                            disabled={true}
+                                        />
+                                    </div>
+
+                                    {/* Term, Date, Day */}
+                                    <div className="grid gap-4 sm:grid-cols-3">
+                                        <FloatingSelect
+                                            id="view-course-term"
+                                            label={t('admin.courseForm.term')}
+                                            value={viewingCourse.term || ''}
+                                            onChange={() => { }}
+                                            options={[
+                                                { value: 'first', label: t('admin.courseForm.term.first') },
+                                                { value: 'second', label: t('admin.courseForm.term.second') },
+                                            ]}
+                                            disabled={true}
+                                            hideSelectedTextWhen={(value) => value === ''}
+                                        />
+                                        <FloatingInput
+                                            id="view-academic-year"
+                                            label={t('admin.courseForm.academicYear', { defaultValue: 'Academic Year' })}
+                                            value={calculateAcademicYearFromDate(viewingCourse.first_week_monday || '')}
+                                            onChange={() => { }}
+                                            disabled={true}
+                                        />
+                                        <FloatingSelect
+                                            id="view-day-of-week"
+                                            label={t('admin.course.day')}
+                                            value={String(viewingCourse.day_of_week || 1)}
+                                            onChange={() => { }}
+                                            options={weekdayKeys.map(key => ({ value: String(key), label: formatDay(key) }))}
+                                            disabled={true}
+                                            hideSelectedTextWhen={(value) => value === ''}
+                                        />
+                                    </div>
+
+                                    {/* Sessions and Weeks */}
+                                    <div className="space-y-4">
+                                        <FloatingMultiSelect
+                                            id="view-course-periods"
+                                            label={t('admin.courseForm.periods')}
+                                            value={(viewingCourse.periods || []).map(String)}
+                                            onChange={() => { }}
+                                            options={Array.from({ length: 13 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }))}
+                                            disabled={true}
+                                        />
+                                        <FloatingMultiSelect
+                                            id="view-course-weeks"
+                                            label={t('admin.courseForm.weeks')}
+                                            value={(viewingCourse.week_pattern || []).map(String)}
+                                            onChange={() => { }}
+                                            options={Array.from({ length: 17 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }))}
+                                            disabled={true}
+                                            showSearch={true}
+                                        />
+                                    </div>
+
+                                    {/* Form Actions */}
+                                    <div className="flex flex-col-reverse pt-3 space-y-2 space-y-reverse border-t sm:flex-row sm:justify-between sm:space-x-3 sm:space-y-0 border-app-light-border dark:border-app-dark-border">
                                         <button
                                             type="button"
-                                            onClick={() => navigate(getViewClosePath())}
-                                            className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
+                                            onClick={() => navigate(`/admin/courses/${viewingCourse.id}/delete`)}
+                                            className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-error bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-error dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
                                         >
-                                            {t('common.close')}
+                                            {t('common.delete')}
                                         </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => navigate(`/admin/courses/${viewingCourse.id}/edit`)}
-                                            className="w-full px-4 py-2 text-sm font-medium text-white transition-colors border border-transparent rounded-lg sm:w-auto bg-app-light-accent hover:bg-app-light-accent-hover dark:bg-app-dark-accent dark:hover:bg-app-dark-accent-hover"
-                                        >
-                                            {t('common.edit')}
-                                        </button>
+                                        <div className="flex flex-col-reverse space-y-2 space-y-reverse sm:flex-row sm:space-x-3 sm:space-y-0">
+                                            <button
+                                                type="button"
+                                                onClick={() => navigate(getViewClosePath())}
+                                                className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
+                                            >
+                                                {t('common.close')}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => navigate(`/admin/courses/${viewingCourse.id}/edit`)}
+                                                className="w-full px-4 py-2 text-sm font-medium text-white transition-colors border border-transparent rounded-lg sm:w-auto bg-app-light-accent hover:bg-app-light-accent-hover dark:bg-app-dark-accent dark:hover:bg-app-dark-accent-hover"
+                                            >
+                                                {t('common.edit')}
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -907,47 +922,49 @@ const AdminCoursesPage: React.FC = () => {
             )}
 
             {showDatePicker && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                    <div className="w-full max-w-md max-h-[90vh] overflow-y-auto border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
-                        <div className="flex items-center justify-between p-4 pb-3">
-                            <div>
-                                <h2 className="text-lg font-semibold text-app-light-text-primary dark:text-app-dark-text-primary">
-                                    {t('admin.missingAcademicTerm')}
-                                </h2>
+                <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm">
+                    <div className="flex items-center justify-center min-h-full p-4">
+                        <div className="w-full max-w-md border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
+                            <div className="flex items-center justify-between p-4 pb-3">
+                                <div>
+                                    <h2 className="text-lg font-semibold text-app-light-text-primary dark:text-app-dark-text-primary">
+                                        {t('admin.missingAcademicTerm')}
+                                    </h2>
+                                </div>
+                                <button type="button" onClick={() => setShowDatePicker(false)} className="p-2 transition-colors rounded-lg text-app-light-text-secondary hover:text-app-light-text-primary dark:text-app-dark-text-secondary dark:hover:text-app-dark-text-primary hover:bg-app-light-surface-hover dark:hover:bg-app-dark-surface-hover" aria-label={t('common.close')}>
+                                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
                             </div>
-                            <button type="button" onClick={() => setShowDatePicker(false)} className="p-2 transition-colors rounded-lg text-app-light-text-secondary hover:text-app-light-text-primary dark:text-app-dark-text-secondary dark:hover:text-app-dark-text-primary hover:bg-app-light-surface-hover dark:hover:bg-app-dark-surface-hover" aria-label={t('common.close')}>
-                                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-                        <div className="px-4 pb-4">
-                            <div className="space-y-4">
-                                <p className="text-sm text-app-light-text-secondary dark:text-app-dark-text-secondary">
-                                    {t('admin.selectFirstWeekMondayDescription')}
-                                </p>
-                                <CustomDatePicker
-                                    id="first-week-monday"
-                                    label={t('admin.firstWeekMonday')}
-                                    value={selectedDate}
-                                    onChange={setSelectedDate}
-                                />
-                                <div className="flex flex-col-reverse pt-3 space-y-2 space-y-reverse border-t sm:flex-row sm:justify-end sm:space-x-3 sm:space-y-0 border-app-light-border dark:border-app-dark-border">
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowDatePicker(false)}
-                                        className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
-                                    >
-                                        {t('common.cancel')}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={saveWithNewTerm}
-                                        disabled={!selectedDate || saving}
-                                        className="w-full px-4 py-2 text-sm font-medium transition-colors border border-transparent rounded-lg sm:w-auto text-app-light-text-on-accent bg-app-light-accent hover:bg-app-light-accent-hover disabled:opacity-50 disabled:cursor-not-allowed dark:bg-app-dark-accent dark:text-app-dark-text-on-accent dark:hover:bg-app-dark-accent-hover"
-                                    >
-                                        {saving ? t('profile.saving') : t('admin.createTermAndSave')}
-                                    </button>
+                            <div className="px-4 pb-4">
+                                <div className="space-y-4">
+                                    <p className="text-sm text-app-light-text-secondary dark:text-app-dark-text-secondary">
+                                        {t('admin.selectFirstWeekMondayDescription')}
+                                    </p>
+                                    <CustomDatePicker
+                                        id="first-week-monday"
+                                        label={t('admin.firstWeekMonday')}
+                                        value={selectedDate}
+                                        onChange={setSelectedDate}
+                                    />
+                                    <div className="flex flex-col-reverse pt-3 space-y-2 space-y-reverse border-t sm:flex-row sm:justify-end sm:space-x-3 sm:space-y-0 border-app-light-border dark:border-app-dark-border">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowDatePicker(false)}
+                                            className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
+                                        >
+                                            {t('common.cancel')}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={saveWithNewTerm}
+                                            disabled={!selectedDate || saving}
+                                            className="w-full px-4 py-2 text-sm font-medium transition-colors border border-transparent rounded-lg sm:w-auto text-app-light-text-on-accent bg-app-light-accent hover:bg-app-light-accent-hover disabled:opacity-50 disabled:cursor-not-allowed dark:bg-app-dark-accent dark:text-app-dark-text-on-accent dark:hover:bg-app-dark-accent-hover"
+                                        >
+                                            {saving ? t('profile.saving') : t('admin.createTermAndSave')}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -957,36 +974,38 @@ const AdminCoursesPage: React.FC = () => {
 
             {/* Delete Confirmation Modal */}
             {deleteConfirmModalOpen && courseToDelete && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                    <div className="w-full max-w-md border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
-                        <div className="p-6">
-                            <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full dark:bg-red-900/30">
-                                <svg className="w-6 h-6 text-red-600 dark:text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                </svg>
-                            </div>
-                            <h3 className="mb-2 text-lg font-semibold text-center text-app-light-text-primary dark:text-app-dark-text-primary">
-                                {t('admin.courseDeleteConfirmTitle', { defaultValue: 'Delete Course' })}
-                            </h3>
-                            <p className="mb-6 text-sm text-center text-app-light-text-secondary dark:text-app-dark-text-secondary">
-                                {t('admin.courseDeleteConfirm', { defaultValue: 'Are you sure you want to delete this course? This action cannot be undone.', name: courseToDelete.title })}
-                            </p>
-                            <div className="flex flex-col-reverse space-y-2 space-y-reverse sm:flex-row sm:justify-end sm:space-x-3 sm:space-y-0">
-                                <button
-                                    type="button"
-                                    onClick={cancelDelete}
-                                    className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
-                                >
-                                    {t('common.cancel')}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={confirmDeleteCourse}
-                                    disabled={deletingId === courseToDelete.id}
-                                    className="w-full px-4 py-2 text-sm font-medium text-white transition-colors border border-transparent rounded-lg sm:w-auto bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-red-600 dark:hover:bg-red-700"
-                                >
-                                    {deletingId === courseToDelete.id ? t('common.deleting', { defaultValue: 'Deleting...' }) : t('common.delete')}
-                                </button>
+                <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm">
+                    <div className="flex items-center justify-center min-h-full p-4">
+                        <div className="w-full max-w-md border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
+                            <div className="p-6">
+                                <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full dark:bg-red-900/30">
+                                    <svg className="w-6 h-6 text-red-600 dark:text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                    </svg>
+                                </div>
+                                <h3 className="mb-2 text-lg font-semibold text-center text-app-light-text-primary dark:text-app-dark-text-primary">
+                                    {t('admin.courseDeleteConfirmTitle', { defaultValue: 'Delete Course' })}
+                                </h3>
+                                <p className="mb-6 text-sm text-center text-app-light-text-secondary dark:text-app-dark-text-secondary">
+                                    {t('admin.courseDeleteConfirm', { defaultValue: 'Are you sure you want to delete this course? This action cannot be undone.', name: courseToDelete.title })}
+                                </p>
+                                <div className="flex flex-col-reverse space-y-2 space-y-reverse sm:flex-row sm:justify-end sm:space-x-3 sm:space-y-0">
+                                    <button
+                                        type="button"
+                                        onClick={cancelDelete}
+                                        className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
+                                    >
+                                        {t('common.cancel')}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={confirmDeleteCourse}
+                                        disabled={deletingId === courseToDelete.id}
+                                        className="w-full px-4 py-2 text-sm font-medium text-white transition-colors border border-transparent rounded-lg sm:w-auto bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-red-600 dark:hover:bg-red-700"
+                                    >
+                                        {deletingId === courseToDelete.id ? t('common.deleting', { defaultValue: 'Deleting...' }) : t('common.delete')}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>

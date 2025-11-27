@@ -109,6 +109,20 @@ const AdminStudentsPage: React.FC = () => {
         }
     }, [form]);
 
+    // Prevent body scrolling when modals are open
+    React.useEffect(() => {
+        const isAnyModalOpen = modalOpen || editModalOpen || viewModalOpen || deleteConfirmModalOpen;
+        const originalOverflow = document.body.style.overflow;
+
+        if (isAnyModalOpen) {
+            document.body.style.overflow = 'hidden';
+        }
+
+        return () => {
+            document.body.style.overflow = originalOverflow;
+        };
+    }, [modalOpen, editModalOpen, viewModalOpen, deleteConfirmModalOpen]);
+
 
 
     // Focus states for floating labels
@@ -734,501 +748,108 @@ const AdminStudentsPage: React.FC = () => {
                 )}
 
                 {modalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                        <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
-                            <div className="flex items-center justify-between p-4 pb-3">
-                                <div>
-                                    <h2 className="text-lg font-semibold text-app-light-text-primary dark:text-app-dark-text-primary">{t('admin.addStudent', { defaultValue: 'Add student' })}</h2>
+                    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm">
+                        <div className="flex items-center justify-center min-h-full p-4">
+                            <div className="w-full max-w-2xl border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
+                                <div className="flex items-center justify-between p-4 pb-3">
+                                    <div>
+                                        <h2 className="text-lg font-semibold text-app-light-text-primary dark:text-app-dark-text-primary">{t('admin.addStudent', { defaultValue: 'Add student' })}</h2>
+                                    </div>
+                                    <button type="button" onClick={() => {
+                                        // Save current form data before closing
+                                        localStorage.setItem('admin-student-add-form', JSON.stringify(form));
+                                        navigate('/admin/students');
+                                    }} className="p-2 transition-colors rounded-lg text-app-light-text-secondary hover:text-app-light-text-primary dark:text-app-dark-text-secondary dark:hover:text-app-dark-text-primary hover:bg-app-light-surface-hover dark:hover:bg-app-dark-surface-hover" aria-label={t('common.close')}>
+                                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
                                 </div>
-                                <button type="button" onClick={() => {
-                                    // Save current form data before closing
-                                    localStorage.setItem('admin-student-add-form', JSON.stringify(form));
-                                    navigate('/admin/students');
-                                }} className="p-2 transition-colors rounded-lg text-app-light-text-secondary hover:text-app-light-text-primary dark:text-app-dark-text-secondary dark:hover:text-app-dark-text-primary hover:bg-app-light-surface-hover dark:hover:bg-app-dark-surface-hover" aria-label={t('common.close')}>
-                                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                            </div>
-                            <div className="px-4 pb-4">
-                                <form onSubmit={submitNewStudent} className="space-y-4" autoComplete="off">
-                                    {/* Student ID */}
-                                    <FloatingInput
-                                        id="student_id"
-                                        label={t('admin.table.studentId')}
-                                        value={form.student_id}
-                                        onChange={(value: string) => setForm(prev => ({ ...prev, student_id: value }))}
-                                        required
-                                    />
-
-                                    {/* Full Name */}
-                                    <FloatingInput
-                                        id="full_name"
-                                        label={t('profile.name')}
-                                        value={form.full_name}
-                                        onChange={(value: string) => setForm(prev => ({ ...prev, full_name: value }))}
-                                    />
-
-                                    {/* Email and Phone Row */}
-                                    <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="px-4 pb-4">
+                                    <form onSubmit={submitNewStudent} className="space-y-4" autoComplete="off">
+                                        {/* Student ID */}
                                         <FloatingInput
-                                            id="email"
-                                            label={t('admin.table.email')}
-                                            value={form.email}
-                                            onChange={(value: string) => setForm(prev => ({ ...prev, email: value }))}
-                                            type="email"
-                                        />
-                                        <FloatingInput
-                                            id="phone"
-                                            label={t('admin.student.phone')}
-                                            value={form.phone}
-                                            onChange={(value: string) => setForm(prev => ({ ...prev, phone: value }))}
-                                        />
-                                    </div>
-
-                                    {/* Major and College Row */}
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        <FloatingInput
-                                            id="major"
-                                            label={t('admin.student.major')}
-                                            value={form.major}
-                                            onChange={(value: string) => setForm(prev => ({ ...prev, major: value }))}
-                                        />
-                                        <FloatingInput
-                                            id="college"
-                                            label={t('admin.student.college')}
-                                            value={form.college}
-                                            onChange={(value: string) => setForm(prev => ({ ...prev, college: value }))}
-                                        />
-                                    </div>
-
-                                    {/* Class Name and Year Row */}
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        <FloatingInput
-                                            id="class_name"
-                                            label={t('admin.student.class_name')}
-                                            value={form.class_name}
-                                            onChange={(value: string) => setForm(prev => ({ ...prev, class_name: value }))}
-                                        />
-                                        <YearInput
-                                            id="year"
-                                            label={t('admin.student.year')}
-                                            value={form.year}
-                                            onChange={(value: string) => setForm(prev => ({ ...prev, year: value }))}
-                                        />
-                                    </div>
-
-                                    {/* Gender and Chinese Level */}
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        <FloatingSelect
-                                            id="gender"
-                                            label={t('admin.student.gender')}
-                                            value={form.gender}
-                                            onChange={(value: string) => setForm(prev => ({ ...prev, gender: value }))}
-                                            options={[
-                                                { value: 'Male', label: t('admin.student.gender.male', { defaultValue: 'Male' }) },
-                                                { value: 'Female', label: t('admin.student.gender.female', { defaultValue: 'Female' }) },
-                                            ]}
-                                        />
-                                        <FloatingSelect
-                                            id="chinese_level"
-                                            label={t('admin.student.chinese_level')}
-                                            value={form.chinese_level}
-                                            onChange={(value: string) => setForm(prev => ({ ...prev, chinese_level: value }))}
-                                            options={[
-                                                { value: 'HSK1', label: 'HSK 1' },
-                                                { value: 'HSK2', label: 'HSK 2' },
-                                                { value: 'HSK3', label: 'HSK 3' },
-                                                { value: 'HSK4', label: 'HSK 4' },
-                                                { value: 'HSK5', label: 'HSK 5' },
-                                                { value: 'HSK6', label: 'HSK 6' },
-                                                { value: 'Native', label: t('admin.student.chinese_level.native', { defaultValue: 'Native' }) },
-                                            ]}
-                                        />
-                                    </div>
-
-                                    {/* Form Actions */}
-                                    <div className="flex flex-col-reverse pt-3 space-y-2 space-y-reverse border-t sm:flex-row sm:justify-end sm:space-x-3 sm:space-y-0 border-app-light-border dark:border-app-dark-border">
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                localStorage.removeItem('admin-student-add-form');
-                                                navigate('/admin/students');
-                                            }}
-                                            className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
-                                        >
-                                            {t('common.cancel')}
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            disabled={creating}
-                                            className="w-full px-4 py-2 text-sm font-medium text-white transition-colors border border-transparent rounded-lg sm:w-auto bg-app-light-accent hover:bg-app-light-accent-hover disabled:opacity-50 disabled:cursor-not-allowed dark:bg-app-dark-accent dark:hover:bg-app-dark-accent-hover"
-                                        >
-                                            {creating ? t('profile.saving') : t('admin.createStudent', { defaultValue: 'Create student' })}
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {editModalOpen && editingStudent && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                        <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
-                            <div className="flex items-center justify-between p-4 pb-3">
-                                <div>
-                                    <p className="text-xs tracking-wider uppercase text-app-light-text-secondary dark:text-app-dark-text-secondary">
-                                        {t('admin.editStudent')}
-                                    </p>
-                                    <h2 className="text-lg font-semibold text-app-light-text-primary dark:text-app-dark-text-primary">{editingStudent.first_name || editingStudent.username}</h2>
-                                </div>
-                                <button type="button" onClick={() => navigate(`/admin/students/${editingStudent.student_profile?.student_id}`)} className="p-2 transition-colors rounded-lg text-app-light-text-secondary hover:text-app-light-text-primary dark:text-app-dark-text-secondary dark:hover:text-app-dark-text-primary hover:bg-app-light-surface-hover dark:hover:bg-app-dark-surface-hover" aria-label={t('common.close')}>
-                                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                            </div>
-                            <div className="px-4 pb-4">
-                                <form onSubmit={submitEditStudent} className="space-y-4" autoComplete="off">
-                                    {/* Basic Info Row */}
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        <FloatingInput
-                                            id="edit_student_id"
+                                            id="student_id"
                                             label={t('admin.table.studentId')}
-                                            value={editForm.student_id}
-                                            onChange={() => { }}
-                                            disabled
+                                            value={form.student_id}
+                                            onChange={(value: string) => setForm(prev => ({ ...prev, student_id: value }))}
+                                            required
                                         />
+
+                                        {/* Full Name */}
                                         <FloatingInput
-                                            id="edit_full_name"
+                                            id="full_name"
                                             label={t('profile.name')}
-                                            value={editForm.full_name}
-                                            onChange={(value: string) => setEditForm(prev => ({ ...prev, full_name: value }))}
+                                            value={form.full_name}
+                                            onChange={(value: string) => setForm(prev => ({ ...prev, full_name: value }))}
                                         />
-                                    </div>
 
-                                    {/* Contact Info */}
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        <FloatingInput
-                                            id="edit_email"
-                                            label={t('admin.table.email')}
-                                            value={editForm.email}
-                                            onChange={(value: string) => setEditForm(prev => ({ ...prev, email: value }))}
-                                            type="email"
-                                        />
-                                        <FloatingInput
-                                            id="edit_phone"
-                                            label={t('admin.student.phone')}
-                                            value={editForm.phone}
-                                            onChange={(value: string) => setEditForm(prev => ({ ...prev, phone: value }))}
-                                        />
-                                    </div>
-
-                                    {/* Academic Info */}
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        <FloatingInput
-                                            id="edit_major"
-                                            label={t('admin.student.major')}
-                                            value={editForm.major}
-                                            onChange={(value: string) => setEditForm(prev => ({ ...prev, major: value }))}
-                                        />
-                                        <FloatingInput
-                                            id="edit_college"
-                                            label={t('admin.student.college')}
-                                            value={editForm.college}
-                                            onChange={(value: string) => setEditForm(prev => ({ ...prev, college: value }))}
-                                        />
-                                    </div>
-
-                                    {/* Class and Year */}
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        <FloatingInput
-                                            id="edit_class_name"
-                                            label={t('admin.student.class_name')}
-                                            value={editForm.class_name}
-                                            onChange={(value: string) => setEditForm(prev => ({ ...prev, class_name: value }))}
-                                        />
-                                        <YearInput
-                                            id="edit_year"
-                                            label={t('admin.student.year')}
-                                            value={editForm.year}
-                                            onChange={(value: string) => setEditForm(prev => ({ ...prev, year: value }))}
-                                        />
-                                    </div>
-
-                                    {/* Gender and Chinese Level */}
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        <FloatingSelect
-                                            id="edit_gender"
-                                            label={t('admin.student.gender')}
-                                            value={editForm.gender}
-                                            onChange={(value: string) => setEditForm(prev => ({ ...prev, gender: value }))}
-                                            options={[
-                                                { value: 'Male', label: t('admin.student.gender.male', { defaultValue: 'Male' }) },
-                                                { value: 'Female', label: t('admin.student.gender.female', { defaultValue: 'Female' }) },
-                                            ]}
-                                        />
-                                        <FloatingSelect
-                                            id="edit_chinese_level"
-                                            label={t('admin.student.chinese_level')}
-                                            value={editForm.chinese_level}
-                                            onChange={(value: string) => setEditForm(prev => ({ ...prev, chinese_level: value }))}
-                                            options={[
-                                                { value: 'HSK1', label: 'HSK 1' },
-                                                { value: 'HSK2', label: 'HSK 2' },
-                                                { value: 'HSK3', label: 'HSK 3' },
-                                                { value: 'HSK4', label: 'HSK 4' },
-                                                { value: 'HSK5', label: 'HSK 5' },
-                                                { value: 'HSK6', label: 'HSK 6' },
-                                                { value: 'Native', label: t('admin.student.chinese_level.native', { defaultValue: 'Native' }) },
-                                            ]}
-                                        />
-                                    </div>
-
-                                    {/* Form Actions */}
-                                    <div className="flex flex-col gap-3 pt-3 border-t border-app-light-border dark:border-app-dark-border">
-                                        <div className="flex flex-col-reverse space-y-2 space-y-reverse sm:flex-row sm:justify-between sm:space-x-3 sm:space-y-0 sm:items-center">
-                                            <button
-                                                type="button"
-                                                onClick={() => resetPassword(editingStudent)}
-                                                className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover disabled:opacity-50 disabled:cursor-not-allowed dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
-                                                disabled={resettingUserId === editingStudent.id}
-                                            >
-                                                {resettingUserId === editingStudent.id ? t('profile.saving') : t('admin.resetPassword')}
-                                            </button>
-                                            <div className="flex flex-col-reverse space-y-2 space-y-reverse sm:flex-row sm:space-x-3 sm:space-y-0">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => navigate(`/admin/students/${editingStudent.student_profile?.student_id}`)}
-                                                    className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
-                                                >
-                                                    {t('common.cancel')}
-                                                </button>
-                                                <button
-                                                    type="submit"
-                                                    disabled={updating}
-                                                    className="w-full px-4 py-2 text-sm font-medium text-white transition-colors border border-transparent rounded-lg sm:w-auto bg-app-light-accent hover:bg-app-light-accent-hover disabled:opacity-50 disabled:cursor-not-allowed dark:bg-app-dark-accent dark:hover:bg-app-dark-accent-hover"
-                                                >
-                                                    {updating ? t('profile.saving') : t('admin.saveChanges')}
-                                                </button>
-                                            </div>
+                                        {/* Email and Phone Row */}
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <FloatingInput
+                                                id="email"
+                                                label={t('admin.table.email')}
+                                                value={form.email}
+                                                onChange={(value: string) => setForm(prev => ({ ...prev, email: value }))}
+                                                type="email"
+                                            />
+                                            <FloatingInput
+                                                id="phone"
+                                                label={t('admin.student.phone')}
+                                                value={form.phone}
+                                                onChange={(value: string) => setForm(prev => ({ ...prev, phone: value }))}
+                                            />
                                         </div>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                )}
 
-                {viewModalOpen && viewingStudent && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                        <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
-                            <div className="flex items-center justify-between p-4 pb-3">
-                                <div>
-                                    <p className="text-xs tracking-wider uppercase text-app-light-text-secondary dark:text-app-dark-text-secondary">
-                                        {t('admin.viewStudent', { defaultValue: 'View Student' })}
-                                    </p>
-                                    <h2 className="text-lg font-semibold text-app-light-text-primary dark:text-app-dark-text-primary">{viewingStudent.first_name || viewingStudent.username}</h2>
-                                </div>
-                                <button type="button" onClick={() => navigate('/admin/students')} className="p-2 transition-colors rounded-lg text-app-light-text-secondary hover:text-app-light-text-primary dark:text-app-dark-text-secondary dark:hover:text-app-dark-text-primary hover:bg-app-light-surface-hover dark:hover:bg-app-dark-surface-hover" aria-label={t('common.close')}>
-                                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                            </div>
-                            <div className="px-4 pb-4">
-                                <div className="space-y-4">
-                                    {/* Basic Info Row */}
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        <div className="relative">
-                                            <div className="relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border bg-app-light-surface-secondary dark:bg-app-dark-surface-secondary">
-                                                <input
-                                                    id="view_student_id"
-                                                    value={viewingStudent.student_profile?.student_id || ''}
-                                                    readOnly
-                                                    className="w-full px-4 pt-5 pb-3 placeholder-transparent transition-colors duration-200 bg-transparent text-app-light-text-secondary dark:text-app-dark-text-secondary focus:outline-none rounded-lg"
-                                                />
-                                                <label
-                                                    htmlFor="view_student_id"
-                                                    className={`absolute left-4 text-app-light-text-secondary font-medium pointer-events-none transform transition-all duration-200 ${viewingStudent.student_profile?.student_id
-                                                        ? 'top-0.5 -translate-y-0 text-xs'
-                                                        : 'top-1/2 -translate-y-1/2 text-sm'
-                                                        }`}
-                                                >
-                                                    {t('admin.table.studentId')}
-                                                </label>
-                                            </div>
+                                        {/* Major and College Row */}
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <FloatingInput
+                                                id="major"
+                                                label={t('admin.student.major')}
+                                                value={form.major}
+                                                onChange={(value: string) => setForm(prev => ({ ...prev, major: value }))}
+                                            />
+                                            <FloatingInput
+                                                id="college"
+                                                label={t('admin.student.college')}
+                                                value={form.college}
+                                                onChange={(value: string) => setForm(prev => ({ ...prev, college: value }))}
+                                            />
                                         </div>
-                                        <div className="relative">
-                                            <div className="relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border bg-app-light-surface-secondary dark:bg-app-dark-surface-secondary">
-                                                <input
-                                                    id="view_full_name"
-                                                    value={viewingStudent.first_name || ''}
-                                                    readOnly
-                                                    className="w-full px-4 pt-5 pb-3 placeholder-transparent transition-colors duration-200 bg-transparent text-app-light-text-secondary dark:text-app-dark-text-secondary focus:outline-none rounded-lg"
-                                                />
-                                                <label
-                                                    htmlFor="view_full_name"
-                                                    className={`absolute left-4 text-app-light-text-secondary font-medium pointer-events-none transform transition-all duration-200 ${viewingStudent.first_name
-                                                        ? 'top-0.5 -translate-y-0 text-xs'
-                                                        : 'top-1/2 -translate-y-1/2 text-sm'
-                                                        }`}
-                                                >
-                                                    {t('profile.name')}
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
 
-                                    {/* Contact Info */}
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        <div className="relative">
-                                            <div className="relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border bg-app-light-surface-secondary dark:bg-app-dark-surface-secondary">
-                                                <input
-                                                    id="view_email"
-                                                    value={viewingStudent.email || ''}
-                                                    readOnly
-                                                    className="w-full px-4 pt-5 pb-3 placeholder-transparent transition-colors duration-200 bg-transparent text-app-light-text-secondary dark:text-app-dark-text-secondary focus:outline-none rounded-lg"
-                                                />
-                                                <label
-                                                    htmlFor="view_email"
-                                                    className={`absolute left-4 text-app-light-text-secondary font-medium pointer-events-none transform transition-all duration-200 ${viewingStudent.email
-                                                        ? 'top-0.5 -translate-y-0 text-xs'
-                                                        : 'top-1/2 -translate-y-1/2 text-sm'
-                                                        }`}
-                                                >
-                                                    {t('admin.table.email')}
-                                                </label>
-                                            </div>
+                                        {/* Class Name and Year Row */}
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <FloatingInput
+                                                id="class_name"
+                                                label={t('admin.student.class_name')}
+                                                value={form.class_name}
+                                                onChange={(value: string) => setForm(prev => ({ ...prev, class_name: value }))}
+                                            />
+                                            <YearInput
+                                                id="year"
+                                                label={t('admin.student.year')}
+                                                value={form.year}
+                                                onChange={(value: string) => setForm(prev => ({ ...prev, year: value }))}
+                                            />
                                         </div>
-                                        <div className="relative">
-                                            <div className="relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border bg-app-light-surface-secondary dark:bg-app-dark-surface-secondary">
-                                                <input
-                                                    id="view_phone"
-                                                    value={viewingStudent.student_profile?.phone || ''}
-                                                    readOnly
-                                                    className="w-full px-4 pt-5 pb-3 placeholder-transparent transition-colors duration-200 bg-transparent text-app-light-text-secondary dark:text-app-dark-text-secondary focus:outline-none rounded-lg"
-                                                />
-                                                <label
-                                                    htmlFor="view_phone"
-                                                    className={`absolute left-4 text-app-light-text-secondary font-medium pointer-events-none transform transition-all duration-200 ${viewingStudent.student_profile?.phone
-                                                        ? 'top-0.5 -translate-y-0 text-xs'
-                                                        : 'top-1/2 -translate-y-1/2 text-sm'
-                                                        }`}
-                                                >
-                                                    {t('admin.student.phone')}
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
 
-                                    {/* Academic Info */}
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        <div className="relative">
-                                            <div className="relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border bg-app-light-surface-secondary dark:bg-app-dark-surface-secondary">
-                                                <input
-                                                    id="view_major"
-                                                    value={viewingStudent.student_profile?.major || ''}
-                                                    readOnly
-                                                    className="w-full px-4 pt-5 pb-3 placeholder-transparent transition-colors duration-200 bg-transparent text-app-light-text-secondary dark:text-app-dark-text-secondary focus:outline-none rounded-lg"
-                                                />
-                                                <label
-                                                    htmlFor="view_major"
-                                                    className={`absolute left-4 text-app-light-text-secondary font-medium pointer-events-none transform transition-all duration-200 ${viewingStudent.student_profile?.major
-                                                        ? 'top-0.5 -translate-y-0 text-xs'
-                                                        : 'top-1/2 -translate-y-1/2 text-sm'
-                                                        }`}
-                                                >
-                                                    {t('admin.student.major')}
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <div className="relative">
-                                            <div className="relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border bg-app-light-surface-secondary dark:bg-app-dark-surface-secondary">
-                                                <input
-                                                    id="view_college"
-                                                    value={viewingStudent.student_profile?.college || ''}
-                                                    readOnly
-                                                    className="w-full px-4 pt-5 pb-3 placeholder-transparent transition-colors duration-200 bg-transparent text-app-light-text-secondary dark:text-app-dark-text-secondary focus:outline-none rounded-lg"
-                                                />
-                                                <label
-                                                    htmlFor="view_college"
-                                                    className={`absolute left-4 text-app-light-text-secondary font-medium pointer-events-none transform transition-all duration-200 ${viewingStudent.student_profile?.college
-                                                        ? 'top-0.5 -translate-y-0 text-xs'
-                                                        : 'top-1/2 -translate-y-1/2 text-sm'
-                                                        }`}
-                                                >
-                                                    {t('admin.student.college')}
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Class and Year */}
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        <div className="relative">
-                                            <div className="relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border bg-app-light-surface-secondary dark:bg-app-dark-surface-secondary">
-                                                <input
-                                                    id="view_class_name"
-                                                    value={viewingStudent.student_profile?.class_name || ''}
-                                                    readOnly
-                                                    className="w-full px-4 pt-5 pb-3 placeholder-transparent transition-colors duration-200 bg-transparent text-app-light-text-secondary dark:text-app-dark-text-secondary focus:outline-none rounded-lg"
-                                                />
-                                                <label
-                                                    htmlFor="view_class_name"
-                                                    className={`absolute left-4 text-app-light-text-secondary font-medium pointer-events-none transform transition-all duration-200 ${viewingStudent.student_profile?.class_name
-                                                        ? 'top-0.5 -translate-y-0 text-xs'
-                                                        : 'top-1/2 -translate-y-1/2 text-sm'
-                                                        }`}
-                                                >
-                                                    {t('admin.student.class_name')}
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <div className="relative">
-                                            <div className="relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border bg-app-light-surface-secondary dark:bg-app-dark-surface-secondary">
-                                                <input
-                                                    id="view_year"
-                                                    value={viewingStudent.student_profile?.year?.toString() || ''}
-                                                    readOnly
-                                                    className="w-full px-4 pt-5 pb-3 placeholder-transparent transition-colors duration-200 bg-transparent text-app-light-text-secondary dark:text-app-dark-text-secondary focus:outline-none rounded-lg"
-                                                />
-                                                <label
-                                                    htmlFor="view_year"
-                                                    className={`absolute left-4 text-app-light-text-secondary font-medium pointer-events-none transform transition-all duration-200 ${viewingStudent.student_profile?.year
-                                                        ? 'top-0.5 -translate-y-0 text-xs'
-                                                        : 'top-1/2 -translate-y-1/2 text-sm'
-                                                        }`}
-                                                >
-                                                    {t('admin.student.year')}
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Gender and Chinese Level */}
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        <div className="relative">
+                                        {/* Gender and Chinese Level */}
+                                        <div className="grid gap-4 sm:grid-cols-2">
                                             <FloatingSelect
-                                                id="view_gender"
+                                                id="gender"
                                                 label={t('admin.student.gender')}
-                                                value={viewingStudent.student_profile?.gender || ''}
-                                                onChange={() => { }}
-                                                disabled={true}
+                                                value={form.gender}
+                                                onChange={(value: string) => setForm(prev => ({ ...prev, gender: value }))}
                                                 options={[
                                                     { value: 'Male', label: t('admin.student.gender.male', { defaultValue: 'Male' }) },
                                                     { value: 'Female', label: t('admin.student.gender.female', { defaultValue: 'Female' }) },
                                                 ]}
                                             />
-                                        </div>
-                                        <div className="relative">
                                             <FloatingSelect
-                                                id="view_chinese_level"
+                                                id="chinese_level"
                                                 label={t('admin.student.chinese_level')}
-                                                value={viewingStudent.student_profile?.chinese_level || ''}
-                                                onChange={() => { }}
-                                                disabled={true}
+                                                value={form.chinese_level}
+                                                onChange={(value: string) => setForm(prev => ({ ...prev, chinese_level: value }))}
                                                 options={[
                                                     { value: 'HSK1', label: 'HSK 1' },
                                                     { value: 'HSK2', label: 'HSK 2' },
@@ -1240,33 +861,432 @@ const AdminStudentsPage: React.FC = () => {
                                                 ]}
                                             />
                                         </div>
-                                    </div>
 
-                                    {/* Form Actions */}
-                                    <div className="flex flex-col gap-3 pt-3 border-t border-app-light-border dark:border-app-dark-border">
-                                        <div className="flex flex-col-reverse space-y-2 space-y-reverse sm:flex-row sm:justify-between sm:space-x-3 sm:space-y-0 sm:items-center">
+                                        {/* Form Actions */}
+                                        <div className="flex flex-col-reverse pt-3 space-y-2 space-y-reverse border-t sm:flex-row sm:justify-end sm:space-x-3 sm:space-y-0 border-app-light-border dark:border-app-dark-border">
                                             <button
                                                 type="button"
-                                                onClick={() => navigate(`/admin/students/${viewingStudent.student_profile?.student_id}/delete`)}
-                                                className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-error bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover disabled:opacity-50 disabled:cursor-not-allowed dark:bg-app-dark-surface dark:text-app-dark-error dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
+                                                onClick={() => {
+                                                    localStorage.removeItem('admin-student-add-form');
+                                                    navigate('/admin/students');
+                                                }}
+                                                className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
                                             >
-                                                {t('common.delete')}
+                                                {t('common.cancel')}
                                             </button>
-                                            <div className="flex flex-col-reverse space-y-2 space-y-reverse sm:flex-row sm:space-x-3 sm:space-y-0">
+                                            <button
+                                                type="submit"
+                                                disabled={creating}
+                                                className="w-full px-4 py-2 text-sm font-medium text-white transition-colors border border-transparent rounded-lg sm:w-auto bg-app-light-accent hover:bg-app-light-accent-hover disabled:opacity-50 disabled:cursor-not-allowed dark:bg-app-dark-accent dark:hover:bg-app-dark-accent-hover"
+                                            >
+                                                {creating ? t('profile.saving') : t('admin.createStudent', { defaultValue: 'Create student' })}
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {editModalOpen && editingStudent && (
+                    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm">
+                        <div className="flex items-center justify-center min-h-full p-4">
+                            <div className="w-full max-w-3xl border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
+                                <div className="flex items-center justify-between p-4 pb-3">
+                                    <div>
+                                        <p className="text-xs tracking-wider uppercase text-app-light-text-secondary dark:text-app-dark-text-secondary">
+                                            {t('admin.editStudent')}
+                                        </p>
+                                        <h2 className="text-lg font-semibold text-app-light-text-primary dark:text-app-dark-text-primary">{editingStudent.first_name || editingStudent.username}</h2>
+                                    </div>
+                                    <button type="button" onClick={() => navigate(`/admin/students/${editingStudent.student_profile?.student_id}`)} className="p-2 transition-colors rounded-lg text-app-light-text-secondary hover:text-app-light-text-primary dark:text-app-dark-text-secondary dark:hover:text-app-dark-text-primary hover:bg-app-light-surface-hover dark:hover:bg-app-dark-surface-hover" aria-label={t('common.close')}>
+                                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div className="px-4 pb-4">
+                                    <form onSubmit={submitEditStudent} className="space-y-4" autoComplete="off">
+                                        {/* Basic Info Row */}
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <FloatingInput
+                                                id="edit_student_id"
+                                                label={t('admin.table.studentId')}
+                                                value={editForm.student_id}
+                                                onChange={() => { }}
+                                                disabled
+                                            />
+                                            <FloatingInput
+                                                id="edit_full_name"
+                                                label={t('profile.name')}
+                                                value={editForm.full_name}
+                                                onChange={(value: string) => setEditForm(prev => ({ ...prev, full_name: value }))}
+                                            />
+                                        </div>
+
+                                        {/* Contact Info */}
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <FloatingInput
+                                                id="edit_email"
+                                                label={t('admin.table.email')}
+                                                value={editForm.email}
+                                                onChange={(value: string) => setEditForm(prev => ({ ...prev, email: value }))}
+                                                type="email"
+                                            />
+                                            <FloatingInput
+                                                id="edit_phone"
+                                                label={t('admin.student.phone')}
+                                                value={editForm.phone}
+                                                onChange={(value: string) => setEditForm(prev => ({ ...prev, phone: value }))}
+                                            />
+                                        </div>
+
+                                        {/* Academic Info */}
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <FloatingInput
+                                                id="edit_major"
+                                                label={t('admin.student.major')}
+                                                value={editForm.major}
+                                                onChange={(value: string) => setEditForm(prev => ({ ...prev, major: value }))}
+                                            />
+                                            <FloatingInput
+                                                id="edit_college"
+                                                label={t('admin.student.college')}
+                                                value={editForm.college}
+                                                onChange={(value: string) => setEditForm(prev => ({ ...prev, college: value }))}
+                                            />
+                                        </div>
+
+                                        {/* Class and Year */}
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <FloatingInput
+                                                id="edit_class_name"
+                                                label={t('admin.student.class_name')}
+                                                value={editForm.class_name}
+                                                onChange={(value: string) => setEditForm(prev => ({ ...prev, class_name: value }))}
+                                            />
+                                            <YearInput
+                                                id="edit_year"
+                                                label={t('admin.student.year')}
+                                                value={editForm.year}
+                                                onChange={(value: string) => setEditForm(prev => ({ ...prev, year: value }))}
+                                            />
+                                        </div>
+
+                                        {/* Gender and Chinese Level */}
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <FloatingSelect
+                                                id="edit_gender"
+                                                label={t('admin.student.gender')}
+                                                value={editForm.gender}
+                                                onChange={(value: string) => setEditForm(prev => ({ ...prev, gender: value }))}
+                                                options={[
+                                                    { value: 'Male', label: t('admin.student.gender.male', { defaultValue: 'Male' }) },
+                                                    { value: 'Female', label: t('admin.student.gender.female', { defaultValue: 'Female' }) },
+                                                ]}
+                                            />
+                                            <FloatingSelect
+                                                id="edit_chinese_level"
+                                                label={t('admin.student.chinese_level')}
+                                                value={editForm.chinese_level}
+                                                onChange={(value: string) => setEditForm(prev => ({ ...prev, chinese_level: value }))}
+                                                options={[
+                                                    { value: 'HSK1', label: 'HSK 1' },
+                                                    { value: 'HSK2', label: 'HSK 2' },
+                                                    { value: 'HSK3', label: 'HSK 3' },
+                                                    { value: 'HSK4', label: 'HSK 4' },
+                                                    { value: 'HSK5', label: 'HSK 5' },
+                                                    { value: 'HSK6', label: 'HSK 6' },
+                                                    { value: 'Native', label: t('admin.student.chinese_level.native', { defaultValue: 'Native' }) },
+                                                ]}
+                                            />
+                                        </div>
+
+                                        {/* Form Actions */}
+                                        <div className="flex flex-col gap-3 pt-3 border-t border-app-light-border dark:border-app-dark-border">
+                                            <div className="flex flex-col-reverse space-y-2 space-y-reverse sm:flex-row sm:justify-between sm:space-x-3 sm:space-y-0 sm:items-center">
                                                 <button
                                                     type="button"
-                                                    onClick={() => navigate('/admin/students')}
-                                                    className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
+                                                    onClick={() => resetPassword(editingStudent)}
+                                                    className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover disabled:opacity-50 disabled:cursor-not-allowed dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
+                                                    disabled={resettingUserId === editingStudent.id}
                                                 >
-                                                    {t('common.close')}
+                                                    {resettingUserId === editingStudent.id ? t('profile.saving') : t('admin.resetPassword')}
                                                 </button>
+                                                <div className="flex flex-col-reverse space-y-2 space-y-reverse sm:flex-row sm:space-x-3 sm:space-y-0">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => navigate(`/admin/students/${editingStudent.student_profile?.student_id}`)}
+                                                        className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
+                                                    >
+                                                        {t('common.cancel')}
+                                                    </button>
+                                                    <button
+                                                        type="submit"
+                                                        disabled={updating}
+                                                        className="w-full px-4 py-2 text-sm font-medium text-white transition-colors border border-transparent rounded-lg sm:w-auto bg-app-light-accent hover:bg-app-light-accent-hover disabled:opacity-50 disabled:cursor-not-allowed dark:bg-app-dark-accent dark:hover:bg-app-dark-accent-hover"
+                                                    >
+                                                        {updating ? t('profile.saving') : t('admin.saveChanges')}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {viewModalOpen && viewingStudent && (
+                    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm">
+                        <div className="flex items-center justify-center min-h-full p-4">
+                            <div className="w-full max-w-2xl border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
+                                <div className="flex items-center justify-between p-4 pb-3">
+                                    <div>
+                                        <p className="text-xs tracking-wider uppercase text-app-light-text-secondary dark:text-app-dark-text-secondary">
+                                            {t('admin.viewStudent', { defaultValue: 'View Student' })}
+                                        </p>
+                                        <h2 className="text-lg font-semibold text-app-light-text-primary dark:text-app-dark-text-primary">{viewingStudent.first_name || viewingStudent.username}</h2>
+                                    </div>
+                                    <button type="button" onClick={() => navigate('/admin/students')} className="p-2 transition-colors rounded-lg text-app-light-text-secondary hover:text-app-light-text-primary dark:text-app-dark-text-secondary dark:hover:text-app-dark-text-primary hover:bg-app-light-surface-hover dark:hover:bg-app-dark-surface-hover" aria-label={t('common.close')}>
+                                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div className="px-4 pb-4">
+                                    <div className="space-y-4">
+                                        {/* Basic Info Row */}
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <div className="relative">
+                                                <div className="relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border bg-app-light-surface-secondary dark:bg-app-dark-surface-secondary">
+                                                    <input
+                                                        id="view_student_id"
+                                                        value={viewingStudent.student_profile?.student_id || ''}
+                                                        readOnly
+                                                        className="w-full px-4 pt-5 pb-3 placeholder-transparent transition-colors duration-200 bg-transparent text-app-light-text-secondary dark:text-app-dark-text-secondary focus:outline-none rounded-lg"
+                                                    />
+                                                    <label
+                                                        htmlFor="view_student_id"
+                                                        className={`absolute left-4 text-app-light-text-secondary font-medium pointer-events-none transform transition-all duration-200 ${viewingStudent.student_profile?.student_id
+                                                            ? 'top-0.5 -translate-y-0 text-xs'
+                                                            : 'top-1/2 -translate-y-1/2 text-sm'
+                                                            }`}
+                                                    >
+                                                        {t('admin.table.studentId')}
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div className="relative">
+                                                <div className="relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border bg-app-light-surface-secondary dark:bg-app-dark-surface-secondary">
+                                                    <input
+                                                        id="view_full_name"
+                                                        value={viewingStudent.first_name || ''}
+                                                        readOnly
+                                                        className="w-full px-4 pt-5 pb-3 placeholder-transparent transition-colors duration-200 bg-transparent text-app-light-text-secondary dark:text-app-dark-text-secondary focus:outline-none rounded-lg"
+                                                    />
+                                                    <label
+                                                        htmlFor="view_full_name"
+                                                        className={`absolute left-4 text-app-light-text-secondary font-medium pointer-events-none transform transition-all duration-200 ${viewingStudent.first_name
+                                                            ? 'top-0.5 -translate-y-0 text-xs'
+                                                            : 'top-1/2 -translate-y-1/2 text-sm'
+                                                            }`}
+                                                    >
+                                                        {t('profile.name')}
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Contact Info */}
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <div className="relative">
+                                                <div className="relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border bg-app-light-surface-secondary dark:bg-app-dark-surface-secondary">
+                                                    <input
+                                                        id="view_email"
+                                                        value={viewingStudent.email || ''}
+                                                        readOnly
+                                                        className="w-full px-4 pt-5 pb-3 placeholder-transparent transition-colors duration-200 bg-transparent text-app-light-text-secondary dark:text-app-dark-text-secondary focus:outline-none rounded-lg"
+                                                    />
+                                                    <label
+                                                        htmlFor="view_email"
+                                                        className={`absolute left-4 text-app-light-text-secondary font-medium pointer-events-none transform transition-all duration-200 ${viewingStudent.email
+                                                            ? 'top-0.5 -translate-y-0 text-xs'
+                                                            : 'top-1/2 -translate-y-1/2 text-sm'
+                                                            }`}
+                                                    >
+                                                        {t('admin.table.email')}
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div className="relative">
+                                                <div className="relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border bg-app-light-surface-secondary dark:bg-app-dark-surface-secondary">
+                                                    <input
+                                                        id="view_phone"
+                                                        value={viewingStudent.student_profile?.phone || ''}
+                                                        readOnly
+                                                        className="w-full px-4 pt-5 pb-3 placeholder-transparent transition-colors duration-200 bg-transparent text-app-light-text-secondary dark:text-app-dark-text-secondary focus:outline-none rounded-lg"
+                                                    />
+                                                    <label
+                                                        htmlFor="view_phone"
+                                                        className={`absolute left-4 text-app-light-text-secondary font-medium pointer-events-none transform transition-all duration-200 ${viewingStudent.student_profile?.phone
+                                                            ? 'top-0.5 -translate-y-0 text-xs'
+                                                            : 'top-1/2 -translate-y-1/2 text-sm'
+                                                            }`}
+                                                    >
+                                                        {t('admin.student.phone')}
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Academic Info */}
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <div className="relative">
+                                                <div className="relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border bg-app-light-surface-secondary dark:bg-app-dark-surface-secondary">
+                                                    <input
+                                                        id="view_major"
+                                                        value={viewingStudent.student_profile?.major || ''}
+                                                        readOnly
+                                                        className="w-full px-4 pt-5 pb-3 placeholder-transparent transition-colors duration-200 bg-transparent text-app-light-text-secondary dark:text-app-dark-text-secondary focus:outline-none rounded-lg"
+                                                    />
+                                                    <label
+                                                        htmlFor="view_major"
+                                                        className={`absolute left-4 text-app-light-text-secondary font-medium pointer-events-none transform transition-all duration-200 ${viewingStudent.student_profile?.major
+                                                            ? 'top-0.5 -translate-y-0 text-xs'
+                                                            : 'top-1/2 -translate-y-1/2 text-sm'
+                                                            }`}
+                                                    >
+                                                        {t('admin.student.major')}
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div className="relative">
+                                                <div className="relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border bg-app-light-surface-secondary dark:bg-app-dark-surface-secondary">
+                                                    <input
+                                                        id="view_college"
+                                                        value={viewingStudent.student_profile?.college || ''}
+                                                        readOnly
+                                                        className="w-full px-4 pt-5 pb-3 placeholder-transparent transition-colors duration-200 bg-transparent text-app-light-text-secondary dark:text-app-dark-text-secondary focus:outline-none rounded-lg"
+                                                    />
+                                                    <label
+                                                        htmlFor="view_college"
+                                                        className={`absolute left-4 text-app-light-text-secondary font-medium pointer-events-none transform transition-all duration-200 ${viewingStudent.student_profile?.college
+                                                            ? 'top-0.5 -translate-y-0 text-xs'
+                                                            : 'top-1/2 -translate-y-1/2 text-sm'
+                                                            }`}
+                                                    >
+                                                        {t('admin.student.college')}
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Class and Year */}
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <div className="relative">
+                                                <div className="relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border bg-app-light-surface-secondary dark:bg-app-dark-surface-secondary">
+                                                    <input
+                                                        id="view_class_name"
+                                                        value={viewingStudent.student_profile?.class_name || ''}
+                                                        readOnly
+                                                        className="w-full px-4 pt-5 pb-3 placeholder-transparent transition-colors duration-200 bg-transparent text-app-light-text-secondary dark:text-app-dark-text-secondary focus:outline-none rounded-lg"
+                                                    />
+                                                    <label
+                                                        htmlFor="view_class_name"
+                                                        className={`absolute left-4 text-app-light-text-secondary font-medium pointer-events-none transform transition-all duration-200 ${viewingStudent.student_profile?.class_name
+                                                            ? 'top-0.5 -translate-y-0 text-xs'
+                                                            : 'top-1/2 -translate-y-1/2 text-sm'
+                                                            }`}
+                                                    >
+                                                        {t('admin.student.class_name')}
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div className="relative">
+                                                <div className="relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border bg-app-light-surface-secondary dark:bg-app-dark-surface-secondary">
+                                                    <input
+                                                        id="view_year"
+                                                        value={viewingStudent.student_profile?.year?.toString() || ''}
+                                                        readOnly
+                                                        className="w-full px-4 pt-5 pb-3 placeholder-transparent transition-colors duration-200 bg-transparent text-app-light-text-secondary dark:text-app-dark-text-secondary focus:outline-none rounded-lg"
+                                                    />
+                                                    <label
+                                                        htmlFor="view_year"
+                                                        className={`absolute left-4 text-app-light-text-secondary font-medium pointer-events-none transform transition-all duration-200 ${viewingStudent.student_profile?.year
+                                                            ? 'top-0.5 -translate-y-0 text-xs'
+                                                            : 'top-1/2 -translate-y-1/2 text-sm'
+                                                            }`}
+                                                    >
+                                                        {t('admin.student.year')}
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Gender and Chinese Level */}
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <div className="relative">
+                                                <FloatingSelect
+                                                    id="view_gender"
+                                                    label={t('admin.student.gender')}
+                                                    value={viewingStudent.student_profile?.gender || ''}
+                                                    onChange={() => { }}
+                                                    disabled={true}
+                                                    options={[
+                                                        { value: 'Male', label: t('admin.student.gender.male', { defaultValue: 'Male' }) },
+                                                        { value: 'Female', label: t('admin.student.gender.female', { defaultValue: 'Female' }) },
+                                                    ]}
+                                                />
+                                            </div>
+                                            <div className="relative">
+                                                <FloatingSelect
+                                                    id="view_chinese_level"
+                                                    label={t('admin.student.chinese_level')}
+                                                    value={viewingStudent.student_profile?.chinese_level || ''}
+                                                    onChange={() => { }}
+                                                    disabled={true}
+                                                    options={[
+                                                        { value: 'HSK1', label: 'HSK 1' },
+                                                        { value: 'HSK2', label: 'HSK 2' },
+                                                        { value: 'HSK3', label: 'HSK 3' },
+                                                        { value: 'HSK4', label: 'HSK 4' },
+                                                        { value: 'HSK5', label: 'HSK 5' },
+                                                        { value: 'HSK6', label: 'HSK 6' },
+                                                        { value: 'Native', label: t('admin.student.chinese_level.native', { defaultValue: 'Native' }) },
+                                                    ]}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Form Actions */}
+                                        <div className="flex flex-col gap-3 pt-3 border-t border-app-light-border dark:border-app-dark-border">
+                                            <div className="flex flex-col-reverse space-y-2 space-y-reverse sm:flex-row sm:justify-between sm:space-x-3 sm:space-y-0 sm:items-center">
                                                 <button
                                                     type="button"
-                                                    onClick={() => navigate(`/admin/students/${viewingStudent.student_profile?.student_id}/edit`)}
-                                                    className="w-full px-4 py-2 text-sm font-medium text-white transition-colors border border-transparent rounded-lg sm:w-auto bg-app-light-accent hover:bg-app-light-accent-hover dark:bg-app-dark-accent dark:hover:bg-app-dark-accent-hover"
+                                                    onClick={() => navigate(`/admin/students/${viewingStudent.student_profile?.student_id}/delete`)}
+                                                    className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-error bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover disabled:opacity-50 disabled:cursor-not-allowed dark:bg-app-dark-surface dark:text-app-dark-error dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
                                                 >
-                                                    {t('common.edit')}
+                                                    {t('common.delete')}
                                                 </button>
+                                                <div className="flex flex-col-reverse space-y-2 space-y-reverse sm:flex-row sm:space-x-3 sm:space-y-0">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => navigate('/admin/students')}
+                                                        className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
+                                                    >
+                                                        {t('common.close')}
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => navigate(`/admin/students/${viewingStudent.student_profile?.student_id}/edit`)}
+                                                        className="w-full px-4 py-2 text-sm font-medium text-white transition-colors border border-transparent rounded-lg sm:w-auto bg-app-light-accent hover:bg-app-light-accent-hover dark:bg-app-dark-accent dark:hover:bg-app-dark-accent-hover"
+                                                    >
+                                                        {t('common.edit')}
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -1284,41 +1304,44 @@ const AdminStudentsPage: React.FC = () => {
 
                 {/* Delete Confirmation Modal */}
                 {deleteConfirmModalOpen && studentToDelete && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                        <div className="w-full max-w-md border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
-                            <div className="p-6">
-                                <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full dark:bg-red-900/30">
-                                    <svg className="w-6 h-6 text-red-600 dark:text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                    </svg>
-                                </div>
-                                <h3 className="mb-2 text-lg font-semibold text-center text-app-light-text-primary dark:text-app-dark-text-primary">
-                                    {t('admin.studentDeleteConfirmTitle', { defaultValue: 'Delete Student' })}
-                                </h3>
-                                <p className="mb-6 text-sm text-center text-app-light-text-secondary dark:text-app-dark-text-secondary">
-                                    {t('admin.studentDeleteConfirm', { defaultValue: 'Are you sure you want to delete this student? This action cannot be undone.', name: studentToDelete.first_name || studentToDelete.username })}
-                                </p>
-                                <div className="flex flex-col-reverse space-y-2 space-y-reverse sm:flex-row sm:justify-end sm:space-x-3 sm:space-y-0">
-                                    <button
-                                        type="button"
-                                        onClick={cancelDelete}
-                                        className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
-                                    >
-                                        {t('common.cancel')}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={confirmDeleteStudent}
-                                        disabled={deletingId === studentToDelete.id}
-                                        className="w-full px-4 py-2 text-sm font-medium text-white transition-colors border border-transparent rounded-lg sm:w-auto bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-red-600 dark:hover:bg-red-700"
-                                    >
-                                        {deletingId === studentToDelete.id ? t('common.deleting', { defaultValue: 'Deleting...' }) : t('common.delete')}
-                                    </button>
+                    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm">
+                        <div className="flex items-center justify-center min-h-full p-4">
+                            <div className="w-full max-w-md border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
+                                <div className="p-6">
+                                    <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full dark:bg-red-900/30">
+                                        <svg className="w-6 h-6 text-red-600 dark:text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                        </svg>
+                                    </div>
+                                    <h3 className="mb-2 text-lg font-semibold text-center text-app-light-text-primary dark:text-app-dark-text-primary">
+                                        {t('admin.studentDeleteConfirmTitle', { defaultValue: 'Delete Student' })}
+                                    </h3>
+                                    <p className="mb-6 text-sm text-center text-app-light-text-secondary dark:text-app-dark-text-secondary">
+                                        {t('admin.studentDeleteConfirm', { defaultValue: 'Are you sure you want to delete this student? This action cannot be undone.', name: studentToDelete.first_name || studentToDelete.username })}
+                                    </p>
+                                    <div className="flex flex-col-reverse space-y-2 space-y-reverse sm:flex-row sm:justify-end sm:space-x-3 sm:space-y-0">
+                                        <button
+                                            type="button"
+                                            onClick={cancelDelete}
+                                            className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
+                                        >
+                                            {t('common.cancel')}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={confirmDeleteStudent}
+                                            disabled={deletingId === studentToDelete.id}
+                                            className="w-full px-4 py-2 text-sm font-medium text-white transition-colors border border-transparent rounded-lg sm:w-auto bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-red-600 dark:hover:bg-red-700"
+                                        >
+                                            {deletingId === studentToDelete.id ? t('common.deleting', { defaultValue: 'Deleting...' }) : t('common.delete')}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 )}
+
             </div>
         </main>
     );

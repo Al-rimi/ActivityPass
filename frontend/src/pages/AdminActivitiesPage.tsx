@@ -585,6 +585,17 @@ const AdminActivitiesPage: React.FC = () => {
         // If no identifier, modals stay closed
     }, [identifier, action, allActivities]);
 
+    useEffect(() => {
+        const isAnyModalOpen = modalOpen || editModalOpen || viewModalOpen || deleteConfirmModalOpen;
+        const originalOverflow = document.body.style.overflow;
+        if (isAnyModalOpen) {
+            document.body.style.overflow = 'hidden';
+        }
+        return () => {
+            document.body.style.overflow = originalOverflow;
+        };
+    }, [modalOpen, editModalOpen, viewModalOpen, deleteConfirmModalOpen]);
+
     return (
         <main className="flex-1 px-4 py-8 sm:px-6 lg:px-10">
             <div className="flex flex-col gap-6">
@@ -654,409 +665,415 @@ const AdminActivitiesPage: React.FC = () => {
             </div>
 
             {modalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                    <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
-                        <div className="flex items-center justify-between p-4 pb-3">
-                            <div>
-                                <h2 className="text-lg font-semibold text-app-light-text-primary dark:text-app-dark-text-primary">{t('admin.addActivity', { defaultValue: 'Add Activity' })}</h2>
+                <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm">
+                    <div className="flex items-center justify-center min-h-full p-4">
+                        <div className="w-full max-w-2xl border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
+                            <div className="flex items-center justify-between p-4 pb-3">
+                                <div>
+                                    <h2 className="text-lg font-semibold text-app-light-text-primary dark:text-app-dark-text-primary">{t('admin.addActivity', { defaultValue: 'Add Activity' })}</h2>
+                                </div>
+                                <button type="button" onClick={() => {
+                                    // Save current form data before closing
+                                    localStorage.setItem('admin-activity-add-form', JSON.stringify(form));
+                                    navigate('/admin/activities');
+                                }} className="p-2 transition-colors rounded-lg text-app-light-text-secondary hover:text-app-light-text-primary dark:text-app-dark-text-secondary dark:hover:text-app-dark-text-primary hover:bg-app-light-surface-hover dark:hover:bg-app-dark-surface-hover" aria-label={t('common.close')}>
+                                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
                             </div>
-                            <button type="button" onClick={() => {
-                                // Save current form data before closing
-                                localStorage.setItem('admin-activity-add-form', JSON.stringify(form));
-                                navigate('/admin/activities');
-                            }} className="p-2 transition-colors rounded-lg text-app-light-text-secondary hover:text-app-light-text-primary dark:text-app-dark-text-secondary dark:hover:text-app-dark-text-primary hover:bg-app-light-surface-hover dark:hover:bg-app-dark-surface-hover" aria-label={t('common.close')}>
-                                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-                        <div className="px-4 pb-4">
-                            <form onSubmit={submitActivity} className="space-y-4" autoComplete="off">
-                                {/* Basic Info */}
-                                <div className="grid gap-4 sm:grid-cols-2">
-                                    <FloatingInput
-                                        id="activity-title"
-                                        label={t('admin.activity.title', { defaultValue: 'Title' })}
-                                        value={form.title}
-                                        onChange={(value) => setForm(prev => ({ ...prev, title: value }))}
-                                        required
-                                    />
-                                    <FloatingInput
-                                        id="activity-capacity"
-                                        label={t('admin.activity.capacity', { defaultValue: 'Capacity' })}
-                                        value={form.capacity.toString()}
-                                        onChange={(value) => setForm(prev => ({ ...prev, capacity: Number(value) || 50 }))}
-                                        type="number"
-                                    />
-                                </div>
+                            <div className="px-4 pb-4">
+                                <form onSubmit={submitActivity} className="space-y-4" autoComplete="off">
+                                    {/* Basic Info */}
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <FloatingInput
+                                            id="activity-title"
+                                            label={t('admin.activity.title', { defaultValue: 'Title' })}
+                                            value={form.title}
+                                            onChange={(value) => setForm(prev => ({ ...prev, title: value }))}
+                                            required
+                                        />
+                                        <FloatingInput
+                                            id="activity-capacity"
+                                            label={t('admin.activity.capacity', { defaultValue: 'Capacity' })}
+                                            value={form.capacity.toString()}
+                                            onChange={(value) => setForm(prev => ({ ...prev, capacity: Number(value) || 50 }))}
+                                            type="number"
+                                        />
+                                    </div>
 
-                                {/* Description */}
-                                <FloatingTextarea
-                                    id="activity-description"
-                                    label={t('admin.activity.description', { defaultValue: 'Description' })}
-                                    value={form.description}
-                                    onChange={(value) => setForm(prev => ({ ...prev, description: value }))}
-                                    rows={3}
-                                    placeholder={t('admin.activity.description')}
-                                />
-
-                                {/* Date/Time Period */}
-                                <SelectPeriod
-                                    id="activity-period"
-                                    label={t('admin.activity.period', { defaultValue: 'Period' })}
-                                    startValue={form.start_datetime}
-                                    endValue={form.end_datetime}
-                                    onStartChange={(value) => setForm(prev => ({ ...prev, start_datetime: value }))}
-                                    onEndChange={(value) => setForm(prev => ({ ...prev, end_datetime: value }))}
-                                />
-
-                                {/* Location */}
-                                <LocationPicker
-                                    id="activity-location"
-                                    label={t('admin.activity.location', { defaultValue: 'Location' })}
-                                    value={form.location}
-                                    onChange={(location) => setForm(prev => ({ ...prev, location }))}
-                                    placeholder={t('admin.activity.selectLocation', { defaultValue: 'Select activity location...' })}
-                                />
-
-                                {/* Requirements */}
-                                <div className="space-y-4">
-                                    <FloatingMultiSelect
-                                        id="activity-college"
-                                        label={t('admin.activity.college', { defaultValue: 'College' })}
-                                        value={form.college_required}
-                                        onChange={(value) => setForm(prev => ({ ...prev, college_required: value }))}
-                                        options={COLLEGE_OPTIONS.map(option => ({
-                                            value: option.value,
-                                            label: t(option.labelKey, { defaultValue: option.value })
-                                        }))}
+                                    {/* Description */}
+                                    <FloatingTextarea
+                                        id="activity-description"
+                                        label={t('admin.activity.description', { defaultValue: 'Description' })}
+                                        value={form.description}
+                                        onChange={(value) => setForm(prev => ({ ...prev, description: value }))}
+                                        rows={3}
+                                        placeholder={t('admin.activity.description')}
                                     />
-                                    <FloatingMultiSelect
-                                        id="activity-countries"
-                                        label={t('admin.activity.countries', { defaultValue: 'Countries' })}
-                                        value={form.countries}
-                                        onChange={(value) => setForm(prev => ({ ...prev, countries: value }))}
-                                        options={COUNTRY_OPTIONS.map(option => ({
-                                            value: option.value,
-                                            label: t(option.labelKey, { defaultValue: option.value })
-                                        }))}
-                                    />
-                                    <FloatingSelect
-                                        id="activity-chinese-level"
-                                        label={t('admin.activity.chineseLevelMin', { defaultValue: 'Min Chinese Level' })}
-                                        value={form.chinese_level_min}
-                                        onChange={(value) => setForm(prev => ({ ...prev, chinese_level_min: value }))}
-                                        options={CHINESE_LEVEL_OPTIONS.map(option => ({
-                                            value: option.value,
-                                            label: t(option.labelKey, { defaultValue: option.value })
-                                        }))}
-                                        hideSelectedTextWhen={(value) => value === ''}
-                                    />
-                                </div>
 
-                                {/* Form Actions */}
-                                <div className="flex flex-col-reverse pt-3 space-y-2 space-y-reverse border-t sm:flex-row sm:justify-end sm:space-x-3 sm:space-y-0 border-app-light-border dark:border-app-dark-border">
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            localStorage.removeItem('admin-activity-add-form');
-                                            navigate('/admin/activities');
-                                        }}
-                                        className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
-                                    >
-                                        {t('common.cancel')}
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        disabled={creating}
-                                        className="w-full px-4 py-2 text-sm font-medium text-white transition-colors border border-transparent rounded-lg sm:w-auto bg-app-light-accent hover:bg-app-light-accent-hover disabled:opacity-50 disabled:cursor-not-allowed dark:bg-app-dark-accent dark:hover:bg-app-dark-accent-hover"
-                                    >
-                                        {creating ? t('profile.saving') : t('admin.createActivity', { defaultValue: 'Create Activity' })}
-                                    </button>
-                                </div>
-                            </form>
+                                    {/* Date/Time Period */}
+                                    <SelectPeriod
+                                        id="activity-period"
+                                        label={t('admin.activity.period', { defaultValue: 'Period' })}
+                                        startValue={form.start_datetime}
+                                        endValue={form.end_datetime}
+                                        onStartChange={(value) => setForm(prev => ({ ...prev, start_datetime: value }))}
+                                        onEndChange={(value) => setForm(prev => ({ ...prev, end_datetime: value }))}
+                                    />
+
+                                    {/* Location */}
+                                    <LocationPicker
+                                        id="activity-location"
+                                        label={t('admin.activity.location', { defaultValue: 'Location' })}
+                                        value={form.location}
+                                        onChange={(location) => setForm(prev => ({ ...prev, location }))}
+                                        placeholder={t('admin.activity.selectLocation', { defaultValue: 'Select activity location...' })}
+                                    />
+
+                                    {/* Requirements */}
+                                    <div className="space-y-4">
+                                        <FloatingMultiSelect
+                                            id="activity-college"
+                                            label={t('admin.activity.college', { defaultValue: 'College' })}
+                                            value={form.college_required}
+                                            onChange={(value) => setForm(prev => ({ ...prev, college_required: value }))}
+                                            options={COLLEGE_OPTIONS.map(option => ({
+                                                value: option.value,
+                                                label: t(option.labelKey, { defaultValue: option.value })
+                                            }))}
+                                        />
+                                        <FloatingMultiSelect
+                                            id="activity-countries"
+                                            label={t('admin.activity.countries', { defaultValue: 'Countries' })}
+                                            value={form.countries}
+                                            onChange={(value) => setForm(prev => ({ ...prev, countries: value }))}
+                                            options={COUNTRY_OPTIONS.map(option => ({
+                                                value: option.value,
+                                                label: t(option.labelKey, { defaultValue: option.value })
+                                            }))}
+                                        />
+                                        <FloatingSelect
+                                            id="activity-chinese-level"
+                                            label={t('admin.activity.chineseLevelMin', { defaultValue: 'Min Chinese Level' })}
+                                            value={form.chinese_level_min}
+                                            onChange={(value) => setForm(prev => ({ ...prev, chinese_level_min: value }))}
+                                            options={CHINESE_LEVEL_OPTIONS.map(option => ({
+                                                value: option.value,
+                                                label: t(option.labelKey, { defaultValue: option.value })
+                                            }))}
+                                            hideSelectedTextWhen={(value) => value === ''}
+                                        />
+                                    </div>
+
+                                    {/* Form Actions */}
+                                    <div className="flex flex-col-reverse pt-3 space-y-2 space-y-reverse border-t sm:flex-row sm:justify-end sm:space-x-3 sm:space-y-0 border-app-light-border dark:border-app-dark-border">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                localStorage.removeItem('admin-activity-add-form');
+                                                navigate('/admin/activities');
+                                            }}
+                                            className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
+                                        >
+                                            {t('common.cancel')}
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            disabled={creating}
+                                            className="w-full px-4 py-2 text-sm font-medium text-white transition-colors border border-transparent rounded-lg sm:w-auto bg-app-light-accent hover:bg-app-light-accent-hover disabled:opacity-50 disabled:cursor-not-allowed dark:bg-app-dark-accent dark:hover:bg-app-dark-accent-hover"
+                                        >
+                                            {creating ? t('profile.saving') : t('admin.createActivity', { defaultValue: 'Create Activity' })}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
             )}
 
             {editModalOpen && editingActivity && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                    <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
-                        <div className="flex items-center justify-between p-4 pb-3">
-                            <div>
-                                <p className="text-xs tracking-wider uppercase text-app-light-text-secondary dark:text-app-dark-text-secondary">
-                                    {t('admin.editActivity', { defaultValue: 'Edit Activity' })}
-                                </p>
-                                <h2 className="text-lg font-semibold text-app-light-text-primary dark:text-app-dark-text-primary">{editingActivity.title}</h2>
+                <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm">
+                    <div className="flex items-center justify-center min-h-full p-4">
+                        <div className="w-full max-w-2xl border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
+                            <div className="flex items-center justify-between p-4 pb-3">
+                                <div>
+                                    <p className="text-xs tracking-wider uppercase text-app-light-text-secondary dark:text-app-dark-text-secondary">
+                                        {t('admin.editActivity', { defaultValue: 'Edit Activity' })}
+                                    </p>
+                                    <h2 className="text-lg font-semibold text-app-light-text-primary dark:text-app-dark-text-primary">{editingActivity.title}</h2>
+                                </div>
+                                <button type="button" onClick={() => navigate(`/admin/activities/${editingActivity.id}`)} className="p-2 transition-colors rounded-lg text-app-light-text-secondary hover:text-app-light-text-primary dark:text-app-dark-text-secondary dark:hover:text-app-dark-text-primary hover:bg-app-light-surface-hover dark:hover:bg-app-dark-surface-hover" aria-label={t('common.close')}>
+                                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
                             </div>
-                            <button type="button" onClick={() => navigate(`/admin/activities/${editingActivity.id}`)} className="p-2 transition-colors rounded-lg text-app-light-text-secondary hover:text-app-light-text-primary dark:text-app-dark-text-secondary dark:hover:text-app-dark-text-primary hover:bg-app-light-surface-hover dark:hover:bg-app-dark-surface-hover" aria-label={t('common.close')}>
-                                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-                        <div className="px-4 pb-4">
-                            <form onSubmit={submitEditActivity} className="space-y-4" autoComplete="off">
-                                {/* Basic Info */}
-                                <div className="grid gap-4 sm:grid-cols-2">
-                                    <FloatingInput
-                                        id="edit-activity-title"
-                                        label={t('admin.activity.title', { defaultValue: 'Title' })}
-                                        value={editForm.title}
-                                        onChange={(value) => setEditForm(prev => ({ ...prev, title: value }))}
-                                        required
-                                    />
-                                    <FloatingInput
-                                        id="edit-activity-capacity"
-                                        label={t('admin.activity.capacity', { defaultValue: 'Capacity' })}
-                                        value={editForm.capacity.toString()}
-                                        onChange={(value) => setEditForm(prev => ({ ...prev, capacity: Number(value) || 50 }))}
-                                        type="number"
-                                    />
-                                </div>
+                            <div className="px-4 pb-4">
+                                <form onSubmit={submitEditActivity} className="space-y-4" autoComplete="off">
+                                    {/* Basic Info */}
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <FloatingInput
+                                            id="edit-activity-title"
+                                            label={t('admin.activity.title', { defaultValue: 'Title' })}
+                                            value={editForm.title}
+                                            onChange={(value) => setEditForm(prev => ({ ...prev, title: value }))}
+                                            required
+                                        />
+                                        <FloatingInput
+                                            id="edit-activity-capacity"
+                                            label={t('admin.activity.capacity', { defaultValue: 'Capacity' })}
+                                            value={editForm.capacity.toString()}
+                                            onChange={(value) => setEditForm(prev => ({ ...prev, capacity: Number(value) || 50 }))}
+                                            type="number"
+                                        />
+                                    </div>
 
-                                {/* Description */}
-                                <FloatingTextarea
-                                    id="edit-activity-description"
-                                    label={t('admin.activity.description', { defaultValue: 'Description' })}
-                                    value={editForm.description}
-                                    onChange={(value) => setEditForm(prev => ({ ...prev, description: value }))}
-                                    rows={3}
-                                    placeholder={t('admin.activity.description')}
-                                />
-
-                                {/* Date/Time Period */}
-                                <SelectPeriod
-                                    id="edit-activity-period"
-                                    label={t('admin.activity.period', { defaultValue: 'Period' })}
-                                    startValue={editForm.start_datetime}
-                                    endValue={editForm.end_datetime}
-                                    onStartChange={(value) => setEditForm(prev => ({ ...prev, start_datetime: value }))}
-                                    onEndChange={(value) => setEditForm(prev => ({ ...prev, end_datetime: value }))}
-                                />
-
-                                {/* Location */}
-                                <LocationPicker
-                                    id="edit-activity-location"
-                                    label={t('admin.activity.location', { defaultValue: 'Location' })}
-                                    value={editForm.location}
-                                    onChange={(location) => setEditForm(prev => ({ ...prev, location }))}
-                                    placeholder={t('admin.activity.selectLocation', { defaultValue: 'Select activity location...' })}
-                                />
-
-                                {/* Requirements */}
-                                <div className="space-y-4">
-                                    <FloatingMultiSelect
-                                        id="edit-activity-college"
-                                        label={t('admin.activity.college', { defaultValue: 'College' })}
-                                        value={editForm.college_required}
-                                        onChange={(value) => setEditForm(prev => ({ ...prev, college_required: value }))}
-                                        options={COLLEGE_OPTIONS.map(option => ({
-                                            value: option.value,
-                                            label: t(option.labelKey, { defaultValue: option.value })
-                                        }))}
+                                    {/* Description */}
+                                    <FloatingTextarea
+                                        id="edit-activity-description"
+                                        label={t('admin.activity.description', { defaultValue: 'Description' })}
+                                        value={editForm.description}
+                                        onChange={(value) => setEditForm(prev => ({ ...prev, description: value }))}
+                                        rows={3}
+                                        placeholder={t('admin.activity.description')}
                                     />
-                                    <FloatingMultiSelect
-                                        id="edit-activity-countries"
-                                        label={t('admin.activity.countries', { defaultValue: 'Countries' })}
-                                        value={editForm.countries}
-                                        onChange={(value) => setEditForm(prev => ({ ...prev, countries: value }))}
-                                        options={COUNTRY_OPTIONS.map(option => ({
-                                            value: option.value,
-                                            label: t(option.labelKey, { defaultValue: option.value })
-                                        }))}
-                                    />
-                                    <FloatingSelect
-                                        id="edit-activity-chinese-level-min"
-                                        label={t('admin.activity.chineseLevelMin', { defaultValue: 'Min Chinese Level' })}
-                                        value={editForm.chinese_level_min}
-                                        onChange={(value: string) => setEditForm(prev => ({ ...prev, chinese_level_min: value }))}
-                                        options={CHINESE_LEVEL_OPTIONS.map(option => ({
-                                            value: option.value,
-                                            label: t(option.labelKey, { defaultValue: option.value })
-                                        }))}
-                                    />
-                                </div>
 
-                                {/* Form Actions */}
-                                <div className="flex flex-col-reverse pt-3 space-y-2 space-y-reverse border-t sm:flex-row sm:justify-end sm:space-x-3 sm:space-y-0 border-app-light-border dark:border-app-dark-border">
-                                    <button
-                                        type="button"
-                                        onClick={() => navigate(`/admin/activities/${editingActivity.id}`)}
-                                        className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
-                                    >
-                                        {t('common.cancel')}
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        disabled={updating}
-                                        className="w-full px-4 py-2 text-sm font-medium text-white transition-colors border border-transparent rounded-lg sm:w-auto bg-app-light-accent hover:bg-app-light-accent-hover disabled:opacity-50 disabled:cursor-not-allowed dark:bg-app-dark-accent dark:hover:bg-app-dark-accent-hover"
-                                    >
-                                        {updating ? t('profile.saving') : t('admin.saveChanges')}
-                                    </button>
-                                </div>
-                            </form>
+                                    {/* Date/Time Period */}
+                                    <SelectPeriod
+                                        id="edit-activity-period"
+                                        label={t('admin.activity.period', { defaultValue: 'Period' })}
+                                        startValue={editForm.start_datetime}
+                                        endValue={editForm.end_datetime}
+                                        onStartChange={(value) => setEditForm(prev => ({ ...prev, start_datetime: value }))}
+                                        onEndChange={(value) => setEditForm(prev => ({ ...prev, end_datetime: value }))}
+                                    />
+
+                                    {/* Location */}
+                                    <LocationPicker
+                                        id="edit-activity-location"
+                                        label={t('admin.activity.location', { defaultValue: 'Location' })}
+                                        value={editForm.location}
+                                        onChange={(location) => setEditForm(prev => ({ ...prev, location }))}
+                                        placeholder={t('admin.activity.selectLocation', { defaultValue: 'Select activity location...' })}
+                                    />
+
+                                    {/* Requirements */}
+                                    <div className="space-y-4">
+                                        <FloatingMultiSelect
+                                            id="edit-activity-college"
+                                            label={t('admin.activity.college', { defaultValue: 'College' })}
+                                            value={editForm.college_required}
+                                            onChange={(value) => setEditForm(prev => ({ ...prev, college_required: value }))}
+                                            options={COLLEGE_OPTIONS.map(option => ({
+                                                value: option.value,
+                                                label: t(option.labelKey, { defaultValue: option.value })
+                                            }))}
+                                        />
+                                        <FloatingMultiSelect
+                                            id="edit-activity-countries"
+                                            label={t('admin.activity.countries', { defaultValue: 'Countries' })}
+                                            value={editForm.countries}
+                                            onChange={(value) => setEditForm(prev => ({ ...prev, countries: value }))}
+                                            options={COUNTRY_OPTIONS.map(option => ({
+                                                value: option.value,
+                                                label: t(option.labelKey, { defaultValue: option.value })
+                                            }))}
+                                        />
+                                        <FloatingSelect
+                                            id="edit-activity-chinese-level-min"
+                                            label={t('admin.activity.chineseLevelMin', { defaultValue: 'Min Chinese Level' })}
+                                            value={editForm.chinese_level_min}
+                                            onChange={(value: string) => setEditForm(prev => ({ ...prev, chinese_level_min: value }))}
+                                            options={CHINESE_LEVEL_OPTIONS.map(option => ({
+                                                value: option.value,
+                                                label: t(option.labelKey, { defaultValue: option.value })
+                                            }))}
+                                        />
+                                    </div>
+
+                                    {/* Form Actions */}
+                                    <div className="flex flex-col-reverse pt-3 space-y-2 space-y-reverse border-t sm:flex-row sm:justify-end sm:space-x-3 sm:space-y-0 border-app-light-border dark:border-app-dark-border">
+                                        <button
+                                            type="button"
+                                            onClick={() => navigate(`/admin/activities/${editingActivity.id}`)}
+                                            className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
+                                        >
+                                            {t('common.cancel')}
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            disabled={updating}
+                                            className="w-full px-4 py-2 text-sm font-medium text-white transition-colors border border-transparent rounded-lg sm:w-auto bg-app-light-accent hover:bg-app-light-accent-hover disabled:opacity-50 disabled:cursor-not-allowed dark:bg-app-dark-accent dark:hover:bg-app-dark-accent-hover"
+                                        >
+                                            {updating ? t('profile.saving') : t('admin.saveChanges')}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
             )}
 
             {viewModalOpen && viewingActivity && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                    <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
-                        <div className="flex items-center justify-between p-4 pb-3">
-                            <div>
-                                <p className="text-xs tracking-wider uppercase text-app-light-text-secondary dark:text-app-dark-text-secondary">
-                                    {t('admin.viewActivity', { defaultValue: 'View Activity' })}
-                                </p>
-                                <h2 className="text-lg font-semibold text-app-light-text-primary dark:text-app-dark-text-primary">{viewingActivity.title}</h2>
+                <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm">
+                    <div className="flex items-center justify-center min-h-full p-4">
+                        <div className="w-full max-w-2xl border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
+                            <div className="flex items-center justify-between p-4 pb-3">
+                                <div>
+                                    <p className="text-xs tracking-wider uppercase text-app-light-text-secondary dark:text-app-dark-text-secondary">
+                                        {t('admin.viewActivity', { defaultValue: 'View Activity' })}
+                                    </p>
+                                    <h2 className="text-lg font-semibold text-app-light-text-primary dark:text-app-dark-text-primary">{viewingActivity.title}</h2>
+                                </div>
+                                <button type="button" onClick={() => navigate(getViewClosePath())} className="p-2 transition-colors rounded-lg text-app-light-text-secondary hover:text-app-light-text-primary dark:text-app-dark-text-secondary dark:hover:text-app-dark-text-primary hover:bg-app-light-surface-hover dark:hover:bg-app-dark-surface-hover" aria-label={t('common.close')}>
+                                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
                             </div>
-                            <button type="button" onClick={() => navigate(getViewClosePath())} className="p-2 transition-colors rounded-lg text-app-light-text-secondary hover:text-app-light-text-primary dark:text-app-dark-text-secondary dark:hover:text-app-dark-text-primary hover:bg-app-light-surface-hover dark:hover:bg-app-dark-surface-hover" aria-label={t('common.close')}>
-                                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-                        <div className="px-4 pb-4">
-                            <div className="space-y-4">
-                                {/* Basic Info */}
-                                <div className="grid gap-4 sm:grid-cols-2">
-                                    <FloatingInput
-                                        id="view-activity-title"
-                                        label={t('admin.activity.title', { defaultValue: 'Title' })}
-                                        value={viewingActivity.title || ''}
-                                        onChange={() => { }}
-                                        disabled={true}
-                                    />
-                                    <FloatingInput
-                                        id="view-activity-capacity"
-                                        label={t('admin.activity.capacity', { defaultValue: 'Capacity' })}
-                                        value={viewingActivity.capacity?.toString() || ''}
-                                        onChange={() => { }}
-                                        disabled={true}
-                                    />
-                                </div>
-
-                                {/* Description */}
-                                <FloatingTextarea
-                                    id="view-activity-description"
-                                    label={t('admin.activity.description', { defaultValue: 'Description' })}
-                                    value={viewingActivity.description || ''}
-                                    onChange={() => { }}
-                                    rows={3}
-                                    disabled={true}
-                                />
-
-                                {/* Date/Time Period */}
-                                <SelectPeriod
-                                    id="view-activity-period"
-                                    label={t('admin.activity.period', { defaultValue: 'Period' })}
-                                    startValue={viewingActivity.start_datetime || ''}
-                                    endValue={viewingActivity.end_datetime || ''}
-                                    onStartChange={() => { }}
-                                    onEndChange={() => { }}
-                                    disabled={true}
-                                />
-
-                                {/* Location */}
-                                <LocationPicker
-                                    id="view-activity-location"
-                                    label={t('admin.activity.location', { defaultValue: 'Location' })}
-                                    value={(() => {
-                                        if (!viewingActivity.location) return null;
-                                        if (typeof viewingActivity.location === 'string') {
-                                            // For string locations, create a Location object with dummy coordinates
-                                            return { lat: 0, lng: 0, address: viewingActivity.location };
-                                        }
-                                        return viewingActivity.location;
-                                    })()}
-                                    onChange={() => { }}
-                                    disabled={true}
-                                />
-
-                                {/* Requirements */}
+                            <div className="px-4 pb-4">
                                 <div className="space-y-4">
-                                    <FloatingMultiSelect
-                                        id="view-activity-college"
-                                        label={t('admin.activity.college', { defaultValue: 'College' })}
-                                        value={viewingActivity.college_required === 'all' ? COLLEGE_OPTIONS.map(opt => opt.value) :
-                                            Array.isArray(viewingActivity.college_required) ? viewingActivity.college_required : []}
-                                        onChange={() => { }}
-                                        options={COLLEGE_OPTIONS.map(option => ({
-                                            value: option.value,
-                                            label: t(option.labelKey, { defaultValue: option.value })
-                                        }))}
-                                        disabled={true}
-                                    />
-                                    <FloatingMultiSelect
-                                        id="view-activity-countries"
-                                        label={t('admin.activity.countries', { defaultValue: 'Countries' })}
-                                        value={viewingActivity.countries === 'all' ? COUNTRY_OPTIONS.map(opt => opt.value) :
-                                            Array.isArray(viewingActivity.countries) ? viewingActivity.countries : []}
-                                        onChange={() => { }}
-                                        options={COUNTRY_OPTIONS.map(option => ({
-                                            value: option.value,
-                                            label: t(option.labelKey, { defaultValue: option.value })
-                                        }))}
-                                        disabled={true}
-                                    />
-                                    <FloatingSelect
-                                        id="view-activity-chinese-level"
-                                        label={t('admin.activity.chineseLevelMin', { defaultValue: 'Min Chinese Level' })}
-                                        value={viewingActivity.chinese_level_min || ''}
-                                        onChange={() => { }}
-                                        options={CHINESE_LEVEL_OPTIONS.map(option => ({
-                                            value: option.value,
-                                            label: t(option.labelKey, { defaultValue: option.value })
-                                        }))}
-                                        disabled={true}
-                                        hideSelectedTextWhen={(value) => value === ''}
-                                    />
-                                </div>
+                                    {/* Basic Info */}
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <FloatingInput
+                                            id="view-activity-title"
+                                            label={t('admin.activity.title', { defaultValue: 'Title' })}
+                                            value={viewingActivity.title || ''}
+                                            onChange={() => { }}
+                                            disabled={true}
+                                        />
+                                        <FloatingInput
+                                            id="view-activity-capacity"
+                                            label={t('admin.activity.capacity', { defaultValue: 'Capacity' })}
+                                            value={viewingActivity.capacity?.toString() || ''}
+                                            onChange={() => { }}
+                                            disabled={true}
+                                        />
+                                    </div>
 
-                                {/* Metadata */}
-                                <div className="grid gap-4 sm:grid-cols-2">
-                                    <FloatingInput
-                                        id="view-activity-creator"
-                                        label={t('admin.table.creator', { defaultValue: 'Creator' })}
-                                        value={viewingActivity.created_by_username || ''}
+                                    {/* Description */}
+                                    <FloatingTextarea
+                                        id="view-activity-description"
+                                        label={t('admin.activity.description', { defaultValue: 'Description' })}
+                                        value={viewingActivity.description || ''}
                                         onChange={() => { }}
+                                        rows={3}
                                         disabled={true}
                                     />
-                                    <FloatingInput
-                                        id="view-activity-created-at"
-                                        label={t('admin.createdAt', { defaultValue: 'Created At' })}
-                                        value={viewingActivity.created_at ? formatDateTime(viewingActivity.created_at) : ''}
-                                        onChange={() => { }}
-                                        disabled={true}
-                                    />
-                                </div>
 
-                                {/* Form Actions */}
-                                <div className="flex flex-col-reverse pt-3 space-y-2 space-y-reverse border-t sm:flex-row sm:justify-between sm:space-x-3 sm:space-y-0 border-app-light-border dark:border-app-dark-border">
-                                    <button
-                                        type="button"
-                                        onClick={() => navigate(`/admin/activities/${viewingActivity.id}/delete`)}
-                                        className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-error bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-error dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
-                                    >
-                                        {t('common.delete')}
-                                    </button>
-                                    <div className="flex flex-col-reverse space-y-2 space-y-reverse sm:flex-row sm:space-x-3 sm:space-y-0">
+                                    {/* Date/Time Period */}
+                                    <SelectPeriod
+                                        id="view-activity-period"
+                                        label={t('admin.activity.period', { defaultValue: 'Period' })}
+                                        startValue={viewingActivity.start_datetime || ''}
+                                        endValue={viewingActivity.end_datetime || ''}
+                                        onStartChange={() => { }}
+                                        onEndChange={() => { }}
+                                        disabled={true}
+                                    />
+
+                                    {/* Location */}
+                                    <LocationPicker
+                                        id="view-activity-location"
+                                        label={t('admin.activity.location', { defaultValue: 'Location' })}
+                                        value={(() => {
+                                            if (!viewingActivity.location) return null;
+                                            if (typeof viewingActivity.location === 'string') {
+                                                // For string locations, create a Location object with dummy coordinates
+                                                return { lat: 0, lng: 0, address: viewingActivity.location };
+                                            }
+                                            return viewingActivity.location;
+                                        })()}
+                                        onChange={() => { }}
+                                        disabled={true}
+                                    />
+
+                                    {/* Requirements */}
+                                    <div className="space-y-4">
+                                        <FloatingMultiSelect
+                                            id="view-activity-college"
+                                            label={t('admin.activity.college', { defaultValue: 'College' })}
+                                            value={viewingActivity.college_required === 'all' ? COLLEGE_OPTIONS.map(opt => opt.value) :
+                                                Array.isArray(viewingActivity.college_required) ? viewingActivity.college_required : []}
+                                            onChange={() => { }}
+                                            options={COLLEGE_OPTIONS.map(option => ({
+                                                value: option.value,
+                                                label: t(option.labelKey, { defaultValue: option.value })
+                                            }))}
+                                            disabled={true}
+                                        />
+                                        <FloatingMultiSelect
+                                            id="view-activity-countries"
+                                            label={t('admin.activity.countries', { defaultValue: 'Countries' })}
+                                            value={viewingActivity.countries === 'all' ? COUNTRY_OPTIONS.map(opt => opt.value) :
+                                                Array.isArray(viewingActivity.countries) ? viewingActivity.countries : []}
+                                            onChange={() => { }}
+                                            options={COUNTRY_OPTIONS.map(option => ({
+                                                value: option.value,
+                                                label: t(option.labelKey, { defaultValue: option.value })
+                                            }))}
+                                            disabled={true}
+                                        />
+                                        <FloatingSelect
+                                            id="view-activity-chinese-level"
+                                            label={t('admin.activity.chineseLevelMin', { defaultValue: 'Min Chinese Level' })}
+                                            value={viewingActivity.chinese_level_min || ''}
+                                            onChange={() => { }}
+                                            options={CHINESE_LEVEL_OPTIONS.map(option => ({
+                                                value: option.value,
+                                                label: t(option.labelKey, { defaultValue: option.value })
+                                            }))}
+                                            disabled={true}
+                                            hideSelectedTextWhen={(value) => value === ''}
+                                        />
+                                    </div>
+
+                                    {/* Metadata */}
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <FloatingInput
+                                            id="view-activity-creator"
+                                            label={t('admin.table.creator', { defaultValue: 'Creator' })}
+                                            value={viewingActivity.created_by_username || ''}
+                                            onChange={() => { }}
+                                            disabled={true}
+                                        />
+                                        <FloatingInput
+                                            id="view-activity-created-at"
+                                            label={t('admin.createdAt', { defaultValue: 'Created At' })}
+                                            value={viewingActivity.created_at ? formatDateTime(viewingActivity.created_at) : ''}
+                                            onChange={() => { }}
+                                            disabled={true}
+                                        />
+                                    </div>
+
+                                    {/* Form Actions */}
+                                    <div className="flex flex-col-reverse pt-3 space-y-2 space-y-reverse border-t sm:flex-row sm:justify-between sm:space-x-3 sm:space-y-0 border-app-light-border dark:border-app-dark-border">
                                         <button
                                             type="button"
-                                            onClick={() => navigate(getViewClosePath())}
-                                            className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
+                                            onClick={() => navigate(`/admin/activities/${viewingActivity.id}/delete`)}
+                                            className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-error bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-error dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
                                         >
-                                            {t('common.close')}
+                                            {t('common.delete')}
                                         </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => navigate(`/admin/activities/${viewingActivity.id}/edit`)}
-                                            className="w-full px-4 py-2 text-sm font-medium text-white transition-colors border border-transparent rounded-lg sm:w-auto bg-app-light-accent hover:bg-app-light-accent-hover dark:bg-app-dark-accent dark:hover:bg-app-dark-accent-hover"
-                                        >
-                                            {t('common.edit')}
-                                        </button>
+                                        <div className="flex flex-col-reverse space-y-2 space-y-reverse sm:flex-row sm:space-x-3 sm:space-y-0">
+                                            <button
+                                                type="button"
+                                                onClick={() => navigate(getViewClosePath())}
+                                                className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
+                                            >
+                                                {t('common.close')}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => navigate(`/admin/activities/${viewingActivity.id}/edit`)}
+                                                className="w-full px-4 py-2 text-sm font-medium text-white transition-colors border border-transparent rounded-lg sm:w-auto bg-app-light-accent hover:bg-app-light-accent-hover dark:bg-app-dark-accent dark:hover:bg-app-dark-accent-hover"
+                                            >
+                                                {t('common.edit')}
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1067,36 +1084,38 @@ const AdminActivitiesPage: React.FC = () => {
 
             {/* Delete Confirmation Modal */}
             {deleteConfirmModalOpen && activityToDelete && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                    <div className="w-full max-w-md border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
-                        <div className="p-6">
-                            <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full dark:bg-red-900/30">
-                                <svg className="w-6 h-6 text-red-600 dark:text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                </svg>
-                            </div>
-                            <h3 className="mb-2 text-lg font-semibold text-center text-app-light-text-primary dark:text-app-dark-text-primary">
-                                {t('admin.activityDeleteConfirmTitle', { defaultValue: 'Delete Activity' })}
-                            </h3>
-                            <p className="mb-6 text-sm text-center text-app-light-text-secondary dark:text-app-dark-text-secondary">
-                                {t('admin.activityDeleteConfirm', { defaultValue: 'Are you sure you want to delete this activity? This action cannot be undone.', name: activityToDelete.title })}
-                            </p>
-                            <div className="flex flex-col-reverse space-y-2 space-y-reverse sm:flex-row sm:justify-end sm:space-x-3 sm:space-y-0">
-                                <button
-                                    type="button"
-                                    onClick={cancelDelete}
-                                    className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
-                                >
-                                    {t('common.cancel')}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={confirmDeleteActivity}
-                                    disabled={deletingId === activityToDelete.id}
-                                    className="w-full px-4 py-2 text-sm font-medium text-white transition-colors border border-transparent rounded-lg sm:w-auto bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-red-600 dark:hover:bg-red-700"
-                                >
-                                    {deletingId === activityToDelete.id ? t('common.deleting', { defaultValue: 'Deleting...' }) : t('common.delete')}
-                                </button>
+                <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm">
+                    <div className="flex items-center justify-center min-h-full p-4">
+                        <div className="w-full max-w-md border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
+                            <div className="p-6">
+                                <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full dark:bg-red-900/30">
+                                    <svg className="w-6 h-6 text-red-600 dark:text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                    </svg>
+                                </div>
+                                <h3 className="mb-2 text-lg font-semibold text-center text-app-light-text-primary dark:text-app-dark-text-primary">
+                                    {t('admin.activityDeleteConfirmTitle', { defaultValue: 'Delete Activity' })}
+                                </h3>
+                                <p className="mb-6 text-sm text-center text-app-light-text-secondary dark:text-app-dark-text-secondary">
+                                    {t('admin.activityDeleteConfirm', { defaultValue: 'Are you sure you want to delete this activity? This action cannot be undone.', name: activityToDelete.title })}
+                                </p>
+                                <div className="flex flex-col-reverse space-y-2 space-y-reverse sm:flex-row sm:justify-end sm:space-x-3 sm:space-y-0">
+                                    <button
+                                        type="button"
+                                        onClick={cancelDelete}
+                                        className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
+                                    >
+                                        {t('common.cancel')}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={confirmDeleteActivity}
+                                        disabled={deletingId === activityToDelete.id}
+                                        className="w-full px-4 py-2 text-sm font-medium text-white transition-colors border border-transparent rounded-lg sm:w-auto bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-red-600 dark:hover:bg-red-700"
+                                    >
+                                        {deletingId === activityToDelete.id ? t('common.deleting', { defaultValue: 'Deleting...' }) : t('common.delete')}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
