@@ -7,6 +7,7 @@ import FloatingSelect from '../components/FloatingSelect';
 import FloatingMultiSelect from '../components/FloatingMultiSelect';
 import SearchInput from '../components/SearchInput';
 import CustomDatePicker from '../components/CustomDatePicker';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 
 const defaultCourseForm = () => ({
     code: '',
@@ -43,9 +44,46 @@ const SECTION_TIMES: Record<number, [string, string]> = {
     13: ["20:30", "21:10"],
 };
 
+
+
 const AdminCoursesPage: React.FC = () => {
     const { tokens } = useAuth();
     const { t } = useTranslation();
+    const { '*': path } = useParams<{ '*': string }>();
+    const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+
+    // Capture saved form data before it gets cleared
+    const capturedFormData = React.useRef<string | null>(null);
+
+    // Capture the data on mount
+    React.useEffect(() => {
+        const savedForm = localStorage.getItem('admin-course-add-form');
+        capturedFormData.current = savedForm;
+    }, []);
+
+    // Parse the path
+    let identifier: string | null = null;
+    let action: string | null = null;
+
+    if (path === 'add') {
+        action = 'add';
+    } else if (path) {
+        const editMatch = path.match(/^(\d+)\/edit$/);
+        const deleteMatch = path.match(/^(\d+)\/delete$/);
+        const viewMatch = path.match(/^(\d+)$/);
+
+        if (editMatch) {
+            identifier = editMatch[1];
+            action = 'edit';
+        } else if (deleteMatch) {
+            identifier = deleteMatch[1];
+            action = 'delete';
+        } else if (viewMatch) {
+            identifier = viewMatch[1];
+            action = null; // view
+        }
+    }
     const [courses, setCourses] = useState<AdminCourse[]>([]);
     const [loading, setLoading] = useState(false);
     const [notice, setNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -53,15 +91,55 @@ const AdminCoursesPage: React.FC = () => {
     const [termFilter, setTermFilter] = useState('');
     const [dayFilter, setDayFilter] = useState('');
     const [modalOpen, setModalOpen] = useState(false);
-    const [form, setForm] = useState<CourseFormState>(defaultCourseForm());
+    const [form, setForm] = useState<CourseFormState>(() => {
+        const saved = localStorage.getItem('admin-course-add-form');
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                const clean = Object.fromEntries(Object.entries(parsed).filter(([k, v]) => v !== undefined && v !== null));
+                return { ...defaultCourseForm(), ...clean };
+            } catch (e) {
+                return defaultCourseForm();
+            }
+        }
+        return defaultCourseForm();
+    });
     const [saving, setSaving] = useState(false);
     const [editingCourse, setEditingCourse] = useState<AdminCourse | null>(null);
     const [deletingId, setDeletingId] = useState<number | null>(null);
-    const [viewModalOpen, setViewModalOpen] = useState(false);
-    const [viewingCourse, setViewingCourse] = useState<AdminCourse | null>(null);
     const [academicTerms, setAcademicTerms] = useState<any[]>([]);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [selectedDate, setSelectedDate] = useState<string>('');
+    const [deleteConfirmModalOpen, setDeleteConfirmModalOpen] = useState(false);
+    const [courseToDelete, setCourseToDelete] = useState<AdminCourse | null>(null);
+    const [viewModalOpen, setViewModalOpen] = useState(false);
+    const [viewingCourse, setViewingCourse] = useState<AdminCourse | null>(null);
+
+    // Track if we've loaded initial form data to prevent overwriting localStorage on mount
+    const hasLoadedInitialData = React.useRef(false);
+
+    // Track if we're currently loading initial data to prevent saving during load
+    const isLoadingInitialData = React.useRef(false);
+
+    // Save form data whenever it changes (as user types)
+    React.useEffect(() => {
+        if (!editingCourse && !isLoadingInitialData.current && hasLoadedInitialData.current) {
+            localStorage.setItem('admin-course-add-form', JSON.stringify(form));
+        }
+    }, [form, editingCourse]);
+
+
+
+    // Determine where to navigate when closing the view modal
+    const getViewClosePath = useCallback(() => {
+        const from = searchParams.get('from');
+        const studentId = searchParams.get('studentId');
+
+        if (from === 'student' && studentId) {
+            return `/admin/students/${studentId}/courses`;
+        }
+        return '/admin/courses';
+    }, [searchParams]);
 
     const authHeaders = useMemo(() => {
         const base: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -192,23 +270,6 @@ const AdminCoursesPage: React.FC = () => {
         }));
     }, [calculateWeekOneMonday, form.academic_year]);
 
-
-    const openViewModal = (course: AdminCourse) => {
-        setViewingCourse(course);
-        setViewModalOpen(true);
-    };
-
-    const closeViewModal = () => {
-        setViewModalOpen(false);
-        setViewingCourse(null);
-    };
-
-    const openCreateModal = () => {
-        setForm(defaultCourseForm());
-        setEditingCourse(null);
-        setModalOpen(true);
-    };
-
     const openEditModal = (course: AdminCourse) => {
         setEditingCourse(course);
         const academicYear = calculateAcademicYearFromDate(course.first_week_monday || '');
@@ -275,7 +336,10 @@ const AdminCoursesPage: React.FC = () => {
             const res = await fetch(url, { method, headers: authHeaders, body: JSON.stringify(payload) });
             if (!res.ok) throw new Error('save_failed');
             setNotice({ type: 'success', text: t('admin.courseSaveSuccess') });
-            closeModal();
+            if (!editingCourse) {
+                localStorage.removeItem('admin-course-add-form');
+            }
+            navigate('/admin/courses');
             fetchCourses();
         } catch (err) {
             console.error(err);
@@ -326,7 +390,6 @@ const AdminCoursesPage: React.FC = () => {
 
     const deleteCourse = async (courseId: number) => {
         if (!tokens) return;
-        if (!window.confirm(t('admin.courseDeleteConfirm'))) return;
         setDeletingId(courseId);
         try {
             const res = await fetch(`/api/admin/courses/${courseId}/`, { method: 'DELETE', headers: authHeaders });
@@ -340,13 +403,84 @@ const AdminCoursesPage: React.FC = () => {
         }
     };
 
+    const openDeleteConfirm = (course: AdminCourse) => {
+        setCourseToDelete(course);
+        setDeleteConfirmModalOpen(true);
+    };
+
+    const confirmDeleteCourse = async () => {
+        if (!courseToDelete) return;
+        const courseId = courseToDelete.id;
+        setDeleteConfirmModalOpen(false);
+        setCourseToDelete(null);
+        await deleteCourse(courseId);
+        navigate('/admin/courses');
+    };
+
+    const cancelDelete = () => {
+        setDeleteConfirmModalOpen(false);
+        setCourseToDelete(null);
+        if (courseToDelete) {
+            navigate(`/admin/courses/${courseToDelete.id}`);
+        }
+    };
+
+    useEffect(() => {
+        // Always close all modals first
+        setModalOpen(false);
+        setEditingCourse(null);
+        setDeleteConfirmModalOpen(false);
+        setCourseToDelete(null);
+        setViewModalOpen(false);
+        setViewingCourse(null);
+
+        if (action === 'add') {
+            isLoadingInitialData.current = true;
+            const saved = localStorage.getItem('admin-course-add-form');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    const clean = Object.fromEntries(Object.entries(parsed).filter(([k, v]) => v !== undefined && v !== null));
+                    setForm({ ...defaultCourseForm(), ...clean });
+                } catch (e) {
+                    console.error('Failed to parse saved course form:', e);
+                    setForm(defaultCourseForm());
+                }
+            } else {
+                setForm(defaultCourseForm());
+            }
+            hasLoadedInitialData.current = true;
+            isLoadingInitialData.current = false;
+            setEditingCourse(null);
+            setModalOpen(true);
+        } else if (identifier) {
+            const courseId = parseInt(identifier, 10);
+            if (!isNaN(courseId) && courses.length > 0) {
+                const course = courses.find(c => c.id === courseId);
+                if (course) {
+                    if (action === 'edit') {
+                        openEditModal(course);
+                    } else if (action === 'delete') {
+                        openDeleteConfirm(course);
+                    } else if (action === null) {
+                        // view action
+                        setViewingCourse(course);
+                        setViewModalOpen(true);
+                    }
+                }
+            }
+            // If course not found, modals stay closed
+        }
+        // If no identifier, modals stay closed
+    }, [identifier, action, courses]);
+
     return (
         <main className="flex-1 px-4 py-8 sm:px-6 lg:px-10">
             <div className="flex flex-col gap-6">
                 <header className="flex items-center justify-between gap-3">
                     <h1 className="text-xl font-semibold flex-shrink-0">{t('admin.manageCourses', { defaultValue: 'Manage courses' })}</h1>
                     <div className="flex items-center gap-3 flex-shrink-0">
-                        <button type="button" onClick={openCreateModal} className="px-3 py-2 text-sm transition-colors border border-transparent rounded-lg text-app-light-text-on-accent bg-app-light-accent hover:bg-app-light-accent-hover focus:ring-2 focus:ring-app-light-accent focus:ring-offset-2 dark:bg-app-dark-accent dark:text-app-dark-text-on-accent dark:hover:bg-app-dark-accent-hover dark:focus:ring-app-dark-accent whitespace-nowrap">
+                        <button type="button" onClick={() => navigate('/admin/courses/add')} className="px-3 py-2 text-sm transition-colors border border-transparent rounded-lg text-app-light-text-on-accent bg-app-light-accent hover:bg-app-light-accent-hover dark:bg-app-dark-accent dark:text-app-dark-text-on-accent dark:hover:bg-app-dark-accent-hover whitespace-nowrap">
                             {t('admin.addCourse', { defaultValue: 'Add course' })}
                         </button>
                     </div>
@@ -444,7 +578,7 @@ const AdminCoursesPage: React.FC = () => {
                                             <td className="px-4 py-2 whitespace-nowrap">{formatWeeks(course)}</td>
                                             <td className="px-4 py-2 whitespace-nowrap">{course.location || '—'}</td>
                                             <td className="px-4 py-2 text-right whitespace-nowrap">
-                                                <button type="button" onClick={() => openViewModal(course)} className="text-sm font-medium transition-colors text-app-light-text-primary dark:text-app-dark-text-primary hover:text-app-light-accent dark:hover:text-app-dark-accent">
+                                                <button type="button" onClick={() => navigate(`/admin/courses/${course.id}`)} className="text-sm font-medium transition-colors text-app-light-text-primary dark:text-app-dark-text-primary hover:text-app-light-accent dark:hover:text-app-dark-accent">
                                                     {t('common.view')}
                                                 </button>
                                             </td>
@@ -458,8 +592,8 @@ const AdminCoursesPage: React.FC = () => {
             </div>
 
             {modalOpen && (
-                <div className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
-                    <div className="w-full max-w-2xl my-8 border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
                         <div className="flex items-center justify-between p-4 pb-3">
                             <div>
                                 <p className="text-xs tracking-wider uppercase text-app-light-text-secondary dark:text-app-dark-text-secondary">
@@ -467,7 +601,13 @@ const AdminCoursesPage: React.FC = () => {
                                 </p>
                                 <h2 className="text-lg font-semibold text-app-light-text-primary dark:text-app-dark-text-primary">{form.title || t('admin.course.title')}</h2>
                             </div>
-                            <button type="button" onClick={closeModal} className="p-2 transition-colors rounded-lg text-app-light-text-secondary hover:text-app-light-text-primary dark:text-app-dark-text-secondary dark:hover:text-app-dark-text-primary hover:bg-app-light-surface-hover dark:hover:bg-app-dark-surface-hover" aria-label={t('common.close')}>
+                            <button type="button" onClick={() => {
+                                if (!editingCourse) {
+                                    // Save current form data before closing
+                                    localStorage.setItem('admin-course-add-form', JSON.stringify(form));
+                                }
+                                editingCourse ? navigate(`/admin/courses/${editingCourse.id}`) : navigate('/admin/courses');
+                            }} className="p-2 transition-colors rounded-lg text-app-light-text-secondary hover:text-app-light-text-primary dark:text-app-dark-text-secondary dark:hover:text-app-dark-text-primary hover:bg-app-light-surface-hover dark:hover:bg-app-dark-surface-hover" aria-label={t('common.close')}>
                                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M6 18L18 6M6 6l12 12" />
                                 </svg>
@@ -585,15 +725,20 @@ const AdminCoursesPage: React.FC = () => {
                                 <div className="flex flex-col-reverse pt-3 space-y-2 space-y-reverse border-t sm:flex-row sm:justify-end sm:space-x-3 sm:space-y-0 border-app-light-border dark:border-app-dark-border">
                                     <button
                                         type="button"
-                                        onClick={closeModal}
-                                        className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover focus:ring-1 focus:ring-app-light-border focus:ring-offset-2 dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover dark:focus:ring-app-dark-border"
+                                        onClick={() => {
+                                            if (!editingCourse) {
+                                                localStorage.removeItem('admin-course-add-form');
+                                            }
+                                            editingCourse ? navigate(`/admin/courses/${editingCourse.id}`) : navigate('/admin/courses');
+                                        }}
+                                        className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
                                     >
                                         {t('common.cancel')}
                                     </button>
                                     <button
                                         type="submit"
                                         disabled={saving}
-                                        className="w-full px-4 py-2 text-sm font-medium transition-colors border border-transparent rounded-lg sm:w-auto text-app-light-text-on-accent bg-app-light-accent hover:bg-app-light-accent-hover focus:ring-1 focus:ring-app-light-accent focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-app-dark-accent dark:text-app-dark-text-on-accent dark:hover:bg-app-dark-accent-hover dark:focus:ring-app-dark-accent"
+                                        className="w-full px-4 py-2 text-sm font-medium transition-colors border border-transparent rounded-lg sm:w-auto text-app-light-text-on-accent bg-app-light-accent hover:bg-app-light-accent-hover disabled:opacity-50 disabled:cursor-not-allowed dark:bg-app-dark-accent dark:text-app-dark-text-on-accent dark:hover:bg-app-dark-accent-hover"
                                     >
                                         {saving ? t('profile.saving') : t('common.save')}
                                     </button>
@@ -604,14 +749,19 @@ const AdminCoursesPage: React.FC = () => {
                 </div>
             )}
 
+
+
             {viewModalOpen && viewingCourse && (
-                <div className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
-                    <div className="w-full max-w-2xl my-8 border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
                         <div className="flex items-center justify-between p-4 pb-3">
                             <div>
+                                <p className="text-xs tracking-wider uppercase text-app-light-text-secondary dark:text-app-dark-text-secondary">
+                                    {t('admin.viewCourse', { defaultValue: 'View Course' })}
+                                </p>
                                 <h2 className="text-lg font-semibold text-app-light-text-primary dark:text-app-dark-text-primary">{viewingCourse.title}</h2>
                             </div>
-                            <button type="button" onClick={closeViewModal} className="p-2 transition-colors rounded-lg text-app-light-text-secondary hover:text-app-light-text-primary dark:text-app-dark-text-secondary dark:hover:text-app-dark-text-primary hover:bg-app-light-surface-hover dark:hover:bg-app-dark-surface-hover" aria-label={t('common.close')}>
+                            <button type="button" onClick={() => navigate(getViewClosePath())} className="p-2 transition-colors rounded-lg text-app-light-text-secondary hover:text-app-light-text-primary dark:text-app-dark-text-secondary dark:hover:text-app-dark-text-primary hover:bg-app-light-surface-hover dark:hover:bg-app-dark-surface-hover" aria-label={t('common.close')}>
                                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M6 18L18 6M6 6l12 12" />
                                 </svg>
@@ -640,6 +790,7 @@ const AdminCoursesPage: React.FC = () => {
                                             { value: 'Experiment', label: t('admin.courseForm.type.experiment') },
                                         ]}
                                         disabled={true}
+                                        hideSelectedTextWhen={(value) => value === ''}
                                     />
                                 </div>
 
@@ -670,7 +821,7 @@ const AdminCoursesPage: React.FC = () => {
                                     />
                                 </div>
 
-                                {/* Term, Academic Year, Day */}
+                                {/* Term, Date, Day */}
                                 <div className="grid gap-4 sm:grid-cols-3">
                                     <FloatingSelect
                                         id="view-course-term"
@@ -682,27 +833,23 @@ const AdminCoursesPage: React.FC = () => {
                                             { value: 'second', label: t('admin.courseForm.term.second') },
                                         ]}
                                         disabled={true}
+                                        hideSelectedTextWhen={(value) => value === ''}
                                     />
                                     <FloatingInput
-                                        id="view-course-academic-year"
-                                        label={t('admin.courseForm.academicYear')}
-                                        value={(() => {
-                                            const academicYear = calculateAcademicYearFromDate(viewingCourse.first_week_monday || '');
-                                            return academicYear || '';
-                                        })()}
+                                        id="view-academic-year"
+                                        label={t('admin.courseForm.academicYear', { defaultValue: 'Academic Year' })}
+                                        value={calculateAcademicYearFromDate(viewingCourse.first_week_monday || '')}
                                         onChange={() => { }}
                                         disabled={true}
                                     />
                                     <FloatingSelect
-                                        id="view-course-day"
+                                        id="view-day-of-week"
                                         label={t('admin.course.day')}
                                         value={String(viewingCourse.day_of_week || 1)}
                                         onChange={() => { }}
-                                        options={weekdayKeys.map(key => ({
-                                            value: String(key),
-                                            label: formatDay(key)
-                                        }))}
+                                        options={weekdayKeys.map(key => ({ value: String(key), label: formatDay(key) }))}
                                         disabled={true}
+                                        hideSelectedTextWhen={(value) => value === ''}
                                     />
                                 </div>
 
@@ -731,27 +878,23 @@ const AdminCoursesPage: React.FC = () => {
                                 <div className="flex flex-col-reverse pt-3 space-y-2 space-y-reverse border-t sm:flex-row sm:justify-between sm:space-x-3 sm:space-y-0 border-app-light-border dark:border-app-dark-border">
                                     <button
                                         type="button"
-                                        onClick={() => deleteCourse(viewingCourse.id)}
-                                        disabled={deletingId === viewingCourse.id}
-                                        className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-error bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover focus:ring-1 focus:ring-app-light-error focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-app-dark-surface dark:text-app-dark-error dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover dark:focus:ring-app-dark-error"
+                                        onClick={() => navigate(`/admin/courses/${viewingCourse.id}/delete`)}
+                                        className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-error bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-error dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
                                     >
-                                        {t('admin.courseDelete')}
+                                        {t('common.delete')}
                                     </button>
                                     <div className="flex flex-col-reverse space-y-2 space-y-reverse sm:flex-row sm:space-x-3 sm:space-y-0">
                                         <button
                                             type="button"
-                                            onClick={closeViewModal}
-                                            className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover focus:ring-1 focus:ring-app-light-border focus:ring-offset-2 dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover dark:focus:ring-app-dark-border"
+                                            onClick={() => navigate(getViewClosePath())}
+                                            className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
                                         >
                                             {t('common.close')}
                                         </button>
                                         <button
                                             type="button"
-                                            onClick={() => {
-                                                closeViewModal();
-                                                openEditModal(viewingCourse);
-                                            }}
-                                            className="w-full px-4 py-2 text-sm font-medium transition-colors border border-transparent rounded-lg sm:w-auto text-app-light-text-on-accent bg-app-light-accent hover:bg-app-light-accent-hover focus:ring-1 focus:ring-app-light-accent focus:ring-offset-2 dark:bg-app-dark-accent dark:text-app-dark-text-on-accent dark:hover:bg-app-dark-accent-hover dark:focus:ring-app-dark-accent"
+                                            onClick={() => navigate(`/admin/courses/${viewingCourse.id}/edit`)}
+                                            className="w-full px-4 py-2 text-sm font-medium text-white transition-colors border border-transparent rounded-lg sm:w-auto bg-app-light-accent hover:bg-app-light-accent-hover dark:bg-app-dark-accent dark:hover:bg-app-dark-accent-hover"
                                         >
                                             {t('common.edit')}
                                         </button>
@@ -764,8 +907,8 @@ const AdminCoursesPage: React.FC = () => {
             )}
 
             {showDatePicker && (
-                <div className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
-                    <div className="w-full max-w-md my-8 border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="w-full max-w-md max-h-[90vh] overflow-y-auto border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
                         <div className="flex items-center justify-between p-4 pb-3">
                             <div>
                                 <h2 className="text-lg font-semibold text-app-light-text-primary dark:text-app-dark-text-primary">
@@ -793,7 +936,7 @@ const AdminCoursesPage: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={() => setShowDatePicker(false)}
-                                        className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover focus:ring-1 focus:ring-app-light-border focus:ring-offset-2 dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover dark:focus:ring-app-dark-border"
+                                        className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
                                     >
                                         {t('common.cancel')}
                                     </button>
@@ -801,11 +944,49 @@ const AdminCoursesPage: React.FC = () => {
                                         type="button"
                                         onClick={saveWithNewTerm}
                                         disabled={!selectedDate || saving}
-                                        className="w-full px-4 py-2 text-sm font-medium transition-colors border border-transparent rounded-lg sm:w-auto text-app-light-text-on-accent bg-app-light-accent hover:bg-app-light-accent-hover focus:ring-1 focus:ring-app-light-accent focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-app-dark-accent dark:text-app-dark-text-on-accent dark:hover:bg-app-dark-accent-hover dark:focus:ring-app-dark-accent"
+                                        className="w-full px-4 py-2 text-sm font-medium transition-colors border border-transparent rounded-lg sm:w-auto text-app-light-text-on-accent bg-app-light-accent hover:bg-app-light-accent-hover disabled:opacity-50 disabled:cursor-not-allowed dark:bg-app-dark-accent dark:text-app-dark-text-on-accent dark:hover:bg-app-dark-accent-hover"
                                     >
                                         {saving ? t('profile.saving') : t('admin.createTermAndSave')}
                                     </button>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {deleteConfirmModalOpen && courseToDelete && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="w-full max-w-md border shadow-2xl bg-app-light-surface border-app-light-border rounded-2xl dark:bg-app-dark-surface dark:border-app-dark-border">
+                        <div className="p-6">
+                            <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full dark:bg-red-900/30">
+                                <svg className="w-6 h-6 text-red-600 dark:text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                </svg>
+                            </div>
+                            <h3 className="mb-2 text-lg font-semibold text-center text-app-light-text-primary dark:text-app-dark-text-primary">
+                                {t('admin.courseDeleteConfirmTitle', { defaultValue: 'Delete Course' })}
+                            </h3>
+                            <p className="mb-6 text-sm text-center text-app-light-text-secondary dark:text-app-dark-text-secondary">
+                                {t('admin.courseDeleteConfirm', { defaultValue: 'Are you sure you want to delete this course? This action cannot be undone.', name: courseToDelete.title })}
+                            </p>
+                            <div className="flex flex-col-reverse space-y-2 space-y-reverse sm:flex-row sm:justify-end sm:space-x-3 sm:space-y-0">
+                                <button
+                                    type="button"
+                                    onClick={cancelDelete}
+                                    className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
+                                >
+                                    {t('common.cancel')}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={confirmDeleteCourse}
+                                    disabled={deletingId === courseToDelete.id}
+                                    className="w-full px-4 py-2 text-sm font-medium text-white transition-colors border border-transparent rounded-lg sm:w-auto bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-red-600 dark:hover:bg-red-700"
+                                >
+                                    {deletingId === courseToDelete.id ? t('common.deleting', { defaultValue: 'Deleting...' }) : t('common.delete')}
+                                </button>
                             </div>
                         </div>
                     </div>

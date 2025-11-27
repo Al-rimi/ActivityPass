@@ -485,10 +485,10 @@ const App: React.FC = () => {
                 <Route path="/login" element={<Navigate to="/auth" replace />} />
                 <Route path="/complete-profile" element={<ProtectedRoute><CompleteProfilePage /></ProtectedRoute>} />
                 <Route path="/admin" element={<ProtectedRoute><AdminRoute><AdminDashboardPage /></AdminRoute></ProtectedRoute>} />
-                <Route path="/admin/students" element={<ProtectedRoute><AdminRoute><AdminStudentsPage /></AdminRoute></ProtectedRoute>} />
-                <Route path="/admin/staff" element={<ProtectedRoute><AdminRoute><AdminStaffPage /></AdminRoute></ProtectedRoute>} />
-                <Route path="/admin/courses" element={<ProtectedRoute><AdminRoute><AdminCoursesPage /></AdminRoute></ProtectedRoute>} />
-                <Route path="/admin/activities" element={<ProtectedRoute><AdminRoute><AdminActivitiesPage /></AdminRoute></ProtectedRoute>} />
+                <Route path="/admin/students/*" element={<ProtectedRoute><AdminRoute><AdminStudentsPage /></AdminRoute></ProtectedRoute>} />
+                <Route path="/admin/staff/*" element={<ProtectedRoute><AdminRoute><AdminStaffPage /></AdminRoute></ProtectedRoute>} />
+                <Route path="/admin/courses/*" element={<ProtectedRoute><AdminRoute><AdminCoursesPage /></AdminRoute></ProtectedRoute>} />
+                <Route path="/admin/activities/*" element={<ProtectedRoute><AdminRoute><AdminActivitiesPage /></AdminRoute></ProtectedRoute>} />
                 <Route path="/staff" element={<ProtectedRoute><StaffRoute><StaffDashboardPage /></StaffRoute></ProtectedRoute>} />
                 <Route path="/" element={<ProtectedRoute><RoleAwareHome /></ProtectedRoute>} />
             </Routes>
