@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from .models import StudentProfile, AccountMeta, Course, CourseEnrollment, AcademicTerm
+from .models import StudentProfile, AccountMeta, Course, CourseEnrollment, AcademicTerm, FacultyProfile
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -46,7 +46,31 @@ class StudentProfileSerializer(serializers.ModelSerializer):
         read_only_fields = ["activities_participated", "remaining_activity_slots"]
 
 
+class FacultyProfileSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+
+    class Meta:
+        model = FacultyProfile
+        fields = [
+            "id",
+            "user",
+            "faculty_id",
+            "name",
+            "gender",
+            "department",
+            "position",
+            "title_level",
+            "title",
+            "staff_type",
+            "birth_date",
+            "is_external",
+            "is_main_lecturer",
+        ]
+
+
 class CourseSerializer(serializers.ModelSerializer):
+    teacher_name = serializers.SerializerMethodField()
+    teacher_faculty_id = serializers.CharField(source='teacher_id', read_only=True)
 
     class Meta:
         model = Course
@@ -54,24 +78,52 @@ class CourseSerializer(serializers.ModelSerializer):
             "id",
             "code",
             "title",
-            "course_type",
-            "teacher",
+            "course_type_detail",
+            "teacher_id",
+            "teacher_name",
+            "teacher_faculty_id",
             "location",
             "term",
-            "first_week_monday",
-            "day_of_week",
+            "term_start_date",
+            "weekday",
             "periods",
-            "week_pattern",
+            "weeks",
+            "credits",
+            "department_name",
+            "category",
+            "nature",
+            "teaching_mode",
+            "exam_type",
+            "grading_method",
+            "hours_per_week",
+            "total_course_hours",
+            "enrolled_students",
+            "class_students",
+            "capacity",
+            "campus_name",
+            "majors",
+            "grades",
+            "audience",
             "created_at",
             "updated_at",
         ]
         read_only_fields = ["created_at", "updated_at"]
 
-    def validate_week_pattern(self, value):
+    def get_teacher_name(self, obj):
+        """Get teacher name by looking up FacultyProfile with matching faculty_id"""
+        if obj.teacher_id:
+            try:
+                faculty = FacultyProfile.objects.get(faculty_id=obj.teacher_id)
+                return faculty.name or faculty.user.first_name
+            except FacultyProfile.DoesNotExist:
+                pass
+        return ""
+
+    def validate_weeks(self, value):
         if value in (None, ""):
             return []
         if not isinstance(value, list):
-            raise serializers.ValidationError("week_pattern must be a list of weeks")
+            raise serializers.ValidationError("weeks must be a list of week numbers")
         cleaned = []
         for item in value:
             try:
@@ -100,20 +152,20 @@ class CourseSerializer(serializers.ModelSerializer):
         return sorted(set(cleaned))
 
     def validate(self, attrs):
-        day = attrs.get('day_of_week') or getattr(self.instance, 'day_of_week', None)
+        day = attrs.get('weekday') or getattr(self.instance, 'weekday', None)
         if day and not 1 <= day <= 7:
-            raise serializers.ValidationError({'day_of_week': 'Day of week must be between 1 (Mon) and 7 (Sun).'})
+            raise serializers.ValidationError({'weekday': 'Day of week must be between 1 (Mon) and 7 (Sun).'})
         
-        # Validate that first_week_monday matches the expected date for the term
+        # Validate that term_start_date matches the expected date for the term
         term = attrs.get('term') or getattr(self.instance, 'term', None)
-        first_week_monday = attrs.get('first_week_monday') or getattr(self.instance, 'first_week_monday', None)
+        term_start_date = attrs.get('term_start_date') or getattr(self.instance, 'term_start_date', None)
         
-        if term and first_week_monday:
+        if term and term_start_date:
             try:
                 academic_term = AcademicTerm.objects.get(term=term, is_active=True)
-                if academic_term.first_week_monday != first_week_monday:
+                if academic_term.first_week_monday != term_start_date:
                     raise serializers.ValidationError({
-                        'first_week_monday': f'Invalid week 1 Monday date for term {term}. Expected: {academic_term.first_week_monday}, got: {first_week_monday}'
+                        'term_start_date': f'Invalid week 1 Monday date for term {term}. Expected: {academic_term.first_week_monday}, got: {term_start_date}'
                     })
             except AcademicTerm.DoesNotExist:
                 raise serializers.ValidationError({
@@ -128,6 +180,7 @@ class CourseEnrollmentSerializer(serializers.ModelSerializer):
     student_username = serializers.CharField(source='student.user.username', read_only=True)
     course_title = serializers.CharField(source='course.title', read_only=True)
     course = CourseSerializer(read_only=True)  # Include full course data
+    student = StudentProfileSerializer(read_only=True)  # Include full student data
 
     class Meta:
         model = CourseEnrollment
@@ -135,7 +188,7 @@ class CourseEnrollmentSerializer(serializers.ModelSerializer):
             'id',
             'course',  # Now includes full course data
             'course_title',
-            'student',
+            'student',  # Now includes full student data
             'student_name',
             'student_username',
             'created_at',

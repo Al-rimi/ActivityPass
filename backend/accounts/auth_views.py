@@ -27,19 +27,25 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             user_exists = get_user_model().objects.filter(username=username).exists()
 
             if not user_exists:
-                # User doesn't exist - check if it's a valid student ID format
-                if username.isdigit() and len(username) == 12:
-                    # Valid student ID format but user doesn't exist
-                    raise serializers.ValidationError({
-                        'detail': 'Student ID not registered. Please contact your administrator.',
-                        'error_type': 'user_not_found_student'
-                    })
-                else:
-                    # Invalid format or admin/staff username doesn't exist
-                    raise serializers.ValidationError({
-                        'detail': 'Username is not registered.',
-                        'error_type': 'user_not_found'
-                    })
+                # User doesn't exist - check if it's a valid student ID or faculty ID format
+                if username.isdigit():
+                    if len(username) == 12:
+                        # Valid student ID format but user doesn't exist
+                        raise serializers.ValidationError({
+                            'detail': 'Student ID not registered. Please contact your administrator.',
+                            'error_type': 'user_not_found_student'
+                        })
+                    elif len(username) == 8:
+                        # Valid faculty ID format but user doesn't exist
+                        raise serializers.ValidationError({
+                            'detail': 'Faculty ID not registered. Please contact your administrator.',
+                            'error_type': 'user_not_found_faculty'
+                        })
+                # Invalid format or admin/staff username doesn't exist
+                raise serializers.ValidationError({
+                    'detail': 'Username is not registered.',
+                    'error_type': 'user_not_found'
+                })
 
             # User exists, try to authenticate
             try:
@@ -48,18 +54,24 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 return data
             except serializers.ValidationError as e:
                 # Password is incorrect for existing user
-                if username.isdigit() and len(username) == 12:
-                    # Student ID exists but password wrong
-                    raise serializers.ValidationError({
-                        'detail': 'Password is incorrect.',
-                        'error_type': 'invalid_credentials_student'
-                    })
-                else:
-                    # Admin/staff username exists but password wrong
-                    raise serializers.ValidationError({
-                        'detail': 'Password is incorrect.',
-                        'error_type': 'invalid_credentials'
-                    })
+                if username.isdigit():
+                    if len(username) == 12:
+                        # Student ID exists but password wrong
+                        raise serializers.ValidationError({
+                            'detail': 'Password is incorrect.',
+                            'error_type': 'invalid_credentials_student'
+                        })
+                    elif len(username) == 8:
+                        # Faculty ID exists but password wrong
+                        raise serializers.ValidationError({
+                            'detail': 'Password is incorrect.',
+                            'error_type': 'invalid_credentials_faculty'
+                        })
+                # Admin/staff username exists but password wrong
+                raise serializers.ValidationError({
+                    'detail': 'Password is incorrect.',
+                    'error_type': 'invalid_credentials'
+                })
         # Fallback to parent validation for other cases
         return super().validate(attrs)
 

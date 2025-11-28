@@ -25,7 +25,7 @@ from rest_framework_simplejwt.views import (
 )
 
 from activities.views import ActivityViewSet, ParticipationViewSet, StudentCourseEventViewSet, eligibility_check
-from accounts.views import StudentProfileViewSet
+from accounts.views import StudentProfileViewSet, FacultyProfileViewSet
 from accounts.auth_views import register, me, TokenObtainOrCreateStudentView
 from accounts import admin_views as accounts_admin
 
@@ -34,10 +34,12 @@ router.register(r'activities', ActivityViewSet)
 router.register(r'participations', ParticipationViewSet)
 router.register(r'course-events', StudentCourseEventViewSet)
 router.register(r'student-profile', StudentProfileViewSet, basename='student-profile')
+router.register(r'faculty-profile', FacultyProfileViewSet, basename='faculty-profile')
 router.register(r'admin/users', accounts_admin.AdminUserViewSet, basename='admin-users')
 router.register(r'admin/courses', accounts_admin.AdminCourseViewSet, basename='admin-courses')
 router.register(r'admin/course-enrollments', accounts_admin.AdminCourseEnrollmentViewSet, basename='admin-course-enrollments')
 router.register(r'admin/academic-terms', accounts_admin.AdminAcademicTermViewSet, basename='admin-academic-terms')
+router.register(r'admin/activities', accounts_admin.AdminActivityViewSet, basename='admin-activities')
 
 FRONTEND_INDEX = Path(__file__).resolve().parent.parent.parent / 'frontend' / 'build' / 'index.html'
 
@@ -62,11 +64,17 @@ urlpatterns = [
     path('api/auth/me/', me, name='auth_me'),
     # Admin management
     path('api/admin/create-staff/', accounts_admin.create_staff, name='admin_create_staff'),
+    path('api/admin/create-faculty/', accounts_admin.create_faculty, name='admin_create_faculty'),
     path('api/admin/create-student/', accounts_admin.create_student, name='admin_create_student'),
     path('api/admin/reset-password/', accounts_admin.reset_password, name='admin_reset_password'),
     path('api/admin/courses/import/', accounts_admin.import_courses, name='admin_courses_import'),
+    path('api/admin/faculty/course-counts/', accounts_admin.get_faculty_course_counts, name='admin_faculty_course_counts'),
     path('api/admin/security/preferences/', accounts_admin.get_security_preferences, name='admin_security_preferences'),
     path('api/admin/security/toggle/', accounts_admin.toggle_default_password_enforcement, name='admin_security_toggle'),
+    path('api/admin/counts/', accounts_admin.get_counts, name='admin_counts'),
+    path('api/admin/students-with-counts/', accounts_admin.get_students_with_counts, name='admin_students_with_counts'),
+    path('api/admin/faculty-with-counts/', accounts_admin.get_faculty_with_counts, name='admin_faculty_with_counts'),
+    path('api/admin/staff-list/', accounts_admin.get_staff_with_counts, name='admin_staff_list'),
 ]
 
 if settings.DEBUG:
