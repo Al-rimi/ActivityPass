@@ -198,9 +198,7 @@ const AuthPage: React.FC = () => {
                     >
                         {submitting ? (
                             <span className="flex items-center justify-center gap-2">
-                                <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                                </svg>
+                                <div className="inline-block w-4 h-4 border-4 border-app-light-text-on-accent/30 border-t-app-light-text-on-accent rounded-full animate-spin"></div>
                                 {t('auth.loggingIn')}
                             </span>
                         ) : (

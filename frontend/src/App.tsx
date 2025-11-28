@@ -12,6 +12,7 @@ import AuthPage from './pages/AuthPage';
 import CompleteProfilePage from './pages/CompleteProfilePage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminStudentsPage from './pages/AdminStudentsPage';
+import AdminFacultyPage from './pages/AdminFacultyPage';
 import AdminStaffPage from './pages/AdminStaffPage';
 import AdminCoursesPage from './pages/AdminCoursesPage';
 import AdminActivitiesPage from './pages/AdminActivitiesPage';
@@ -49,6 +50,7 @@ const Navbar: React.FC = () => {
             return [
                 { label: dashboardLabel, to: '/admin' },
                 { label: t('admin.studentsTab', { defaultValue: 'Students' }), to: '/admin/students' },
+                { label: t('admin.facultyTab', { defaultValue: 'Faculty' }), to: '/admin/faculty' },
                 { label: t('admin.staffTab', { defaultValue: 'Staff' }), to: '/admin/staff' },
                 { label: t('admin.coursesTab', { defaultValue: 'Courses' }), to: '/admin/courses' },
                 { label: t('admin.activitiesTab', { defaultValue: 'Activities' }), to: '/admin/activities' },
@@ -500,6 +502,7 @@ const App: React.FC = () => {
                 <Route path="/complete-profile" element={<ProtectedRoute><CompleteProfilePage /></ProtectedRoute>} />
                 <Route path="/admin" element={<ProtectedRoute><AdminRoute><AdminDashboardPage /></AdminRoute></ProtectedRoute>} />
                 <Route path="/admin/students/*" element={<ProtectedRoute><AdminRoute><AdminStudentsPage /></AdminRoute></ProtectedRoute>} />
+                <Route path="/admin/faculty/*" element={<ProtectedRoute><AdminRoute><AdminFacultyPage /></AdminRoute></ProtectedRoute>} />
                 <Route path="/admin/staff/*" element={<ProtectedRoute><AdminRoute><AdminStaffPage /></AdminRoute></ProtectedRoute>} />
                 <Route path="/admin/courses/*" element={<ProtectedRoute><AdminRoute><AdminCoursesPage /></AdminRoute></ProtectedRoute>} />
                 <Route path="/admin/activities/*" element={<ProtectedRoute><AdminRoute><AdminActivitiesPage /></AdminRoute></ProtectedRoute>} />

@@ -11,34 +11,34 @@ import LocationPicker from '../components/LocationPicker';
 import SearchInput from '../components/SearchInput';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 
-const COLLEGE_OPTIONS = [
-    { value: '计算机科学与技术学院', labelKey: 'admin.college.computerScience' },
-    { value: '国际经济与贸易学院', labelKey: 'admin.college.internationalEconomics' },
-    { value: '初阳学院', labelKey: 'admin.college.chuYang' },
-    { value: '经管学院', labelKey: 'admin.college.economicsManagement' },
-    { value: '法学院', labelKey: 'admin.college.law' },
-    { value: '马克思学院', labelKey: 'admin.college.marxism' },
-    { value: '教育学院', labelKey: 'admin.college.education' },
-    { value: '联合教育学院', labelKey: 'admin.college.jointEducation' },
-    { value: '心理学院', labelKey: 'admin.college.psychology' },
-    { value: '儿童教育学院', labelKey: 'admin.college.earlyChildhoodEducation' },
-    { value: '体育学院', labelKey: 'admin.college.physicalEducation' },
-    { value: '人文学院', labelKey: 'admin.college.humanities' },
-    { value: '外语学院', labelKey: 'admin.college.foreignLanguages' },
-    { value: '艺术学院', labelKey: 'admin.college.arts' },
-    { value: '设计学院', labelKey: 'admin.college.design' },
-    { value: '数学学院', labelKey: 'admin.college.mathematics' },
-    { value: '计算机学院', labelKey: 'admin.college.computerScience' },
-    { value: '数理医学院', labelKey: 'admin.college.mathematicsPhysicsMedicine' },
-    { value: '物电学院', labelKey: 'admin.college.physicsElectronics' },
-    { value: '化材学院', labelKey: 'admin.college.chemistryMaterials' },
-    { value: '生命科学学院', labelKey: 'admin.college.lifeSciences' },
-    { value: '地环学院', labelKey: 'admin.college.earthEnvironmental' },
-    { value: '工学院', labelKey: 'admin.college.engineering' },
-    { value: '国社学院', labelKey: 'admin.college.nationalSociety' },
-    { value: '非洲学院', labelKey: 'admin.college.africaStudies' },
-    { value: '终身学院', labelKey: 'admin.college.lifelongEducation' },
-    { value: '杭州自动化学院', labelKey: 'admin.college.hangzhouAutomation' },
+const DEPARTMENT_OPTIONS = [
+    { value: '计算机科学与技术学院', labelKey: 'admin.department.computerScience' },
+    { value: '国际经济与贸易学院', labelKey: 'admin.department.internationalEconomics' },
+    { value: '初阳学院', labelKey: 'admin.department.chuYang' },
+    { value: '经管学院', labelKey: 'admin.department.economicsManagement' },
+    { value: '法学院', labelKey: 'admin.department.law' },
+    { value: '马克思学院', labelKey: 'admin.department.marxism' },
+    { value: '教育学院', labelKey: 'admin.department.education' },
+    { value: '联合教育学院', labelKey: 'admin.department.jointEducation' },
+    { value: '心理学院', labelKey: 'admin.department.psychology' },
+    { value: '儿童教育学院', labelKey: 'admin.department.earlyChildhoodEducation' },
+    { value: '体育学院', labelKey: 'admin.department.physicalEducation' },
+    { value: '人文学院', labelKey: 'admin.department.humanities' },
+    { value: '外语学院', labelKey: 'admin.department.foreignLanguages' },
+    { value: '艺术学院', labelKey: 'admin.department.arts' },
+    { value: '设计学院', labelKey: 'admin.department.design' },
+    { value: '数学学院', labelKey: 'admin.department.mathematics' },
+    { value: '计算机学院', labelKey: 'admin.department.computerScience' },
+    { value: '数理医学院', labelKey: 'admin.department.mathematicsPhysicsMedicine' },
+    { value: '物电学院', labelKey: 'admin.department.physicsElectronics' },
+    { value: '化材学院', labelKey: 'admin.department.chemistryMaterials' },
+    { value: '生命科学学院', labelKey: 'admin.department.lifeSciences' },
+    { value: '地环学院', labelKey: 'admin.department.earthEnvironmental' },
+    { value: '工学院', labelKey: 'admin.department.engineering' },
+    { value: '国社学院', labelKey: 'admin.department.nationalSociety' },
+    { value: '非洲学院', labelKey: 'admin.department.africaStudies' },
+    { value: '终身学院', labelKey: 'admin.department.lifelongEducation' },
+    { value: '杭州自动化学院', labelKey: 'admin.department.hangzhouAutomation' },
 ];
 
 const COUNTRY_OPTIONS = [
@@ -283,6 +283,9 @@ const AdminActivitiesPage: React.FC = () => {
     const [viewingActivity, setViewingActivity] = useState<AdminActivity | null>(null);
     const [deletingId, setDeletingId] = useState<number | null>(null);
 
+    // Track if we've fetched data to prevent multiple fetches
+    const hasFetchedData = React.useRef(false);
+
     // Track if we've loaded initial form data to prevent overwriting localStorage on mount
     const hasLoadedInitialData = React.useRef(false);
     // Track if we are currently loading initial data to prevent saving during load
@@ -332,7 +335,7 @@ const AdminActivitiesPage: React.FC = () => {
         if (!tokens) return;
         setLoading(true);
         try {
-            const res = await fetch('/api/activities/', { headers });
+            const res = await fetch('/api/admin/activities/', { headers });
             if (!res.ok) throw new Error('fetch_failed');
             const data = await res.json();
             setAllActivities(data);
@@ -346,7 +349,8 @@ const AdminActivitiesPage: React.FC = () => {
     }, [tokens, headers, t, filterActivities]);
 
     React.useEffect(() => {
-        if (tokens) {
+        if (tokens && !hasFetchedData.current) {
+            hasFetchedData.current = true;
             loadActivities();
         }
     }, [tokens, loadActivities]);
@@ -374,7 +378,7 @@ const AdminActivitiesPage: React.FC = () => {
             const payload = { ...form };
 
             // Handle college_required: if all colleges selected, store "all", otherwise store the array
-            if (form.college_required.length === COLLEGE_OPTIONS.length) {
+            if (form.college_required.length === DEPARTMENT_OPTIONS.length) {
                 (payload as any).college_required = 'all';
             } else if (!form.college_required.length) {
                 delete (payload as any).college_required;
@@ -398,7 +402,7 @@ const AdminActivitiesPage: React.FC = () => {
             if (!form.description.trim()) delete (payload as any).description;
             if (!form.chinese_level_min.trim()) delete (payload as any).chinese_level_min;
 
-            const res = await fetch('/api/activities/', {
+            const res = await fetch('/api/admin/activities/', {
                 method: 'POST',
                 headers,
                 body: JSON.stringify(payload),
@@ -447,7 +451,7 @@ const AdminActivitiesPage: React.FC = () => {
             };
 
             // Handle college_required: if all colleges selected, store "all", otherwise store the array
-            if (Array.isArray(editForm.college_required) && editForm.college_required.length === COLLEGE_OPTIONS.length) {
+            if (Array.isArray(editForm.college_required) && editForm.college_required.length === DEPARTMENT_OPTIONS.length) {
                 payload.college_required = 'all' as any;
             }
 
@@ -464,7 +468,7 @@ const AdminActivitiesPage: React.FC = () => {
                 payload.location = '';
             }
 
-            const res = await fetch(`/api/activities/${editingActivity.id}/`, {
+            const res = await fetch(`/api/admin/activities/${editingActivity.id}/`, {
                 method: 'PATCH',
                 headers,
                 body: JSON.stringify(payload),
@@ -507,7 +511,7 @@ const AdminActivitiesPage: React.FC = () => {
         if (!tokens) return;
         setDeletingId(activity.id);
         try {
-            const res = await fetch(`/api/activities/${activity.id}/`, { method: 'DELETE', headers });
+            const res = await fetch(`/api/admin/activities/${activity.id}/`, { method: 'DELETE', headers });
             if (!res.ok) throw new Error('delete_failed');
             loadActivities(search);
         } catch (err) {
@@ -561,7 +565,7 @@ const AdminActivitiesPage: React.FC = () => {
                         setEditForm({
                             title: activity.title || '',
                             description: activity.description || '',
-                            college_required: activity.college_required === 'all' ? COLLEGE_OPTIONS.map(opt => opt.value) :
+                            college_required: activity.college_required === 'all' ? DEPARTMENT_OPTIONS.map(opt => opt.value) :
                                 Array.isArray(activity.college_required) ? activity.college_required : [],
                             chinese_level_min: activity.chinese_level_min || '',
                             countries: activity.countries === 'all' ? COUNTRY_OPTIONS.map(opt => opt.value) :
@@ -642,6 +646,14 @@ const AdminActivitiesPage: React.FC = () => {
                                 {!activities.length && !loading && (
                                     <tr>
                                         <td colSpan={6} className="py-6 text-center text-app-light-text-secondary dark:text-app-dark-text-secondary">{t('admin.noActivities', { defaultValue: 'No activities found.' })}</td>
+                                    </tr>
+                                )}
+                                {loading && (
+                                    <tr>
+                                        <td colSpan={6} className="py-6 text-center text-app-light-text-secondary dark:text-app-dark-text-secondary">
+                                            <div className="inline-block w-4 h-4 border-4 border-app-light-accent/30 border-t-app-light-accent rounded-full animate-spin dark:border-app-dark-accent/30 dark:border-t-app-dark-accent mr-2"></div>
+                                            {t('admin.table.loading')}
+                                        </td>
                                     </tr>
                                 )}
                                 {activities.map(activity => (
@@ -738,10 +750,11 @@ const AdminActivitiesPage: React.FC = () => {
                                             label={t('admin.activity.college', { defaultValue: 'College' })}
                                             value={form.college_required}
                                             onChange={(value) => setForm(prev => ({ ...prev, college_required: value }))}
-                                            options={COLLEGE_OPTIONS.map(option => ({
+                                            options={DEPARTMENT_OPTIONS.map(option => ({
                                                 value: option.value,
                                                 label: t(option.labelKey, { defaultValue: option.value })
                                             }))}
+                                            showSearch={true}
                                         />
                                         <FloatingMultiSelect
                                             id="activity-countries"
@@ -783,7 +796,14 @@ const AdminActivitiesPage: React.FC = () => {
                                             disabled={creating}
                                             className="w-full px-4 py-2 text-sm font-medium text-white transition-colors border border-transparent rounded-lg sm:w-auto bg-app-light-accent hover:bg-app-light-accent-hover disabled:opacity-50 disabled:cursor-not-allowed dark:bg-app-dark-accent dark:hover:bg-app-dark-accent-hover"
                                         >
-                                            {creating ? t('profile.saving') : t('admin.createActivity', { defaultValue: 'Create Activity' })}
+                                            {creating ? (
+                                                <span className="flex items-center justify-center gap-2">
+                                                    <div className="inline-block w-4 h-4 border-4 border-app-light-text-on-accent/30 border-t-app-light-text-on-accent rounded-full animate-spin"></div>
+                                                    {t('profile.saving')}
+                                                </span>
+                                            ) : (
+                                                t('admin.createActivity', { defaultValue: 'Create Activity' })
+                                            )}
                                         </button>
                                     </div>
                                 </form>
@@ -866,10 +886,11 @@ const AdminActivitiesPage: React.FC = () => {
                                             label={t('admin.activity.college', { defaultValue: 'College' })}
                                             value={editForm.college_required}
                                             onChange={(value) => setEditForm(prev => ({ ...prev, college_required: value }))}
-                                            options={COLLEGE_OPTIONS.map(option => ({
+                                            options={DEPARTMENT_OPTIONS.map(option => ({
                                                 value: option.value,
                                                 label: t(option.labelKey, { defaultValue: option.value })
                                             }))}
+                                            showSearch={true}
                                         />
                                         <FloatingMultiSelect
                                             id="edit-activity-countries"
@@ -907,7 +928,14 @@ const AdminActivitiesPage: React.FC = () => {
                                             disabled={updating}
                                             className="w-full px-4 py-2 text-sm font-medium text-white transition-colors border border-transparent rounded-lg sm:w-auto bg-app-light-accent hover:bg-app-light-accent-hover disabled:opacity-50 disabled:cursor-not-allowed dark:bg-app-dark-accent dark:hover:bg-app-dark-accent-hover"
                                         >
-                                            {updating ? t('profile.saving') : t('admin.saveChanges')}
+                                            {updating ? (
+                                                <span className="flex items-center justify-center gap-2">
+                                                    <div className="inline-block w-4 h-4 border-4 border-app-light-text-on-accent/30 border-t-app-light-text-on-accent rounded-full animate-spin"></div>
+                                                    {t('profile.saving')}
+                                                </span>
+                                            ) : (
+                                                t('admin.saveChanges')
+                                            )}
                                         </button>
                                     </div>
                                 </form>
@@ -996,14 +1024,15 @@ const AdminActivitiesPage: React.FC = () => {
                                         <FloatingMultiSelect
                                             id="view-activity-college"
                                             label={t('admin.activity.college', { defaultValue: 'College' })}
-                                            value={viewingActivity.college_required === 'all' ? COLLEGE_OPTIONS.map(opt => opt.value) :
+                                            value={viewingActivity.college_required === 'all' ? DEPARTMENT_OPTIONS.map(opt => opt.value) :
                                                 Array.isArray(viewingActivity.college_required) ? viewingActivity.college_required : []}
                                             onChange={() => { }}
-                                            options={COLLEGE_OPTIONS.map(option => ({
+                                            options={DEPARTMENT_OPTIONS.map(option => ({
                                                 value: option.value,
                                                 label: t(option.labelKey, { defaultValue: option.value })
                                             }))}
                                             disabled={true}
+                                            showSearch={true}
                                         />
                                         <FloatingMultiSelect
                                             id="view-activity-countries"

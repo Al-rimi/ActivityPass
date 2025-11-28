@@ -7,6 +7,8 @@ import FloatingSelect from '../components/FloatingSelect';
 import YearInput from '../components/YearInput';
 import SearchInput from '../components/SearchInput';
 import { useNavigate, useParams } from 'react-router-dom';
+import { getDepartmentOptions } from '../utils/constants';
+import { useAuthenticatedApi } from '../utils/api';
 
 const defaultStudentForm = () => ({
     student_id: '',
@@ -21,11 +23,94 @@ const defaultStudentForm = () => ({
     year: '',
 });
 
+// Mapping of course titles to translation keys
+const getCourseTitleTranslationKey = (title: string): string => {
+    const titleMapping: { [key: string]: string } = {
+        '人工智能导论': 'admin.course.title.aiIntro',
+        '大模型引领的人工智能通识与实践': 'admin.course.title.largeModelAI',
+        '动手学 AI：人工智能通识与实践（人文艺术版）': 'admin.course.title.handsOnAIHumanities',
+        '动手学 AI：人工智能通识与实践（社科版）': 'admin.course.title.handsOnAISocialScience',
+        '动手学 AI：人工智能通识与实践（理工版）': 'admin.course.title.handsOnAIScience',
+        '人工智能通识与实践应用': 'admin.course.title.aiGeneralPractice',
+        '人工智能实践应用（师范类、人文社科）': 'admin.course.title.aiPracticeNormalHumanities',
+        '人工智能实践应用（师范类、理工科）': 'admin.course.title.aiPracticeNormalScience',
+        'WPS智能办公': 'admin.course.title.wpsOffice',
+        '人工智能应用-网站设计': 'admin.course.title.aiWebDesign',
+        '人工智能基础-Python程序设计': 'admin.course.title.pythonProgramming',
+        'C语言程序设计': 'admin.course.title.cProgramming',
+        'Java程序设计': 'admin.course.title.javaProgramming',
+        'Python与数据分析': 'admin.course.title.pythonDataAnalysis',
+        'Python数据分析应用实训': 'admin.course.title.pythonDataAnalysisTraining',
+        'UI/UX交互设计': 'admin.course.title.uiUxDesign',
+        'Web前端开发技术': 'admin.course.title.webFrontendDevelopment',
+        'Web应用程序开发': 'admin.course.title.webAppDevelopment',
+        '专业基础技能考核': 'admin.course.title.professionalSkillsAssessment',
+        '专业实习': 'admin.course.title.internship',
+        '专业导论': 'admin.course.title.professionalIntroduction',
+        '专业英语': 'admin.course.title.professionalEnglish',
+        '专业见习': 'admin.course.title.professionalVisit',
+        '个人项目实训': 'admin.course.title.individualProjectTraining',
+        '交互设计': 'admin.course.title.interactionDesign',
+        '人工智能基础': 'admin.course.title.aiFoundation',
+        '人工智能算法实训': 'admin.course.title.aiAlgorithmTraining',
+        '分布式系统': 'admin.course.title.distributedSystems',
+        '团队协作与职业素质': 'admin.course.title.teamworkProfessionalQuality',
+        '团队规范项目实训': 'admin.course.title.teamProjectTraining',
+        '多媒体技术与应用': 'admin.course.title.multimediaTechnology',
+        '嵌入式软件开发': 'admin.course.title.embeddedSoftwareDevelopment',
+        '开源硬件实训': 'admin.course.title.openSourceHardwareTraining',
+        '教育实习': 'admin.course.title.educationInternship',
+        '教育研习': 'admin.course.title.educationResearch',
+        '数字信号处理': 'admin.course.title.digitalSignalProcessing',
+        '数字图像处理与计算机视觉': 'admin.course.title.digitalImageProcessing',
+        '数据库原理及应用': 'admin.course.title.databasePrinciples',
+        '数据库及应用技术': 'admin.course.title.databaseTechnology',
+        '数据结构课程设计': 'admin.course.title.dataStructuresDesign',
+        '智能科学新技术讲座': 'admin.course.title.intelligentScienceSeminar',
+        '智能移动设备软件开发': 'admin.course.title.mobileSoftwareDevelopment',
+        '机器人学': 'admin.course.title.robotics',
+        '概率与数理统计': 'admin.course.title.probabilityStatistics',
+        '离散数学': 'admin.course.title.discreteMathematics',
+        '科技文献检索及专利申请': 'admin.course.title.techLiteratureSearch',
+        '移动应用开发': 'admin.course.title.mobileAppDevelopment',
+        '算法设计与分析': 'admin.course.title.algorithmDesign',
+        '系统分析与设计：理论和方法': 'admin.course.title.systemAnalysisDesign',
+        '线性代数': 'admin.course.title.linearAlgebra',
+        '编译原理': 'admin.course.title.compilerPrinciples',
+        '网络安全': 'admin.course.title.networkSecurity',
+        '网络安全技能综合实训': 'admin.course.title.networkSecurityTraining',
+        '网络攻击与防御技术': 'admin.course.title.networkAttackDefense',
+        '计算方法': 'admin.course.title.computationalMethods',
+        '计算机新技术讲座': 'admin.course.title.computerScienceSeminar',
+        '计算机科学导论': 'admin.course.title.computerScienceIntro',
+        '计算机组成与结构': 'admin.course.title.computerArchitecture',
+        '软件新技术讲座': 'admin.course.title.softwareSeminar',
+        '软件设计模式': 'admin.course.title.softwareDesignPatterns',
+        '软件质量保证与测试': 'admin.course.title.softwareQualityTesting',
+        '软件过程与文档写作': 'admin.course.title.softwareProcessDocumentation',
+        '软件项目管理': 'admin.course.title.softwareProjectManagement',
+        '防火墙与入侵检测技术': 'admin.course.title.firewallIntrusionDetection',
+        '面向对象分析与设计': 'admin.course.title.ooAnalysisDesign',
+        '面向对象程序设计C#': 'admin.course.title.ooProgrammingCsharp',
+        '面向对象程序设计Java': 'admin.course.title.ooProgrammingJava',
+        '面向对象编程基础': 'admin.course.title.ooProgrammingFoundation',
+        '项目管理与工程实训': 'admin.course.title.projectManagementTraining',
+    };
+    return titleMapping[title] || '';
+};
+
+// Function to get translated course title
+const getTranslatedCourseTitle = (title: string, t: any): string => {
+    const translationKey = getCourseTitleTranslationKey(title);
+    return translationKey ? t(translationKey) : title;
+};
+
 const AdminStudentsPage: React.FC = () => {
     const { tokens } = useAuth();
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { '*': path } = useParams<{ '*': string }>();
+    const { authenticatedJsonFetch, authenticatedFetch } = useAuthenticatedApi();
 
     // Capture saved form data before it gets cleared
     const capturedFormData = React.useRef<string | null>(null);
@@ -102,6 +187,9 @@ const AdminStudentsPage: React.FC = () => {
     // Track if we are currently loading initial data to prevent saving during load
     const isLoadingInitialData = React.useRef(false);
 
+    // Track if data has been fetched to prevent multiple fetches
+    const hasFetchedData = React.useRef(false);
+
     // Save form data whenever it changes (as user types)
     React.useEffect(() => {
         if (!isLoadingInitialData.current && hasLoadedInitialData.current) {
@@ -135,9 +223,6 @@ const AdminStudentsPage: React.FC = () => {
     const [selectedStudentForCourses, setSelectedStudentForCourses] = useState<any>(null);
     const [loadingActivities, setLoadingActivities] = useState(false);
     const [loadingCourses, setLoadingCourses] = useState(false);
-
-    // Student counts cache
-    const [studentCounts, setStudentCounts] = useState<Record<number, { activities: number; courses: number }>>({});
     const studentProfileFieldDefs = useMemo(() => ([
         { name: 'phone', label: t('admin.student.phone') },
         { name: 'major', label: t('admin.student.major') },
@@ -146,11 +231,6 @@ const AdminStudentsPage: React.FC = () => {
         { name: 'gender', label: t('admin.student.gender') },
         { name: 'chinese_level', label: t('admin.student.chinese_level') },
     ]), [t]);
-
-    const authHeaders = useMemo(() => ({
-        'Content-Type': 'application/json',
-        Authorization: tokens ? `Bearer ${tokens.access}` : '',
-    }), [tokens]);
 
     const filterStudents = useCallback((query: string, dataset: AdminUser[]) => {
         const q = query.trim().toLowerCase();
@@ -168,77 +248,28 @@ const AdminStudentsPage: React.FC = () => {
         });
     }, []);
 
-    const loadStudentCounts = useCallback(async (students: AdminUser[]) => {
-        const counts: Record<number, { activities: number; courses: number }> = {};
-
-        try {
-            // Fetch all participations and course enrollments in bulk
-            const [participationsRes, enrollmentsRes] = await Promise.all([
-                fetch('/api/participations/', { headers: authHeaders }),
-                fetch('/api/admin/course-enrollments/', { headers: authHeaders })
-            ]);
-
-            const participations = participationsRes.ok ? await participationsRes.json() : [];
-            const enrollments = enrollmentsRes.ok ? await enrollmentsRes.json() : [];
-
-            // Create maps for counting
-            const participationCounts: Record<number, number> = {};
-            const enrollmentCounts: Record<number, number> = {};
-
-            // Count participations by student
-            participations.forEach((p: any) => {
-                const studentId = p.student;
-                participationCounts[studentId] = (participationCounts[studentId] || 0) + 1;
-            });
-
-            // Count enrollments by student
-            enrollments.forEach((e: any) => {
-                const studentId = e.student;
-                enrollmentCounts[studentId] = (enrollmentCounts[studentId] || 0) + 1;
-            });
-
-            // Set counts for all students
-            students.forEach(student => {
-                counts[student.id] = {
-                    activities: participationCounts[student.id] || 0,
-                    courses: enrollmentCounts[student.id] || 0
-                };
-            });
-        } catch (err) {
-            console.error('Error loading bulk counts:', err);
-            // Fallback to zero counts
-            students.forEach(student => {
-                counts[student.id] = { activities: 0, courses: 0 };
-            });
-        }
-
-        setStudentCounts(counts);
-    }, [authHeaders]);
-
     const loadStudents = useCallback(async (query = '') => {
         if (!tokens) return;
         setLoading(true);
         try {
-            const qs = new URLSearchParams({ role: 'student' });
-            const res = await fetch(`/api/admin/users/?${qs.toString()}`, { headers: authHeaders });
-            if (!res.ok) throw new Error('fetch_failed');
-            const data = await res.json();
+            const qs = new URLSearchParams();
+            if (query.trim()) {
+                qs.set('q', query.trim());
+            }
+            const data = await authenticatedJsonFetch(`/api/admin/students-with-counts/?${qs.toString()}`);
             setAllStudents(data);
-            const filteredData = filterStudents(query, data);
-            setStudents(filteredData);
-
-            // Load counts for the filtered students
-            await loadStudentCounts(filteredData);
+            setStudents(data);
         } catch (err) {
             console.error(err);
             setNotice({ type: 'error', text: t('admin.fetchError') });
         } finally {
             setLoading(false);
         }
-    }, [tokens, authHeaders, t, filterStudents, loadStudentCounts]);
+    }, [tokens, t, authenticatedJsonFetch]);
 
     useEffect(() => {
-        if (tokens) {
+        if (tokens && !hasFetchedData.current) {
+            hasFetchedData.current = true;
             loadStudents();
         }
     }, [tokens, loadStudents]);
@@ -250,13 +281,12 @@ const AdminStudentsPage: React.FC = () => {
     const resetPassword = async (user: AdminUser) => {
         setResettingUserId(user.id);
         try {
-            const res = await fetch('/api/admin/reset-password/', {
+            const response = await authenticatedFetch('/api/admin/reset-password/', {
                 method: 'POST',
-                headers: authHeaders,
                 body: JSON.stringify({ user_id: user.id }),
             });
-            if (!res.ok) throw new Error('reset_failed');
-            const data = await res.json();
+            if (!response.ok) throw new Error('reset_failed');
+            const data = await response.json();
             setNotice({ type: 'success', text: t('admin.resetPasswordDone', { password: data.password }) });
         } catch (err) {
             console.error(err);
@@ -324,12 +354,11 @@ const AdminStudentsPage: React.FC = () => {
                 studentProfile.year = null;
             }
             payload.student_profile = studentProfile;
-            const res = await fetch(`/api/admin/users/${editingStudent.id}/`, {
+            const response = await authenticatedFetch(`/api/admin/users/${editingStudent.id}/`, {
                 method: 'PATCH',
-                headers: authHeaders,
                 body: JSON.stringify(payload),
             });
-            if (!res.ok) throw new Error('update_failed');
+            if (!response.ok) throw new Error('update_failed');
             setNotice({ type: 'success', text: t('admin.studentUpdated') });
             navigate(`/admin/students/${editingStudent.student_profile?.student_id}`);
             loadStudents(search);
@@ -363,13 +392,12 @@ const AdminStudentsPage: React.FC = () => {
             } else {
                 payload.year = Number(form.year);
             }
-            const res = await fetch('/api/admin/create-student/', {
+            const response = await authenticatedFetch('/api/admin/create-student/', {
                 method: 'POST',
-                headers: authHeaders,
                 body: JSON.stringify(payload),
             });
-            if (!res.ok) throw new Error('create_student_failed');
-            const data = await res.json();
+            if (!response.ok) throw new Error('create_student_failed');
+            const data = await response.json();
             setNotice({ type: 'success', text: t('admin.studentCreated', { defaultValue: 'Student created with default password 000000.', username: data.user?.username || form.student_id }) });
             localStorage.removeItem('admin-student-add-form');
             setForm(defaultStudentForm());
@@ -386,9 +414,7 @@ const AdminStudentsPage: React.FC = () => {
     const loadStudentActivities = useCallback(async (student: AdminUser) => {
         setLoadingActivities(true);
         try {
-            const res = await fetch(`/api/participations/?student=${student.id}`, { headers: authHeaders });
-            if (!res.ok) throw new Error('fetch_activities_failed');
-            const data = await res.json();
+            const data = await authenticatedJsonFetch(`/api/participations/?student=${student.id}`);
             setSelectedStudentActivities(data);
             setSelectedStudentForActivities(student);
         } catch (err) {
@@ -397,14 +423,12 @@ const AdminStudentsPage: React.FC = () => {
         } finally {
             setLoadingActivities(false);
         }
-    }, [authHeaders, t]);
+    }, [authenticatedJsonFetch, t]);
 
     const loadStudentCourses = useCallback(async (student: AdminUser) => {
         setLoadingCourses(true);
         try {
-            const res = await fetch(`/api/admin/course-enrollments/?student=${student.id}`, { headers: authHeaders });
-            if (!res.ok) throw new Error('fetch_courses_failed');
-            const data = await res.json();
+            const data = await authenticatedJsonFetch(`/api/admin/course-enrollments/?student=${student.id}`);
             // Transform course enrollment data to course data
             const courses = data.map((enrollment: any) => enrollment.course);
             setSelectedStudentCourses(courses);
@@ -415,7 +439,7 @@ const AdminStudentsPage: React.FC = () => {
         } finally {
             setLoadingCourses(false);
         }
-    }, [authHeaders, t]);
+    }, [authenticatedJsonFetch, t]);
 
     const openDeleteConfirm = (student: AdminUser) => {
         setStudentToDelete(student);
@@ -443,8 +467,8 @@ const AdminStudentsPage: React.FC = () => {
         if (!tokens) return;
         setDeletingId(studentId);
         try {
-            const res = await fetch(`/api/admin/users/${studentId}/`, { method: 'DELETE', headers: authHeaders });
-            if (!res.ok) throw new Error('delete_failed');
+            const response = await authenticatedFetch(`/api/admin/users/${studentId}/`, { method: 'DELETE' });
+            if (!response.ok) throw new Error('delete_failed');
             loadStudents(search);
         } catch (err) {
             console.error(err);
@@ -517,7 +541,7 @@ const AdminStudentsPage: React.FC = () => {
                             <div className="flex items-center gap-3">
                                 <button
                                     type="button"
-                                    onClick={() => navigate(`/admin/students/${selectedStudentForActivities.student_profile?.student_id}`)}
+                                    onClick={() => navigate('/admin/students')}
                                     className="p-2 transition-colors rounded-lg text-app-light-text-secondary hover:text-app-light-text-primary dark:text-app-dark-text-secondary dark:hover:text-app-dark-text-primary hover:bg-app-light-surface-hover dark:hover:bg-app-dark-surface-hover"
                                     aria-label={t('common.back')}
                                 >
@@ -537,9 +561,9 @@ const AdminStudentsPage: React.FC = () => {
                         <section className="p-5 border shadow-sm rounded-xl border-app-light-border dark:border-app-dark-border bg-app-light-surface dark:bg-app-dark-surface">
                             {loadingActivities ? (
                                 <div className="py-8 text-center">
-                                    <div className="inline-block w-6 h-6 border-2 border-app-light-accent border-t-transparent rounded-full animate-spin dark:border-app-dark-accent"></div>
+                                    <div className="inline-block w-4 h-4 border-4 border-app-light-accent/30 border-t-app-light-accent rounded-full animate-spin dark:border-app-dark-accent/30 dark:border-t-app-dark-accent"></div>
                                     <p className="mt-2 text-sm text-app-light-text-secondary dark:text-app-dark-text-secondary">
-                                        {t('common.loading', { defaultValue: 'Loading...' })}
+                                        {t('common.loading')}
                                     </p>
                                 </div>
                             ) : selectedStudentActivities.length === 0 ? (
@@ -590,7 +614,7 @@ const AdminStudentsPage: React.FC = () => {
                             <div className="flex items-center gap-3">
                                 <button
                                     type="button"
-                                    onClick={() => navigate(`/admin/students/${selectedStudentForCourses.student_profile?.student_id}`)}
+                                    onClick={() => navigate('/admin/students')}
                                     className="p-2 transition-colors rounded-lg text-app-light-text-secondary hover:text-app-light-text-primary dark:text-app-dark-text-secondary dark:hover:text-app-dark-text-primary hover:bg-app-light-surface-hover dark:hover:bg-app-dark-surface-hover"
                                     aria-label={t('common.back')}
                                 >
@@ -600,9 +624,14 @@ const AdminStudentsPage: React.FC = () => {
                                 </button>
                                 <div>
                                     <h1 className="text-xl font-semibold">{t('admin.student.courses', { defaultValue: 'Student Courses' })}</h1>
-                                    <p className="text-sm text-app-light-text-secondary dark:text-app-dark-text-secondary">
-                                        {selectedStudentForCourses.first_name || selectedStudentForCourses.username} ({selectedStudentForCourses.student_profile?.student_id})
-                                    </p>
+                                    <div className="mt-1">
+                                        <p className="text-sm font-medium text-app-light-text-primary dark:text-app-dark-text-primary">
+                                            {selectedStudentForCourses.first_name || '—'}
+                                        </p>
+                                        <p className="text-xs text-app-light-text-secondary dark:text-app-dark-text-secondary">
+                                            {selectedStudentForCourses.student_profile?.student_id || '—'}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </header>
@@ -610,9 +639,9 @@ const AdminStudentsPage: React.FC = () => {
                         <section className="p-5 border shadow-sm rounded-xl border-app-light-border dark:border-app-dark-border bg-app-light-surface dark:bg-app-dark-surface">
                             {loadingCourses ? (
                                 <div className="py-8 text-center">
-                                    <div className="inline-block w-6 h-6 border-2 border-app-light-accent border-t-transparent rounded-full animate-spin dark:border-app-dark-accent"></div>
+                                    <div className="inline-block w-4 h-4 border-4 border-app-light-accent/30 border-t-app-light-accent rounded-full animate-spin dark:border-app-dark-accent/30 dark:border-t-app-dark-accent"></div>
                                     <p className="mt-2 text-sm text-app-light-text-secondary dark:text-app-dark-text-secondary">
-                                        {t('common.loading', { defaultValue: 'Loading...' })}
+                                        {t('common.loading')}
                                     </p>
                                 </div>
                             ) : selectedStudentCourses.length === 0 ? (
@@ -633,21 +662,21 @@ const AdminStudentsPage: React.FC = () => {
                                                 <div className="flex items-start justify-between">
                                                     <div className="flex-1 min-w-0">
                                                         <h3 className="font-medium text-app-light-text-primary dark:text-app-dark-text-primary truncate">
-                                                            {course.title || 'Unknown Course'}
+                                                            {getTranslatedCourseTitle(course.title, t) || 'Unknown Course'}
                                                         </h3>
                                                         {course.code && (
                                                             <p className="text-sm text-app-light-text-secondary dark:text-app-dark-text-secondary mt-1">
-                                                                Code: {course.code}
+                                                                {t('admin.course.code')}: {course.code}
                                                             </p>
                                                         )}
                                                         {course.teacher && (
                                                             <p className="text-sm text-app-light-text-secondary dark:text-app-dark-text-secondary">
-                                                                Teacher: {course.teacher}
+                                                                {t('admin.course.teacher')}: {course.teacher.name || course.teacher.faculty_id}
                                                             </p>
                                                         )}
-                                                        {course.term && (
+                                                        {course.location && (
                                                             <p className="text-xs text-app-light-text-secondary dark:text-app-dark-text-secondary mt-1">
-                                                                {course.term} {course.academic_year}
+                                                                {t('admin.course.location')}: {course.location}
                                                             </p>
                                                         )}
                                                     </div>
@@ -700,12 +729,20 @@ const AdminStudentsPage: React.FC = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {!students.length && !loading && (
+                                        {loading && (
+                                            <tr>
+                                                <td colSpan={3} className="py-6 text-center text-app-light-textSecondary dark:text-app-dark-textSecondary">
+                                                    <div className="inline-block w-4 h-4 border-4 border-app-light-accent/30 border-t-app-light-accent rounded-full animate-spin dark:border-app-dark-accent/30 dark:border-t-app-dark-accent mr-2"></div>
+                                                    {t('common.loading')}
+                                                </td>
+                                            </tr>
+                                        )}
+                                        {!loading && !students.length && (
                                             <tr>
                                                 <td colSpan={3} className="py-6 text-center text-app-light-textSecondary dark:text-app-dark-textSecondary">{t('admin.noStudents', { defaultValue: 'No students found.' })}</td>
                                             </tr>
                                         )}
-                                        {students.map(student => (
+                                        {!loading && students.map(student => (
                                             <tr key={student.id} className="border-t border-app-light-border dark:border-app-dark-border">
                                                 <td className="px-4 py-2 min-w-0 flex-1 xss:min-w-16">
                                                     <button
@@ -713,9 +750,9 @@ const AdminStudentsPage: React.FC = () => {
                                                         onClick={() => navigate(`/admin/students/${student.student_profile?.student_id}`)}
                                                         className="w-full text-left block"
                                                     >
-                                                        <p className="font-medium text-app-light-text-primary hover:text-app-light-text-secondary dark:text-app-dark-text-primary dark:hover:text-app-dark-text-secondary">{student.student_profile?.student_id || '—'}</p>
+                                                        <p className="font-medium text-app-light-text-primary hover:text-app-light-text-secondary dark:text-app-dark-text-primary dark:hover:text-app-dark-text-secondary">{student.first_name || '—'}</p>
                                                         <div className="whitespace-nowrap block overflow-hidden relative">
-                                                            <p className="text-xs text-app-light-text-secondary dark:text-app-dark-text-secondary">{student.first_name || '—'}</p>
+                                                            <p className="text-xs text-app-light-text-secondary dark:text-app-dark-text-secondary">{student.student_profile?.student_id || '—'}</p>
                                                             <span className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-app-light-surface to-transparent dark:from-app-dark-surface"></span>
                                                         </div>
                                                     </button>
@@ -726,7 +763,7 @@ const AdminStudentsPage: React.FC = () => {
                                                         onClick={() => navigate(`/admin/students/${student.student_profile?.student_id}/activities`)}
                                                         className="text-xs xss:text-sm font-medium text-app-light-text-primary hover:text-app-light-text-secondary dark:text-app-dark-text-primary dark:hover:text-app-dark-text-secondary"
                                                     >
-                                                        {studentCounts[student.id]?.activities || 0}
+                                                        {student.activity_count || 0}
                                                     </button>
                                                 </td>
                                                 <td className="p-0.5 xss:px-1 sm:px-4 py-2 whitespace-nowrap text-center w-16 xss:w-20">
@@ -735,7 +772,7 @@ const AdminStudentsPage: React.FC = () => {
                                                         onClick={() => navigate(`/admin/students/${student.student_profile?.student_id}/courses`)}
                                                         className="text-xs xss:text-sm font-medium text-app-light-text-primary hover:text-app-light-text-secondary dark:text-app-dark-text-primary dark:hover:text-app-dark-text-secondary"
                                                     >
-                                                        {studentCounts[student.id]?.courses || 0}
+                                                        {student.course_count || 0}
                                                     </button>
                                                 </td>
                                             </tr>
@@ -809,11 +846,12 @@ const AdminStudentsPage: React.FC = () => {
                                                 value={form.major}
                                                 onChange={(value: string) => setForm(prev => ({ ...prev, major: value }))}
                                             />
-                                            <FloatingInput
+                                            <FloatingSelect
                                                 id="college"
                                                 label={t('admin.student.college')}
                                                 value={form.college}
                                                 onChange={(value: string) => setForm(prev => ({ ...prev, college: value }))}
+                                                options={getDepartmentOptions(t)}
                                             />
                                         </div>
 
@@ -879,7 +917,14 @@ const AdminStudentsPage: React.FC = () => {
                                                 disabled={creating}
                                                 className="w-full px-4 py-2 text-sm font-medium text-white transition-colors border border-transparent rounded-lg sm:w-auto bg-app-light-accent hover:bg-app-light-accent-hover disabled:opacity-50 disabled:cursor-not-allowed dark:bg-app-dark-accent dark:hover:bg-app-dark-accent-hover"
                                             >
-                                                {creating ? t('profile.saving') : t('admin.createStudent', { defaultValue: 'Create student' })}
+                                                {creating ? (
+                                                    <span className="flex items-center justify-center gap-2">
+                                                        <div className="inline-block w-4 h-4 border-4 border-app-light-text-on-accent/30 border-t-app-light-text-on-accent rounded-full animate-spin"></div>
+                                                        {t('profile.saving')}
+                                                    </span>
+                                                ) : (
+                                                    t('admin.createStudent', { defaultValue: 'Create student' })
+                                                )}
                                             </button>
                                         </div>
                                     </form>
@@ -950,11 +995,12 @@ const AdminStudentsPage: React.FC = () => {
                                                 value={editForm.major}
                                                 onChange={(value: string) => setEditForm(prev => ({ ...prev, major: value }))}
                                             />
-                                            <FloatingInput
+                                            <FloatingSelect
                                                 id="edit_college"
                                                 label={t('admin.student.college')}
                                                 value={editForm.college}
                                                 onChange={(value: string) => setEditForm(prev => ({ ...prev, college: value }))}
+                                                options={getDepartmentOptions(t)}
                                             />
                                         </div>
 
@@ -1012,7 +1058,14 @@ const AdminStudentsPage: React.FC = () => {
                                                     className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover disabled:opacity-50 disabled:cursor-not-allowed dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
                                                     disabled={resettingUserId === editingStudent.id}
                                                 >
-                                                    {resettingUserId === editingStudent.id ? t('profile.saving') : t('admin.resetPassword')}
+                                                    {resettingUserId === editingStudent.id ? (
+                                                        <span className="flex items-center justify-center gap-2">
+                                                            <div className="inline-block w-4 h-4 border-4 border-app-light-text-primary/30 border-t-app-light-text-primary rounded-full animate-spin dark:border-app-dark-text-primary/30 dark:border-t-app-dark-text-primary"></div>
+                                                            {t('profile.saving')}
+                                                        </span>
+                                                    ) : (
+                                                        t('admin.resetPassword')
+                                                    )}
                                                 </button>
                                                 <div className="flex flex-col-reverse space-y-2 space-y-reverse sm:flex-row sm:space-x-3 sm:space-y-0">
                                                     <button
@@ -1027,7 +1080,14 @@ const AdminStudentsPage: React.FC = () => {
                                                         disabled={updating}
                                                         className="w-full px-4 py-2 text-sm font-medium text-white transition-colors border border-transparent rounded-lg sm:w-auto bg-app-light-accent hover:bg-app-light-accent-hover disabled:opacity-50 disabled:cursor-not-allowed dark:bg-app-dark-accent dark:hover:bg-app-dark-accent-hover"
                                                     >
-                                                        {updating ? t('profile.saving') : t('admin.saveChanges')}
+                                                        {updating ? (
+                                                            <span className="flex items-center justify-center gap-2">
+                                                                <div className="inline-block w-4 h-4 border-4 border-app-light-text-on-accent/30 border-t-app-light-text-on-accent rounded-full animate-spin"></div>
+                                                                {t('profile.saving')}
+                                                            </span>
+                                                        ) : (
+                                                            t('admin.saveChanges')
+                                                        )}
                                                     </button>
                                                 </div>
                                             </div>
@@ -1167,7 +1227,7 @@ const AdminStudentsPage: React.FC = () => {
                                                 <div className="relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border bg-app-light-surface-secondary dark:bg-app-dark-surface-secondary">
                                                     <input
                                                         id="view_college"
-                                                        value={viewingStudent.student_profile?.college || ''}
+                                                        value={getDepartmentOptions(t).find(opt => opt.value === viewingStudent.student_profile?.college)?.label || viewingStudent.student_profile?.college || ''}
                                                         readOnly
                                                         className="w-full px-4 pt-5 pb-3 placeholder-transparent transition-colors duration-200 bg-transparent text-app-light-text-secondary dark:text-app-dark-text-secondary focus:outline-none rounded-lg"
                                                     />

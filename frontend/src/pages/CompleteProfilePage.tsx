@@ -53,7 +53,16 @@ const CompleteProfilePage: React.FC = () => {
                             value={phone}
                             onChange={setPhone}
                         />
-                        <button disabled={saving || !name.trim()} type="submit" className="w-full px-5 py-3 text-white border border-transparent rounded-md mt-7 bg-primary-500 dark:bg-primary-500 hover:bg-primary-600 dark:hover:bg-primary-600 disabled:opacity-60 dark:border-app-dark-border">{saving ? t('profile.saving') : t('profile.save')}</button>
+                        <button disabled={saving || !name.trim()} type="submit" className="w-full px-5 py-3 text-white border border-transparent rounded-md mt-7 bg-primary-500 dark:bg-primary-500 hover:bg-primary-600 dark:hover:bg-primary-600 disabled:opacity-60 dark:border-app-dark-border">
+                            {saving ? (
+                                <span className="flex items-center justify-center gap-2">
+                                    <div className="inline-block w-4 h-4 border-4 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                    {t('profile.saving')}
+                                </span>
+                            ) : (
+                                t('profile.save')
+                            )}
+                        </button>
                     </form>
                 </section>
             </div>
