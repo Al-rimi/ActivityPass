@@ -5,6 +5,7 @@ import { AdminUser } from '../types/admin';
 import FloatingInput from '../components/FloatingInput';
 import SearchInput from '../components/SearchInput';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuthenticatedApi } from '../utils/api';
 
 const defaultStaffForm = () => ({
     username: '',
@@ -18,6 +19,7 @@ const AdminStaffPage: React.FC = () => {
     const { t } = useTranslation();
     const { '*': path } = useParams<{ '*': string }>();
     const navigate = useNavigate();
+    const { authenticatedJsonFetch } = useAuthenticatedApi();
 
     // Capture saved form data before it gets cleared
     const capturedFormData = React.useRef<string | null>(null);
@@ -35,6 +37,7 @@ const AdminStaffPage: React.FC = () => {
     } else if (path) {
         const editMatch = path.match(/^(.+)\/edit$/);
         const deleteMatch = path.match(/^(.+)\/delete$/);
+        const activitiesMatch = path.match(/^(.+)\/activities$/);
         const viewMatch = path.match(/^(.+)$/);
 
         if (editMatch) {
@@ -43,6 +46,9 @@ const AdminStaffPage: React.FC = () => {
         } else if (deleteMatch) {
             identifier = deleteMatch[1];
             action = 'delete';
+        } else if (activitiesMatch) {
+            identifier = activitiesMatch[1];
+            action = 'activities';
         } else if (viewMatch && viewMatch[1] !== 'add') {
             identifier = viewMatch[1];
             action = null; // view
@@ -53,6 +59,7 @@ const AdminStaffPage: React.FC = () => {
     const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(false);
     const [notice, setNotice] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const [resettingUserId, setResettingUserId] = useState<number | null>(null);
     const [modalOpen, setModalOpen] = useState(false);
     const [form, setForm] = useState(() => {
@@ -78,11 +85,17 @@ const AdminStaffPage: React.FC = () => {
     const [deletingId, setDeletingId] = useState<number | null>(null);
     const [deleteConfirmModalOpen, setDeleteConfirmModalOpen] = useState(false);
     const [staffToDelete, setStaffToDelete] = useState<AdminUser | null>(null);
+    const [selectedStaffForActivities, setSelectedStaffForActivities] = useState<AdminUser | null>(null);
+    const [selectedStaffActivities, setSelectedStaffActivities] = useState<any[]>([]);
+    const [loadingActivities, setLoadingActivities] = useState(false);
 
     // Track if we've loaded initial form data to prevent overwriting localStorage on mount
     const hasLoadedInitialData = React.useRef(false);
     // Track if we are currently loading initial data to prevent saving during load
     const isLoadingInitialData = React.useRef(false);
+
+    // Track if data has been fetched to prevent multiple fetches
+    const hasFetchedData = React.useRef(false);
 
     // Save form data whenever it changes (as user types)
     React.useEffect(() => {
@@ -91,64 +104,57 @@ const AdminStaffPage: React.FC = () => {
         }
     }, [form]);
 
-
-    const headers = useMemo(() => ({
-        'Content-Type': 'application/json',
-        Authorization: tokens ? `Bearer ${tokens.access}` : '',
-    }), [tokens]);
-
-    const filterStaff = useCallback((query: string, dataset: AdminUser[]) => {
-        const q = query.trim().toLowerCase();
-        if (!q) return dataset;
-        return dataset.filter(member => {
-            const targets = [
-                member.username,
-                member.first_name,
-                member.email,
-                member.phone,
-            ].map(val => (val || '').toLowerCase());
-            return targets.some(val => val && val.includes(q));
-        });
-    }, []);
-
     const loadStaff = useCallback(async (query = '') => {
         if (!tokens) return;
         setLoading(true);
         try {
-            const params = new URLSearchParams({ role: 'staff' });
-            const res = await fetch(`/api/admin/users/?${params.toString()}`, { headers });
-            if (!res.ok) throw new Error('fetch_failed');
-            const data = await res.json();
+            const qs = new URLSearchParams();
+            if (query.trim()) {
+                qs.set('q', query.trim());
+            }
+            const data = await authenticatedJsonFetch(`/api/admin/staff-list/?${qs.toString()}`);
             setAllStaff(data);
-            setStaff(filterStaff(query, data));
+            setStaff(data);
         } catch (err) {
             console.error(err);
             setNotice({ type: 'error', text: t('admin.fetchError') });
         } finally {
             setLoading(false);
         }
-    }, [tokens, headers, t, filterStaff]);
+    }, [tokens, authenticatedJsonFetch, t]);
+
+    const loadStaffActivities = useCallback(async (staff: AdminUser) => {
+        setLoadingActivities(true);
+        try {
+            const data = await authenticatedJsonFetch(`/api/activities/?created_by=${staff.id}`);
+            setSelectedStaffActivities(data);
+            setSelectedStaffForActivities(staff);
+        } catch (err) {
+            console.error(err);
+            setNotice({ type: 'error', text: t('admin.fetchError') });
+        } finally {
+            setLoadingActivities(false);
+        }
+    }, [authenticatedJsonFetch, t]);
 
     React.useEffect(() => {
-        if (tokens) {
+        if (tokens && !hasFetchedData.current) {
+            hasFetchedData.current = true;
             loadStaff();
         }
     }, [tokens, loadStaff]);
 
     useEffect(() => {
-        setStaff(filterStaff(search, allStaff));
-    }, [search, allStaff, filterStaff]);
+        loadStaff(search);
+    }, [search, loadStaff]);
 
     const resetPassword = async (user: AdminUser) => {
         setResettingUserId(user.id);
         try {
-            const res = await fetch('/api/admin/reset-password/', {
+            const data = await authenticatedJsonFetch('/api/admin/reset-password/', {
                 method: 'POST',
-                headers,
                 body: JSON.stringify({ user_id: user.id }),
             });
-            if (!res.ok) throw new Error('reset_failed');
-            const data = await res.json();
             setNotice({ type: 'success', text: t('admin.resetPasswordDone', { password: data.password }) });
         } catch (err) {
             console.error(err);
@@ -214,25 +220,38 @@ const AdminStaffPage: React.FC = () => {
             return;
         }
         setCreating(true);
+        setFieldErrors({}); // Clear any previous field errors
         try {
-            const payload = { ...form };
-            if (!form.full_name.trim()) delete (payload as any).full_name;
-            if (!form.email.trim()) delete (payload as any).email;
-            if (!form.phone.trim()) delete (payload as any).phone;
-            const res = await fetch('/api/admin/create-staff/', {
+            const payload: Record<string, unknown> = {
+                username: form.username,
+                full_name: form.full_name,
+                email: form.email,
+                staff_number: form.phone,
+            };
+            if (!form.full_name.trim()) delete payload.full_name;
+            if (!form.email.trim()) delete payload.email;
+            if (!form.phone.trim()) delete payload.staff_number;
+            const data = await authenticatedJsonFetch('/api/admin/create-staff/', {
                 method: 'POST',
-                headers,
                 body: JSON.stringify(payload),
             });
-            if (!res.ok) throw new Error('create_staff_failed');
-            const data = await res.json();
-            setNotice({ type: 'success', text: t('admin.staffCreated', { username: data.user.username, password: data.password }) });
-            localStorage.removeItem('admin-staff-add-form');
+            // Close the modal first
+            setModalOpen(false);
+            setForm(defaultStaffForm());
+            // Then navigate and show success message
             navigate('/admin/staff');
+            setNotice({ type: 'success', text: t('admin.staffCreated', { username: data.user.username, password: data.password }) });
             loadStaff(search);
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
-            setNotice({ type: 'error', text: t('admin.staffCreateError') });
+            // Handle field-specific validation errors
+            if (err.detail === 'username already exists') {
+                setFieldErrors({ username: t('admin.usernameAlreadyExists', { defaultValue: 'Username already exists' }) });
+            } else if (err.detail === 'username required') {
+                setFieldErrors({ username: t('admin.staffUsernameRequired') });
+            } else {
+                setNotice({ type: 'error', text: t('admin.staffCreateError') });
+            }
         } finally {
             setCreating(false);
         }
@@ -248,14 +267,17 @@ const AdminStaffPage: React.FC = () => {
                 email: editForm.email,
                 phone: editForm.phone,
             };
-            const res = await fetch(`/api/admin/users/${editingStaff.id}/`, {
+            await authenticatedJsonFetch(`/api/admin/users/${editingStaff.id}/`, {
                 method: 'PATCH',
-                headers,
                 body: JSON.stringify(payload),
             });
-            if (!res.ok) throw new Error('update_failed');
+            // Close the modal first
+            setEditModalOpen(false);
+            setEditingStaff(null);
+            setEditForm(defaultStaffForm());
+            // Then navigate and show success message
+            navigate('/admin/staff');
             setNotice({ type: 'success', text: t('admin.staffUpdated') });
-            navigate(`/admin/staff/${editingStaff.username}`);
             loadStaff(search);
         } catch (err) {
             console.error(err);
@@ -268,8 +290,7 @@ const AdminStaffPage: React.FC = () => {
     const deleteStaff = async (staffId: number) => {
         setDeletingId(staffId);
         try {
-            const res = await fetch(`/api/admin/users/${staffId}/`, { method: 'DELETE', headers: headers });
-            if (!res.ok) throw new Error('delete_failed');
+            await authenticatedJsonFetch(`/api/admin/users/${staffId}/`, { method: 'DELETE' });
             loadStaff(search);
         } catch (err) {
             console.error(err);
@@ -310,6 +331,7 @@ const AdminStaffPage: React.FC = () => {
         setEditingStaff(null);
         setDeleteConfirmModalOpen(false);
         setStaffToDelete(null);
+        setSelectedStaffForActivities(null);
 
         if (action === 'add') {
             isLoadingInitialData.current = true;
@@ -336,6 +358,9 @@ const AdminStaffPage: React.FC = () => {
                     openEditModal(staffMember);
                 } else if (action === 'delete') {
                     openDeleteConfirm(staffMember);
+                } else if (action === 'activities') {
+                    // Load activities for this staff
+                    loadStaffActivities(staffMember);
                 } else {
                     // Default to view modal when identifier exists but no specific action
                     openViewModal(staffMember);
@@ -344,7 +369,7 @@ const AdminStaffPage: React.FC = () => {
             // If staff member not found, modals stay closed
         }
         // If no identifier, modals stay closed
-    }, [identifier, action, allStaff]);
+    }, [identifier, action, allStaff, loadStaffActivities]);
 
     useEffect(() => {
         const isAnyModalOpen = modalOpen || editModalOpen || viewModalOpen || deleteConfirmModalOpen;
@@ -360,66 +385,163 @@ const AdminStaffPage: React.FC = () => {
     return (
         <main className="flex-1 px-4 py-8 sm:px-6 lg:px-10">
             <div className="flex flex-col gap-6">
-                <header className="flex items-center justify-between gap-3">
-                    <h1 className="flex-shrink-0 text-xl font-semibold">{t('admin.manageStaff')}</h1>
-                    <div className="flex items-center flex-shrink-0 gap-3">
-                        <button type="button" onClick={() => navigate('/admin/staff/add')} className="px-3 py-2 text-sm text-white transition-colors rounded-md bg-app-light-accent hover:bg-app-light-accent-hover dark:bg-app-dark-accent dark:hover:bg-app-dark-accent-hover whitespace-nowrap">
-                            {t('admin.addStaff')}
-                        </button>
-                    </div>
-                </header>
+                {/* Show activities page */}
+                {action === 'activities' && selectedStaffForActivities && (
+                    <>
+                        <header className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => navigate('/admin/staff')}
+                                    className="p-2 transition-colors rounded-lg text-app-light-text-secondary hover:text-app-light-text-primary dark:text-app-dark-text-secondary dark:hover:text-app-dark-text-primary hover:bg-app-light-surface-hover dark:hover:bg-app-dark-surface-hover"
+                                    aria-label={t('common.back')}
+                                >
+                                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M15 18l-6-6 6-6" />
+                                    </svg>
+                                </button>
+                                <div>
+                                    <h1 className="text-xl font-semibold">{t('admin.staff.activities', { defaultValue: 'Staff Activities' })}</h1>
+                                    <p className="text-sm text-app-light-text-secondary dark:text-app-dark-text-secondary">
+                                        {selectedStaffForActivities.first_name || selectedStaffForActivities.username}
+                                    </p>
+                                </div>
+                            </div>
+                        </header>
 
-                {notice && (
-                    <div className={`rounded-md border px-4 py-3 text-sm ${notice.type === 'success' ? 'border-app-light-accent bg-app-light-accent/10 text-app-light-text-primary dark:border-app-dark-accent dark:bg-app-dark-accent/20 dark:text-app-dark-text-primary' : notice.type === 'error' ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-700 dark:bg-red-900/30 dark:text-red-100' : 'border-app-light-border bg-app-light-surface-secondary text-app-light-text-primary dark:border-app-dark-border dark:bg-app-dark-surface-secondary dark:text-app-dark-text-primary'}`}>
-                        {notice.text}
-                    </div>
+                        <section className="p-5 border shadow-sm rounded-xl border-app-light-border dark:border-app-dark-border bg-app-light-surface dark:bg-app-dark-surface">
+                            {loadingActivities ? (
+                                <div className="py-8 text-center">
+                                    <div className="inline-block w-4 h-4 border-4 border-app-light-accent/30 border-t-app-light-accent rounded-full animate-spin dark:border-app-dark-accent/30 dark:border-t-app-dark-accent"></div>
+                                    <p className="mt-2 text-sm text-app-light-text-secondary dark:text-app-dark-text-secondary">
+                                        {t('common.loading')}
+                                    </p>
+                                </div>
+                            ) : selectedStaffActivities.length === 0 ? (
+                                <div className="py-8 text-center text-app-light-text-secondary dark:text-app-dark-text-secondary">
+                                    {t('admin.staff.noActivities', { defaultValue: 'No activities found for this staff member.' })}
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <h2 className="text-lg font-medium">{t('admin.staff.activities')}</h2>
+                                        <span className="text-sm text-app-light-text-secondary dark:text-app-dark-text-secondary">
+                                            {selectedStaffActivities.length} {t('admin.table.activities', { defaultValue: 'activities' })}
+                                        </span>
+                                    </div>
+                                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                        {selectedStaffActivities.map((activity: any) => (
+                                            <div key={activity.id} className="p-4 border rounded-lg border-app-light-border dark:border-app-dark-border hover:bg-app-light-surface-hover dark:hover:bg-app-dark-surface-hover cursor-pointer transition-colors" onClick={() => navigate(`/admin/activities/${activity.id}?from=staff&staffId=${selectedStaffForActivities.username}`)}>
+                                                <div className="flex items-start justify-between">
+                                                    <div className="flex-1 min-w-0">
+                                                        <h3 className="font-medium text-app-light-text-primary dark:text-app-dark-text-primary truncate">
+                                                            {activity.title || 'Unknown Activity'}
+                                                        </h3>
+                                                        <p className="text-sm text-app-light-text-secondary dark:text-app-dark-text-secondary mt-1">
+                                                            {activity.description || 'No description'}
+                                                        </p>
+                                                        {activity.start_datetime && (
+                                                            <p className="text-xs text-app-light-text-secondary dark:text-app-dark-text-secondary mt-1">
+                                                                {new Date(activity.start_datetime).toLocaleDateString()}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </section>
+                    </>
                 )}
 
-                <section className="p-5 border shadow-sm rounded-xl border-app-light-border dark:border-app-dark-border bg-app-light-surface dark:bg-app-dark-surface">
-                    <div className="flex flex-col gap-3 sm:flex-row">
-                        <div className="relative flex-1">
-                            <SearchInput
-                                id="search"
-                                label={t('admin.searchStaff')}
-                                value={search}
-                                onChange={setSearch}
-                            />
-                        </div>
-                    </div>
-                    <div className="mt-6 overflow-x-auto">
-                        <table className="w-full text-sm text-left">
-                            <thead>
-                                <tr className="text-app-light-text-secondary dark:text-app-dark-text-secondary">
-                                    <th className="px-4 py-2 whitespace-nowrap">{t('admin.table.username')}</th>
-                                    <th className="px-4 py-2 whitespace-nowrap">{t('profile.name')}</th>
-                                    <th className="px-4 py-2 whitespace-nowrap">{t('admin.table.email')}</th>
-                                    <th className="px-4 py-2 whitespace-nowrap">{t('admin.table.phone')}</th>
-                                    <th className="px-4 py-2 whitespace-nowrap">{t('admin.table.actions')}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {!staff.length && !loading && (
-                                    <tr>
-                                        <td colSpan={5} className="py-6 text-center text-app-light-text-secondary dark:text-app-dark-text-secondary">{t('admin.noStaff', { defaultValue: 'No staff users found.' })}</td>
-                                    </tr>
-                                )}
-                                {staff.map(member => (
-                                    <tr key={member.id} className="border-t border-app-light-border dark:border-app-dark-border">
-                                        <td className="px-4 py-2 font-mono text-xs whitespace-nowrap">{member.username}</td>
-                                        <td className="px-4 py-2 whitespace-nowrap">{member.first_name || '—'}</td>
-                                        <td className="px-4 py-2 whitespace-nowrap">{member.email || '—'}</td>
-                                        <td className="px-4 py-2 whitespace-nowrap">{member.phone || '—'}</td>
-                                        <td className="px-4 py-2">
-                                            <button type="button" onClick={() => navigate(`/admin/staff/${member.username}`)} className="text-sm font-medium transition-colors text-app-light-text-primary dark:text-app-dark-text-primary hover:text-app-light-accent dark:hover:text-app-dark-accent">
-                                                {t('common.view')}
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
+                {/* Show main staff list when not on activities page */}
+                {action !== 'activities' && (
+                    <>
+                        <header className="flex items-center justify-between gap-3">
+                            <h1 className="flex-shrink-0 text-xl font-semibold">{t('admin.manageStaff')}</h1>
+                            <div className="flex items-center flex-shrink-0 gap-3">
+                                <button type="button" onClick={() => navigate('/admin/staff/add')} className="px-3 py-2 text-sm text-white transition-colors rounded-md bg-app-light-accent hover:bg-app-light-accent-hover dark:bg-app-dark-accent dark:hover:bg-app-dark-accent-hover whitespace-nowrap">
+                                    {t('admin.addStaff')}
+                                </button>
+                            </div>
+                        </header>
+
+                        {notice && (
+                            <div className={`rounded-md border px-4 py-3 text-sm ${notice.type === 'success' ? 'border-app-light-accent bg-app-light-accent/10 text-app-light-text-primary dark:border-app-dark-accent dark:bg-app-dark-accent/20 dark:text-app-dark-text-primary' : notice.type === 'error' ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-700 dark:bg-red-900/30 dark:text-red-100' : 'border-app-light-border bg-app-light-surface-secondary text-app-light-text-primary dark:border-app-dark-border dark:bg-app-dark-surface-secondary dark:text-app-dark-text-primary'}`}>
+                                {notice.text}
+                            </div>
+                        )}
+
+                        <section className="p-5 border shadow-sm rounded-xl border-app-light-border dark:border-app-dark-border bg-app-light-surface dark:bg-app-dark-surface">
+                            <div className="flex flex-col gap-3 sm:flex-row">
+                                <div className="relative flex-1">
+                                    <SearchInput
+                                        id="search"
+                                        label={t('admin.searchStaff')}
+                                        value={search}
+                                        onChange={setSearch}
+                                    />
+                                </div>
+                            </div>
+                            <div className="mt-6 overflow-x-auto">
+                                <table className="w-full text-xs xss:text-sm text-left table-fixed">
+                                    <thead>
+                                        <tr className="text-app-light-text-secondary dark:text-app-dark-text-secondary">
+                                            <th className="px-4 py-2 whitespace-nowrap min-w-0 flex-1 xss:min-w-16">{t('admin.table.staff')}</th>
+                                            <th className="p-0.5 xss:px-1 sm:px-4 py-2 whitespace-nowrap text-center w-16 xss:w-20">{t('admin.table.activities')}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {loading && !staff.length && (
+                                            <tr>
+                                                <td colSpan={2} className="py-6 text-center">
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <div className="inline-block w-4 h-4 border-4 border-current/30 border-t-current rounded-full animate-spin"></div>
+                                                        <span className="text-app-light-text-secondary dark:text-app-dark-text-secondary">{t('admin.table.loading')}</span>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                        {!loading && !staff.length && (
+                                            <tr>
+                                                <td colSpan={2} className="py-6 text-center text-app-light-text-secondary dark:text-app-dark-text-secondary">{t('admin.noStaff', { defaultValue: 'No staff found.' })}</td>
+                                            </tr>
+                                        )}
+                                        {!loading && staff.map(member => (
+                                            <tr key={member.id} className="border-t border-app-light-border dark:border-app-dark-border">
+                                                <td className="px-4 py-2 min-w-0 flex-1 xss:min-w-16">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => navigate(`/admin/staff/${member.username}`)}
+                                                        className="w-full text-left block"
+                                                    >
+                                                        <p className="font-medium text-app-light-text-primary hover:text-app-light-text-secondary dark:text-app-dark-text-primary dark:hover:text-app-dark-text-secondary">{member.first_name || '—'}</p>
+                                                        <div className="whitespace-nowrap block overflow-hidden relative">
+                                                            <p className="text-xs text-app-light-text-secondary dark:text-app-dark-text-secondary">{member.username}</p>
+                                                            <span className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-app-light-surface to-transparent dark:from-app-dark-surface"></span>
+                                                        </div>
+                                                    </button>
+                                                </td>
+                                                <td className="p-0.5 xss:px-1 sm:px-4 py-2 whitespace-nowrap text-center w-16 xss:w-20">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => navigate(`/admin/staff/${member.username}/activities`)}
+                                                        className="text-sm font-medium text-app-light-text-primary hover:text-app-light-text-secondary dark:text-app-dark-text-primary dark:hover:text-app-dark-text-secondary"
+                                                    >
+                                                        {member.activity_count || 0}
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+                    </>
+                )}
+
             </div>
 
             {modalOpen && (
@@ -447,9 +569,18 @@ const AdminStaffPage: React.FC = () => {
                                         id="username"
                                         label={t('admin.newStaffUsername')}
                                         value={form.username}
-                                        onChange={(value: string) => setForm(prev => ({ ...prev, username: value }))}
+                                        onChange={(value: string) => {
+                                            setForm(prev => ({ ...prev, username: value }));
+                                            if (fieldErrors.username) {
+                                                setFieldErrors(prev => ({ ...prev, username: '' }));
+                                            }
+                                        }}
                                         required
+                                        error={!!fieldErrors.username}
                                     />
+                                    {fieldErrors.username && (
+                                        <p className="text-sm text-red-600 dark:text-red-400 mt-1">{fieldErrors.username}</p>
+                                    )}
 
                                     {/* Full Name */}
                                     <FloatingInput
@@ -493,7 +624,14 @@ const AdminStaffPage: React.FC = () => {
                                             disabled={creating}
                                             className="w-full px-4 py-2 text-sm font-medium transition-colors border border-transparent rounded-lg sm:w-auto text-app-light-text-on-accent bg-app-light-accent hover:bg-app-light-accent-hover disabled:opacity-50 disabled:cursor-not-allowed dark:bg-app-dark-accent dark:text-app-dark-text-on-accent dark:hover:bg-app-dark-accent-hover"
                                         >
-                                            {creating ? t('profile.saving') : t('admin.createStaff')}
+                                            {creating ? (
+                                                <span className="flex items-center justify-center gap-2">
+                                                    <div className="inline-block w-4 h-4 border-4 border-app-light-text-on-accent/30 border-t-app-light-text-on-accent rounded-full animate-spin"></div>
+                                                    {t('profile.saving')}
+                                                </span>
+                                            ) : (
+                                                t('admin.createStaff')
+                                            )}
                                         </button>
                                     </div>
                                 </form>
@@ -564,7 +702,14 @@ const AdminStaffPage: React.FC = () => {
                                             disabled={resettingUserId === editingStaff.id}
                                             className="w-full px-4 py-2 text-sm font-medium transition-colors border rounded-lg sm:w-auto text-app-light-text-primary bg-app-light-surface border-app-light-border hover:bg-app-light-surface-hover disabled:opacity-50 disabled:cursor-not-allowed dark:bg-app-dark-surface dark:text-app-dark-text-primary dark:border-app-dark-border dark:hover:bg-app-dark-surface-hover"
                                         >
-                                            {resettingUserId === editingStaff.id ? t('profile.saving') : t('admin.resetPassword')}
+                                            {resettingUserId === editingStaff.id ? (
+                                                <span className="flex items-center justify-center gap-2">
+                                                    <div className="inline-block w-4 h-4 border-4 border-app-light-text-primary/30 border-t-app-light-text-primary rounded-full animate-spin dark:border-app-dark-text-primary/30 dark:border-t-app-dark-text-primary"></div>
+                                                    {t('profile.saving')}
+                                                </span>
+                                            ) : (
+                                                t('admin.resetPassword')
+                                            )}
                                         </button>
                                         <div className="flex flex-col-reverse space-y-2 space-y-reverse sm:flex-row sm:space-x-3 sm:space-y-0">
                                             <button
@@ -579,7 +724,14 @@ const AdminStaffPage: React.FC = () => {
                                                 disabled={updating}
                                                 className="w-full px-4 py-2 text-sm font-medium transition-colors border border-transparent rounded-lg sm:w-auto text-app-light-text-on-accent bg-app-light-accent hover:bg-app-light-accent-hover disabled:opacity-50 disabled:cursor-not-allowed dark:bg-app-dark-accent dark:text-app-dark-text-on-accent dark:hover:bg-app-dark-accent-hover"
                                             >
-                                                {updating ? t('profile.saving') : t('admin.saveChanges')}
+                                                {updating ? (
+                                                    <span className="flex items-center justify-center gap-2">
+                                                        <div className="inline-block w-4 h-4 border-4 border-app-light-text-on-accent/30 border-t-app-light-text-on-accent rounded-full animate-spin"></div>
+                                                        {t('profile.saving')}
+                                                    </span>
+                                                ) : (
+                                                    t('admin.saveChanges')
+                                                )}
                                             </button>
                                         </div>
                                     </div>
