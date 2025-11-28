@@ -33,6 +33,24 @@ class StudentProfile(models.Model):
         return max(0, 7 - self.activities_participated)
 
 
+class FacultyProfile(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='faculty_profile')
+    faculty_id = models.CharField(max_length=32, unique=True, null=True, blank=True)
+    name = models.CharField(max_length=120, blank=True)
+    gender = models.CharField(max_length=16, blank=True)
+    department = models.CharField(max_length=120, blank=True)
+    position = models.CharField(max_length=120, blank=True)
+    title_level = models.CharField(max_length=120, blank=True)
+    title = models.CharField(max_length=120, blank=True)
+    staff_type = models.CharField(max_length=120, blank=True)
+    birth_date = models.DateField(null=True, blank=True)
+    is_external = models.BooleanField(default=False)
+    is_main_lecturer = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"FacultyProfile({self.faculty_id or self.user.username})"
+
+
 class AccountMeta(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='account_meta')
     must_change_password = models.BooleanField(default=False)
@@ -45,6 +63,7 @@ class AccountMeta(models.Model):
 class SecurityPreference(models.Model):
     force_students_change_default = models.BooleanField(default=False)
     force_staff_change_default = models.BooleanField(default=False)
+    force_faculty_change_default = models.BooleanField(default=False)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
@@ -59,14 +78,30 @@ class SecurityPreference(models.Model):
 class Course(models.Model):
     code = models.CharField(max_length=64, blank=True)
     title = models.CharField(max_length=255)
-    course_type = models.CharField(max_length=64, blank=True)
-    teacher = models.CharField(max_length=255, blank=True)
+    teacher_id = models.CharField(max_length=32, blank=True)  # For seeding, before linking to FacultyProfile
     location = models.CharField(max_length=255, blank=True)
     term = models.CharField(max_length=64, blank=True)
-    first_week_monday = models.DateField(help_text="The Monday date of week 1 for the course term")
-    day_of_week = models.PositiveSmallIntegerField(help_text="1 = Monday, 7 = Sunday")
+    term_start_date = models.DateField(help_text="The Monday date of week 1 for the course term")
+    weekday = models.SmallIntegerField(default=-1, help_text="-1 = unscheduled, 1 = Monday, 7 = Sunday")
     periods = models.JSONField(default=list, blank=True, help_text="List of period numbers (1-13) when this course meets")
-    week_pattern = models.JSONField(default=list, blank=True, help_text="List of week numbers when this course meets")
+    weeks = models.JSONField(default=list, blank=True, help_text="List of week numbers when this course meets")
+    credits = models.DecimalField(max_digits=4, decimal_places=1, default=0)
+    department_name = models.CharField(max_length=120, blank=True)
+    category = models.CharField(max_length=120, blank=True)
+    nature = models.CharField(max_length=64, blank=True)
+    teaching_mode = models.CharField(max_length=64, blank=True)
+    exam_type = models.CharField(max_length=64, blank=True)
+    grading_method = models.CharField(max_length=64, blank=True)
+    hours_per_week = models.DecimalField(max_digits=4, decimal_places=1, default=0)
+    total_course_hours = models.IntegerField(default=0)
+    enrolled_students = models.IntegerField(default=0)
+    class_students = models.IntegerField(default=0)
+    capacity = models.IntegerField(default=0, help_text="Maximum number of students that can enroll in this course")
+    campus_name = models.CharField(max_length=120, blank=True)
+    majors = models.CharField(max_length=255, blank=True)
+    grades = models.CharField(max_length=64, blank=True)
+    audience = models.CharField(max_length=255, blank=True)
+    course_type_detail = models.CharField(max_length=64, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
