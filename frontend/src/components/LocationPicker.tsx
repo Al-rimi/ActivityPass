@@ -299,12 +299,9 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
                                 </div>
                                 <div className="text-sm text-gray-600 dark:text-gray-300">
                                     {isLoadingAddress ? (
-                                        <span className="flex items-center justify-center">
-                                            <svg className="w-4 h-4 mr-2 -ml-1 text-blue-500 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
-                                            {t('location.loadingAddress', { defaultValue: 'Loading address...' })}
+                                        <span className="flex items-center justify-center gap-2">
+                                            <div className="inline-block w-4 h-4 border-4 border-app-light-accent/30 border-t-app-light-accent rounded-full animate-spin dark:border-app-dark-accent/30 dark:border-t-app-dark-accent"></div>
+                                            {t('location.loadingAddress')}
                                         </span>
                                     ) : (
                                         formatLocationDisplay(tempLocation)
@@ -449,7 +446,10 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
                                             </p>
                                             <p className="mt-1 text-sm text-app-light-text-secondary dark:text-app-dark-text-secondary">
                                                 {isLoadingAddress ? (
-                                                    <span>{t('location.loadingAddress')}</span>
+                                                    <span className="flex items-center justify-center gap-2">
+                                                        <div className="inline-block w-4 h-4 border-4 border-app-light-accent/30 border-t-app-light-accent rounded-full animate-spin dark:border-app-dark-accent/30 dark:border-t-app-dark-accent"></div>
+                                                        {t('location.loadingAddress')}
+                                                    </span>
                                                 ) : (
                                                     tempLocation ? formatLocationDisplay(tempLocation) : ''
                                                 )}

@@ -27,6 +27,7 @@ const FloatingSelect: React.FC<FloatingSelectProps> = ({
     hideSelectedTextWhen
 }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
     const selectRef = useRef<HTMLDivElement>(null);
     const { t } = useTranslation();
 
@@ -34,6 +35,7 @@ const FloatingSelect: React.FC<FloatingSelectProps> = ({
         const handleClickOutside = (event: MouseEvent) => {
             if (selectRef.current && !selectRef.current.contains(event.target as Node)) {
                 setIsOpen(false);
+                setSearchTerm('');
             }
         };
 
@@ -42,6 +44,12 @@ const FloatingSelect: React.FC<FloatingSelectProps> = ({
     }, []);
 
     const selectedOption = options.find(option => option.value === value);
+
+    const filteredOptions = options.length > 10 && searchTerm
+        ? options.filter(option =>
+            option.label.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+        : options;
 
     const handleButtonClick = () => {
         if (disabled) return;
@@ -54,7 +62,7 @@ const FloatingSelect: React.FC<FloatingSelectProps> = ({
     };
 
     return (
-        <div ref={selectRef} className={`relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover ${disabled ? 'bg-app-light-surface-secondary dark:bg-app-dark-surface-secondary' : 'bg-app-light-input-bg dark:bg-app-dark-input-bg'} ${className}`}>
+        <div ref={selectRef} className={`relative group border-2 rounded-lg transition-colors duration-200 ${disabled ? 'border-app-light-border bg-app-light-surface-secondary dark:border-app-dark-border dark:bg-app-dark-surface-secondary' : 'border-app-light-border dark:border-app-dark-border hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover bg-app-light-input-bg dark:bg-app-dark-input-bg'} ${className}`}>
             <button
                 id={id}
                 type="button"
@@ -87,20 +95,33 @@ const FloatingSelect: React.FC<FloatingSelectProps> = ({
             </label>
 
             {isOpen && (
-                <div className="absolute z-50 w-full mt-1 border rounded-lg shadow-lg bg-app-light-surface border-app-light-border dark:bg-app-dark-surface dark:border-app-dark-border overflow-hidden">
-                    {options.map((option, index) => (
-                        <button
-                            key={option.value}
-                            type="button"
-                            onClick={() => handleOptionClick(option.value)}
-                            className={`w-full px-3 py-2 text-left text-sm hover:bg-app-light-surface-hover dark:hover:bg-app-dark-surface-hover transition-colors ${option.value === value
-                                ? 'bg-app-light-accent text-app-light-text-on-accent dark:bg-app-dark-accent dark:text-app-dark-text-on-accent'
-                                : 'text-app-light-text-primary dark:text-app-dark-text-primary'
-                                } ${index === 0 ? 'rounded-t-lg' : ''} ${index === options.length - 1 ? 'rounded-b-lg' : ''}`}
-                        >
-                            {option.label}
-                        </button>
-                    ))}
+                <div className="absolute z-50 w-full mt-1 overflow-hidden border rounded-lg shadow-lg bg-app-light-surface border-app-light-border dark:bg-app-dark-surface dark:border-app-dark-border max-h-60">
+                    {options.length > 10 && (
+                        <div className="p-2 border-b border-app-light-border dark:border-app-dark-border">
+                            <input
+                                type="text"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                placeholder={t('common.search', { defaultValue: 'Search' })}
+                                className="w-full px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-surface border-app-light-border focus:ring-2 focus:ring-app-light-accent focus:border-app-light-accent dark:bg-app-dark-surface dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-app-dark-accent hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover"
+                            />
+                        </div>
+                    )}
+                    <div className="overflow-y-auto max-h-48">
+                        {filteredOptions.map((option, index) => (
+                            <button
+                                key={option.value}
+                                type="button"
+                                onClick={() => handleOptionClick(option.value)}
+                                className={`w-full px-3 py-2 text-left text-sm hover:bg-app-light-surface-hover dark:hover:bg-app-dark-surface-hover transition-colors ${option.value === value
+                                    ? 'bg-app-light-accent text-app-light-text-on-accent dark:bg-app-dark-accent dark:text-app-dark-text-on-accent'
+                                    : 'text-app-light-text-primary dark:text-app-dark-text-primary'
+                                    } ${index === 0 ? 'rounded-t-lg' : ''} ${index === filteredOptions.length - 1 ? 'rounded-b-lg' : ''}`}
+                            >
+                                {option.label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             )}
         </div>

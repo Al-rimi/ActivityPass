@@ -135,13 +135,13 @@ const FloatingMultiSelect: React.FC<FloatingMultiSelectProps> = ({
 
             {isOpen && (
                 <div className="absolute z-50 w-full mt-1 overflow-hidden border rounded-lg shadow-lg bg-app-light-surface border-app-light-border dark:bg-app-dark-surface dark:border-app-dark-border max-h-60">
-                    {showSearch && options.length > 5 && (
+                    {showSearch && options.length > 10 && (
                         <div className="p-2 border-b border-app-light-border dark:border-app-dark-border">
                             <input
                                 type="text"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                placeholder={t('common.search', { defaultValue: 'Search...' })}
+                                placeholder={t('common.search', { defaultValue: 'Search' })}
                                 className="w-full px-3 py-2 text-sm transition-all duration-200 border rounded-lg bg-app-light-surface border-app-light-border focus:ring-2 focus:ring-app-light-accent focus:border-app-light-accent dark:bg-app-dark-surface dark:border-app-dark-border dark:text-app-dark-text dark:focus:ring-app-dark-accent dark:focus:border-app-dark-accent hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover"
                             />
                         </div>

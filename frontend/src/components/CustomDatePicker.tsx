@@ -2,12 +2,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface CustomDatePickerProps {
-    value: string;
+    value: string | null;
     onChange: (value: string) => void;
     placeholder?: string;
     className?: string;
     label?: string;
     id?: string;
+    disabled?: boolean;
 }
 
 const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
@@ -16,7 +17,8 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
     placeholder = '',
     className = '',
     label = '',
-    id
+    id,
+    disabled = false
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [focused, setFocused] = useState(false);
@@ -109,18 +111,21 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
         : ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
     return (
-        <div ref={pickerRef} className={`relative group border-2 rounded-lg transition-colors duration-200 border-app-light-border dark:border-app-dark-border hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover bg-app-light-input-bg dark:bg-app-dark-input-bg ${className}`}>
+        <div ref={pickerRef} className={`relative group border-2 rounded-lg transition-colors duration-200 ${disabled ? 'border-app-light-border bg-app-light-surface-secondary dark:border-app-dark-border dark:bg-app-dark-surface-secondary' : 'border-app-light-border dark:border-app-dark-border hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover bg-app-light-input-bg dark:bg-app-dark-input-bg'} ${className}`}>
             <button
                 id={id}
                 type="button"
+                disabled={disabled}
                 onClick={() => {
-                    setIsOpen(!isOpen);
-                    setFocused(true);
+                    if (!disabled) {
+                        setIsOpen(!isOpen);
+                        setFocused(true);
+                    }
                 }}
                 onBlur={() => setFocused(false)}
-                className="w-full px-4 pt-5 pb-3 text-app-light-text-primary dark:text-app-dark-text-primary focus:outline-none rounded-lg text-left flex items-center justify-between h-[3.5rem] relative bg-transparent hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover"
+                className={`w-full px-4 pt-5 pb-3 focus:outline-none rounded-lg text-left flex items-center justify-between h-[3.5rem] relative bg-transparent ${disabled ? '' : 'hover:border-app-light-border-hover dark:hover:border-app-dark-border-hover'}`}
             >
-                <span className={value ? 'text-app-light-text-primary dark:text-app-dark-text-primary' : 'text-app-light-text-secondary dark:text-app-dark-text-secondary'}>
+                <span className={disabled ? 'text-app-light-text-secondary dark:text-app-dark-text-secondary' : (value ? 'text-app-light-text-primary dark:text-app-dark-text-primary' : 'text-app-light-text-secondary dark:text-app-dark-text-secondary')}>
                     {value ? formatDisplayDate(value) : placeholder}
                 </span>
                 <svg
@@ -136,8 +141,8 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
                 <label
                     htmlFor={id}
                     className={`absolute left-4 transition-all duration-200 ease-out pointer-events-none ${focused || value
-                        ? 'top-0.5 text-xs text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary font-medium transform -translate-y-0'
-                        : 'top-1/2 text-base text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary transform -translate-y-1/2'
+                        ? `top-0.5 text-xs font-medium transform -translate-y-0 ${disabled ? 'text-app-light-text-secondary dark:text-app-dark-text-secondary' : 'text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary'}`
+                        : `top-1/2 text-base transform -translate-y-1/2 ${disabled ? 'text-app-light-text-secondary dark:text-app-dark-text-secondary' : 'text-app-light-text-secondary group-hover:text-app-light-text-primary dark:group-hover:text-app-dark-text-primary'}`
                         }`}
                 >
                     {label}
