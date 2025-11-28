@@ -1083,8 +1083,6 @@ def process_pdf(pdf_path: str, monday_date: str) -> list[dict]:
             "periods": periods,
             "course_type": course.get("type", ""),
             "first_week_monday": monday_date,
-            "student_name": student.get("name", ""),
-            "student_id": student.get("id", ""),
         }
         db_courses.append(db_course)
     
@@ -1092,39 +1090,58 @@ def process_pdf(pdf_path: str, monday_date: str) -> list[dict]:
 
 
 def main() -> None:
-    # Known terms and their Monday dates
+    # Hardcoded known terms and their Monday dates (simplified)
     known_terms = {
+        "2024-2025-1": "2024-09-09",
+        "2024-2025-2": "2025-03-03", 
         "2025-2026-1": "2025-09-08",
+        "2025-2026-2": "2026-03-02",
     }
-    
+
     # Paths
     script_dir = os.path.dirname(__file__)
     pdf_folder = os.path.join(script_dir, "..", "..", "reference", "pdf")
-    seed_file = os.path.join(script_dir, "..", "..", "backend", "accounts", "seed_data", "courses.json")
-    
-    # Load existing courses
-    if os.path.exists(seed_file):
-        with open(seed_file, "r", encoding="utf-8") as f:
+    courses_file = os.path.join(script_dir, "..", "..", "backend", "accounts", "seed_data", "courses.json")
+    output_file = os.path.join(script_dir, "..", "..", "backend", "accounts", "seed_data", "student_courses.json")
+
+    # Load existing courses for matching
+    if os.path.exists(courses_file):
+        with open(courses_file, "r", encoding="utf-8") as f:
             content = f.read().strip()
             if content:
                 existing_courses = json.loads(content)
-                # Remove source_filename from existing courses for consistency
-                existing_courses = [{k: v for k, v in course.items() if k != 'source_filename'} for course in existing_courses]
             else:
                 existing_courses = []
     else:
-        existing_courses = []
-    
+        print(f"Error: {courses_file} not found. Please run the course generation script first.")
+        return
+
+    # Create course lookup dictionary for faster matching
+    course_lookup = {}
+    for course in existing_courses:
+        # Create multiple keys for matching: (title, teacher, term), (code, term), etc.
+        title_teacher_term = (course.get('title', '').strip(), course.get('teacher_id', '').strip() or course.get('teacher', '').strip(), course.get('term', '').strip())
+        code_term = (course.get('code', '').strip(), course.get('term', '').strip())
+
+        if title_teacher_term[0] and title_teacher_term[1] and title_teacher_term[2]:
+            course_lookup[title_teacher_term] = course
+        if code_term[0] and code_term[1]:
+            course_lookup[code_term] = course
+
     # Find PDFs
     pdf_files = glob.glob(os.path.join(pdf_folder, "*.pdf"))
     if not pdf_files:
         print(f"No PDF files found in {pdf_folder}")
         return
-    
-    total_new = 0
-    total_skipped = 0
-    
+
+    student_course_data = []
+    total_students_processed = 0
+    total_courses_matched = 0
+    total_courses_unmatched = 0
+
     for pdf_path in pdf_files:
+        print(f"\nProcessing: {os.path.basename(pdf_path)}")
+
         # Extract term
         term = extract_term_from_pdf(pdf_path)
         if not term:
@@ -1132,50 +1149,179 @@ def main() -> None:
             tables = extract_tables(pdf_path, strategy="lines")
             _, _, meta, _, _ = merge_main_table(tables, collapse_newlines=False)
             term = extract_term_from_content(pdf_path, meta)
-        
+
         if not term:
             print(f"Could not extract term from {pdf_path}; skipping.")
             continue
         
-        # Check if known
-        if term not in known_terms:
-            monday_date = input(f"Enter Monday date for term {term} (YYYY-MM-DD): ").strip()
-            try:
-                datetime.strptime(monday_date, "%Y-%m-%d")
-                known_terms[term] = monday_date
-            except ValueError:
-                print("Invalid date format; skipping this PDF.")
-                continue
-        else:
-            monday_date = known_terms[term]
-        
-        # Process PDF
+        # Use hardcoded Monday date (simplified)
+        monday_date = known_terms.get(term, "2025-09-08")  # Default fallback        # Extract student info first
+        tables = extract_tables(pdf_path, strategy="lines")
+        _, _, meta, _, _ = merge_main_table(tables, collapse_newlines=False)
+        student = extract_student_info_from_pdf(pdf_path, meta)
+
+        if not student.get('id'):
+            print(f"Could not extract student ID from {pdf_path}; skipping.")
+            continue
+
+        # Process PDF to get courses
         try:
-            courses = process_pdf(pdf_path, monday_date)
+            extracted_courses = process_pdf(pdf_path, monday_date)
         except Exception as e:
             print(f"Error processing {pdf_path}: {e}")
             continue
-        
-        # Add unique courses
-        for course in courses:
-            if course not in existing_courses:
-                existing_courses.append(course)
-                total_new += 1
+
+        student_id = student['id']
+        print(f"Student ID: {student_id}")
+
+        # Match courses for this student
+        matched_course_codes = []
+        unmatched_courses = []
+
+        for extracted_course in extracted_courses:
+            course_title = extracted_course.get('title', '').strip()
+            course_teacher = extracted_course.get('teacher', '').strip()
+            course_term = extracted_course.get('term', '').strip()
+
+            # Try to match the course
+            matched_course = None
+
+            # First try exact match by title and term
+            for course in existing_courses:
+                if course.get('term', '').strip() == course_term:
+                    course_title_db = course.get('title', '').strip()
+                    if (course_title_db == course_title or 
+                        similar_course_titles(course_title, course_title_db)):
+                        # For now, accept the match regardless of teacher (since teacher IDs don't match names)
+                        matched_course = course
+                        break
+
+            if matched_course:
+                course_code = matched_course.get('code', '')
+                if course_code and course_code not in matched_course_codes:
+                    matched_course_codes.append(course_code)
+                    total_courses_matched += 1
+                    print(f"  ✓ Matched: {course_title} -> {course_code}")
             else:
-                total_skipped += 1
+                unmatched_courses.append({
+                    'title': course_title,
+                    'teacher': course_teacher,
+                    'term': course_term
+                })
+                total_courses_unmatched += 1
+                print(f"  ✗ Unmatched: {course_title} (Teacher: {course_teacher})")
+
+        # Only add student if they have matched courses
+        if matched_course_codes:
+            student_entry = {
+                'student_id': student_id,
+                'courses': matched_course_codes
+            }
+            student_course_data.append(student_entry)
+            total_students_processed += 1
+
+            if unmatched_courses:
+                print(f"  Warning: {len(unmatched_courses)} courses could not be matched for student {student_id}")
+        else:
+            print(f"  Skipping student {student_id} - no courses could be matched")
+
+    # Save student-course data
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+    with open(output_file, "w", encoding="utf-8") as f:
+        json.dump(student_course_data, f, ensure_ascii=False, indent=2)
+
+    print("\nSummary:")
+    print(f"Students processed with matched courses: {total_students_processed}")
+    print(f"Total courses matched: {total_courses_matched}")
+    print(f"Total courses unmatched: {total_courses_unmatched}")
+    print(f"Output saved to: {output_file}")
+
+
+def similar_names(name1: str, name2: str) -> bool:
+    """Check if two names are similar (simple heuristic)"""
+    if not name1 or not name2:
+        return False
+
+    # Remove common titles and normalize
+    name1_clean = re.sub(r'(教授|老师|讲师|博士|硕士)', '', name1).strip()
+    name2_clean = re.sub(r'(教授|老师|讲师|博士|硕士)', '', name2).strip()
+
+    # Exact match after cleaning
+    if name1_clean == name2_clean:
+        return True
+
+    # Check if one contains the other
+    return name1_clean in name2_clean or name2_clean in name1_clean
+
+
+def similar_course_titles(title1: str, title2: str) -> bool:
+    """Check if two course titles are similar based on keywords"""
+    if not title1 or not title2:
+        return False
     
-    # Save updated courses
-    os.makedirs(os.path.dirname(seed_file), exist_ok=True)
-    json_str = json.dumps(existing_courses, ensure_ascii=False, indent=2)
-    # Compact week_pattern and periods arrays to single line
-    import re
-    json_str = re.sub(r'("week_pattern": )\[\s*((?:\s*\d+\s*,)*\s*\d+\s*)\s*\]', lambda m: f'{m.group(1)}[{m.group(2).replace(" ", "").replace("\n", "")}]', json_str, flags=re.MULTILINE | re.DOTALL)
-    json_str = re.sub(r'("periods": )\[\s*((?:\s*\d+\s*,)*\s*\d*\s*)\s*\]', lambda m: f'{m.group(1)}[{m.group(2).replace(" ", "").replace("\n", "")}]', json_str, flags=re.MULTILINE | re.DOTALL)
-    with open(seed_file, "w", encoding="utf-8") as f:
-        f.write(json_str)
+    # Exact match
+    if title1.lower() == title2.lower():
+        return True
     
-    print(f"Updated {seed_file} with {total_new} new courses, skipped {total_skipped} duplicates.")
-    print(f"Total courses: {len(existing_courses)}")
+    # Common translations/equivalents
+    translations = {
+        'artificial intelligence': ['人工智能', 'ai', 'artificial intelligence', '智能'],
+        'programming': ['程序设计', '编程', 'program', '语言'],
+        'computer science': ['计算机科学', 'cs', 'computer science', '计算机'],
+        'software': ['软件', 'software'],
+        'analysis': ['分析', 'analysis'],
+        'design': ['设计', 'design'],
+        'quality': ['质量', 'quality'],
+        'testing': ['测试', 'testing'],
+        'mathematics': ['数学', 'math', '高等数学'],
+        'algebra': ['代数', 'algebra', '线性代数'],
+        'language': ['语言', 'language'],
+        'introduction': ['导论', 'introduction', '入门'],
+        'foundation': ['基础', 'foundation', '基础'],
+        'physical education': ['体育', 'physical education', 'pe', '体教'],
+        'chinese': ['中文', 'chinese', '汉语'],
+        'english': ['英语', 'english'],
+        'communication': ['交流', 'communication', '沟通'],
+        'project': ['项目', 'project'],
+        'training': ['培训', 'training', '实训'],
+        'internship': ['实习', 'internship'],
+        'professional': ['专业', 'professional'],
+        'c language': ['c语言', 'c program', 'c语言程序设计'],
+        'object oriented': ['面向对象', 'object oriented'],
+        'data structure': ['数据结构', 'data structure'],
+        'algorithm': ['算法', 'algorithm'],
+        'database': ['数据库', 'database'],
+        'network': ['网络', 'network'],
+        'security': ['安全', 'security'],
+        'system': ['系统', 'system'],
+        'engineering': ['工程', 'engineering'],
+        'management': ['管理', 'management'],
+    }
+    
+    title1_lower = title1.lower()
+    title2_lower = title2.lower()
+    
+    # Check if titles share common keywords
+    title1_words = set(title1_lower.split())
+    title2_words = set(title2_lower.split())
+    
+    # Direct word overlap
+    common_words = title1_words & title2_words
+    if len(common_words) >= 2:  # At least 2 common words
+        return True
+    
+    # Check translation equivalents
+    for eng_word, chn_equivalents in translations.items():
+        if eng_word in title1_lower:
+            for chn in chn_equivalents:
+                if chn in title2_lower:
+                    return True
+        if eng_word in title2_lower:
+            for chn in chn_equivalents:
+                if chn in title1_lower:
+                    return True
+    
+    return False
  
 
 if __name__ == "__main__":

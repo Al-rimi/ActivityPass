@@ -37,9 +37,9 @@ class Command(BaseCommand):
         
         for course_data in courses_data:
             term = course_data.get('term', '').strip()
-            first_week_monday_str = course_data.get('first_week_monday', '').strip()
+            term_start_date_str = course_data.get('term_start_date', '').strip()
             
-            if term and first_week_monday_str:
+            if term and term_start_date_str:
                 # Parse term format: "2024-2025-1" -> academic_year="2024-2025", semester=1
                 if '-' in term:
                     parts = term.split('-')
@@ -48,20 +48,20 @@ class Command(BaseCommand):
                             academic_year = f"{parts[0]}-{parts[1]}"
                             semester = int(parts[2])
                             
-                            # Convert first_week_monday string to date
-                            first_week_monday = datetime.strptime(first_week_monday_str, '%Y-%m-%d').date()
+                            # Convert term_start_date string to date
+                            term_start_date = datetime.strptime(term_start_date_str, '%Y-%m-%d').date()
                             
                             # Use term as key to avoid duplicates
                             academic_terms_data[term] = {
                                 'term': term,
                                 'academic_year': academic_year,
                                 'semester': semester,
-                                'first_week_monday': first_week_monday,
+                                'first_week_monday': term_start_date,
                                 'is_active': True,
                             }
                             
                         except (ValueError, IndexError):
-                            self.stderr.write(self.style.WARNING(f'Invalid term format: {term} or date: {first_week_monday_str}'))
+                            self.stderr.write(self.style.WARNING(f'Invalid term format: {term} or date: {term_start_date_str}'))
 
         # Create academic terms
         created_terms_count = 0
@@ -95,15 +95,15 @@ class Command(BaseCommand):
                 courses_by_student[student_id].append(course_data)
             # Also collect all unique courses
             course_key = (
+                course_data.get('code', ''),
                 course_data.get('title', ''),
-                course_data.get('teacher', ''),
+                course_data.get('teacher_id', ''),
                 course_data.get('location', ''),
                 course_data.get('term', ''),
-                tuple(sorted(course_data.get('week_pattern', []))),
-                course_data.get('day_of_week', 1),
+                tuple(sorted(course_data.get('weeks', []))),
+                course_data.get('weekday', -1),
                 tuple(sorted(course_data.get('periods', []))),
-                course_data.get('course_type', ''),
-                course_data.get('first_week_monday', ''),
+                course_data.get('term_start_date', ''),
             )
             if course_key not in [c[0] for c in all_courses]:
                 all_courses.append((course_key, course_data))
@@ -111,20 +111,35 @@ class Command(BaseCommand):
         # Create courses
         course_objects = {}
         for course_key, course_data in all_courses:
-            if course_data.get('day_of_week') is None:
-                continue  # Skip courses without day_of_week
             periods = course_data.get('periods', [])
             course, created = Course.objects.get_or_create(
+                code=course_data.get('code', ''),
                 title=course_data.get('title', ''),
-                teacher=course_data.get('teacher', ''),
+                teacher_id=course_data.get('teacher_id', ''),
                 location=course_data.get('location', ''),
                 term=course_data.get('term', ''),
-                first_week_monday=course_data.get('first_week_monday', ''),
-                day_of_week=course_data.get('day_of_week', 1),
+                term_start_date=course_data.get('term_start_date', ''),
+                weekday=course_data.get('weekday', -1),
                 defaults={
-                    'course_type': course_data.get('course_type', ''),
-                    'week_pattern': course_data.get('week_pattern', []),
+                    'weeks': course_data.get('weeks', []),
                     'periods': periods,
+                    'credits': course_data.get('credits', ''),
+                    'department_name': course_data.get('department_name', ''),
+                    'category': course_data.get('category', ''),
+                    'nature': course_data.get('nature', ''),
+                    'teaching_mode': course_data.get('teaching_mode', ''),
+                    'exam_type': course_data.get('exam_type', ''),
+                    'grading_method': course_data.get('grading_method', ''),
+                    'hours_per_week': course_data.get('hours_per_week', ''),
+                    'total_course_hours': course_data.get('total_course_hours', ''),
+                    'enrolled_students': course_data.get('enrolled_students', ''),
+                    'class_students': course_data.get('class_students', ''),
+                    'capacity': course_data.get('capacity', 0),
+                    'campus_name': course_data.get('campus_name', ''),
+                    'majors': course_data.get('majors', ''),
+                    'grades': course_data.get('grades', ''),
+                    'audience': course_data.get('audience', ''),
+                    'course_type_detail': course_data.get('course_type_detail', ''),
                 }
             )
             course_objects[course_key] = course
@@ -142,15 +157,15 @@ class Command(BaseCommand):
                 # Enroll in their specific courses
                 for course_data in courses_by_student[sid]:
                     course_key = (
+                        course_data.get('code', ''),
                         course_data.get('title', ''),
-                        course_data.get('teacher', ''),
+                        course_data.get('teacher_id', ''),
                         course_data.get('location', ''),
                         course_data.get('term', ''),
-                        tuple(sorted(course_data.get('week_pattern', []))),
-                        course_data.get('day_of_week', 1),
+                        tuple(sorted(course_data.get('weeks', []))),
+                        course_data.get('weekday', -1),
                         tuple(sorted(course_data.get('periods', []))),
-                        course_data.get('course_type', ''),
-                        course_data.get('first_week_monday', ''),
+                        course_data.get('term_start_date', ''),
                     )
                     course = course_objects.get(course_key)
                     if course:
