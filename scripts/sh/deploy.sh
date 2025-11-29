@@ -290,9 +290,9 @@ print_status "Environment configuration completed"
 
 # Setup backend
 print_step "Setting up Python backend..."
-$PYTHON_CMD -m venv .venv
-source .venv/bin/activate
-cp .env backend/.env
+$PYTHON_CMD -m venv backend/.venv
+source backend/.venv/bin/activate
+# cp .env backend/.env  # Removed: use root .env like run_all.py
 cd backend
 
 # Upgrade pip with timeout and retry
@@ -385,7 +385,7 @@ print_status "     - Name: activitypass-backend"
 print_status "     - Image: python:3.8 (or the version available in 1Panel)"
 print_status "     - Port: 8000"
 print_status "     - Root Directory: /www/wwwroot/activitypass/backend"
-print_status "     - Startup Command: pip install -r requirements.txt && export PYTHONPATH=/www/wwwroot/activitypass && python manage.py runserver 0.0.0.0:8000"
+print_status "     - Startup Command: source .venv/bin/activate && pip install -r requirements.txt && python manage.py runserver 0.0.0.0:8000"
 print_status ""
 print_status "3. After creating the runtime application, edit its configuration:"
 print_status "   - Add environment variables if needed"
