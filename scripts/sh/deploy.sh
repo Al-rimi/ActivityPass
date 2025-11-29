@@ -191,8 +191,8 @@ if [ -n "$MYSQL_CONTAINER" ]; then
         DB_HOST=$MYSQL_CONTAINER  # Use container name for inter-container communication
         print_status "Using MySQL container name: $MYSQL_CONTAINER"
     else
-        DB_HOST="127.0.0.1"
-        print_warning "Could not detect container IP, using 127.0.0.1"
+        DB_HOST=$MYSQL_CONTAINER  # Still use container name even if IP not detected
+        print_warning "Could not detect container IP, using container name: $MYSQL_CONTAINER"
     fi
     
     print_warning "The database host in .env will be set to: $DB_HOST"
@@ -293,7 +293,6 @@ print_step "Setting up Python backend..."
 $PYTHON_CMD -m venv .venv
 source .venv/bin/activate
 cp .env backend/.env
-cp .env .  # Copy .env to root for runtime compatibility
 cd backend
 
 # Upgrade pip with timeout and retry
