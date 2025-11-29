@@ -316,11 +316,15 @@ for i in {1..3}; do
     fi
 done
 
-print_status "Running database migrations..."
-$PYTHON_CMD manage.py migrate
-
-print_status "Creating superuser..."
-$PYTHON_CMD manage.py shell -c "
+print_status "Initializing application (migrations + seeding + superuser)..."
+if $PYTHON_CMD manage.py init_app; then
+    print_status "Application initialized successfully"
+else
+    print_warning "init_app failed; falling back to separate commands"
+    print_status "Running database migrations..."
+    $PYTHON_CMD manage.py migrate
+    print_status "Creating superuser..."
+    $PYTHON_CMD manage.py shell -c "
 from django.contrib.auth import get_user_model
 User = get_user_model()
 if not User.objects.filter(username='admin').exists():
@@ -329,6 +333,9 @@ if not User.objects.filter(username='admin').exists():
 else:
     print('Superuser already exists')
 "
+    print_status "Seeding initial data..."
+    $PYTHON_CMD manage.py seed_students
+fi
 
 cd ..
 
