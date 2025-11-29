@@ -291,7 +291,7 @@ print_status "Environment configuration completed"
 print_step "Setting up Python backend..."
 $PYTHON_CMD -m venv backend/.venv
 source backend/.venv/bin/activate
-cp .env backend/.env  # Copy .env to backend for runtime
+sudo cp .env backend/.env  # Copy .env to backend for runtime
 cd backend
 
 # Upgrade pip with timeout and retry
