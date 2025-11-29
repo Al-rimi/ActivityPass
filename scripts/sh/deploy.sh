@@ -323,16 +323,6 @@ else
     print_warning "init_app failed; falling back to separate commands"
     print_status "Running database migrations..."
     $PYTHON_CMD manage.py migrate
-    print_status "Creating superuser..."
-    $PYTHON_CMD manage.py shell -c "
-from django.contrib.auth import get_user_model
-User = get_user_model()
-if not User.objects.filter(username='admin').exists():
-    User.objects.create_superuser('admin', 'admin@example.com', 'admin123')
-    print('Superuser created')
-else:
-    print('Superuser already exists')
-"
     print_status "Seeding initial data..."
     $PYTHON_CMD manage.py seed_students
 fi
@@ -375,7 +365,17 @@ print_status "     - Name: activitypass"
 print_status "     - Image: python:3.8"
 print_status "     - Port: 8000"
 print_status "     - Root Directory: /www/wwwroot/activitypass/backend"
-print_status "     - Startup Command: source .venv/bin/activate && python -c \"import django\" 2>/dev/null || pip install -r requirements.txt && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+print_status "     - Startup Command: source .venv/bin/activate && python -c \"import django\" 2>/dev/null || pip install -r requirements.txt && python manage.py migrate && python manage.py shell -c \"from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin', 'admin@example.com', 'admin123')\" && gunicorn ActivityPass.wsgi:application --bind 0.0.0.0:8000"
+print_status "   - Set the following environment variables in 1Panel runtime:"
+print_status "     - DB_ENGINE=mysql"
+print_status "     - DB_NAME=activitypass"
+print_status "     - DB_USER=activitypass"
+print_status "     - DB_PASSWORD=Csb6B4sCGEX3anbe"
+print_status "     - DB_HOST=1Panel-mysql-zBv1"
+print_status "     - DB_PORT=3306"
+print_status "     - DJANGO_DEBUG=false"
+print_status "     - DJANGO_SECRET_KEY=<your-secret-key>"
+print_status "     - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,your-domain.com"
 print_status ""
 print_status "Nginx configuration:"
 print_status "   - Add this location block for SPA routing (before the root directive):"
