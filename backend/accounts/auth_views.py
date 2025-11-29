@@ -175,6 +175,6 @@ class TokenObtainOrCreateStudentView(TokenObtainPairView):
                     year = int(username[:4])
                 except Exception:
                     year = 1
-                StudentProfile.objects.create(user=user, student_id=username, year=year)
+                StudentProfile.objects.get_or_create(user=user, student_id=username, defaults={'year': year})
         # Fallback to standard token obtain with custom error handling
         return super().post(request, *args, **kwargs)

@@ -291,7 +291,7 @@ print_status "Environment configuration completed"
 print_step "Setting up Python backend..."
 $PYTHON_CMD -m venv backend/.venv
 source backend/.venv/bin/activate
-# cp .env backend/.env  # Removed: use root .env like run_all.py
+cp .env backend/.env  # Copy .env to backend for runtime
 cd backend
 
 # Upgrade pip with timeout and retry
@@ -375,7 +375,7 @@ print_status "     - Name: activitypass"
 print_status "     - Image: python:3.8"
 print_status "     - Port: 8000"
 print_status "     - Root Directory: /www/wwwroot/activitypass/backend"
-print_status "     - Startup Command: source .venv/bin/activate && pip install -r requirements.txt && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+print_status "     - Startup Command: source .venv/bin/activate && python -c \"import django\" 2>/dev/null || pip install -r requirements.txt && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
 print_status ""
 print_status "Nginx configuration:"
 print_status "   - Add this location block for SPA routing (before the root directive):"
