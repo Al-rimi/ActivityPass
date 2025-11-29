@@ -53,6 +53,13 @@
   --app-shadow-light: rgba(0, 0, 0, 0.2);
 }
 
+/* Base overrides */
+body {
+  @apply m-0 font-sans antialiased;
+  background-color: var(--app-bg);
+  color: var(--app-text-primary);
+}
+
 /* Hide scrollbars globally */
 * {
   -ms-overflow-style: none; /* IE and Edge */
@@ -61,13 +68,6 @@
 
 *::-webkit-scrollbar {
   display: none; /* Chrome, Safari and Opera */
-}
-
-/* Base overrides */
-body {
-  @apply m-0 font-sans antialiased;
-  background-color: var(--app-bg);
-  color: var(--app-text-primary);
 }
 
 /* Slight global font size bump */

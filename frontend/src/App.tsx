@@ -494,7 +494,7 @@ const App: React.FC = () => {
         }
     }, [i18n.language, t]);
     return (
-        <div className="flex flex-col min-h-screen text-app-light-text-primary bg-app-light-input-bg dark:bg-app-dark-input-bg dark:text-app-dark-text-primary">
+        <div className="flex flex-col min-h-screen overflow-auto text-app-light-text-primary bg-app-light-input-bg dark:bg-app-dark-input-bg dark:text-app-dark-text-primary">
             <Navbar />
             <Routes>
                 <Route path="/auth" element={<AuthPage />} />
