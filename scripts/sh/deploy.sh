@@ -163,6 +163,17 @@ if [ -f .env ]; then
     DB_PASSWORD=$(grep "^DB_PASSWORD=" .env | cut -d'=' -f2- | sed 's/^"//' | sed 's/"$//')
 fi
 
+# Prompt for database credentials if not set
+if [ -z "$DB_NAME" ]; then
+    read -p "Enter database name: " DB_NAME
+fi
+if [ -z "$DB_USER" ]; then
+    read -p "Enter database user: " DB_USER
+fi
+if [ -z "$DB_PASSWORD" ]; then
+    read -p "Enter database password: " DB_PASSWORD
+fi
+
 if [ -n "$MYSQL_CONTAINER" ]; then
     print_status "Using 1Panel MySQL container: $MYSQL_CONTAINER"
     print_warning "⚠️  IMPORTANT: You must create the database and user manually in 1Panel"
@@ -171,10 +182,11 @@ if [ -n "$MYSQL_CONTAINER" ]; then
     print_warning "3. Create database: $DB_NAME"
     print_warning "4. Create user: $DB_USER with password: $DB_PASSWORD"
     print_warning "5. Grant ALL privileges on $DB_NAME to $DB_USER"
+    print_warning "6. When creating the user, specify: IDENTIFIED WITH mysql_native_password BY '$DB_PASSWORD';"
     print_warning ""
     
     # Get the container IP for database connection
-    CONTAINER_IP=$(sudo docker inspect $MYSQL_CONTAINER | grep -A 10 '"Networks"' | grep '"IPAddress"' | head -1 | cut -d'"' -f4)
+    CONTAINER_IP=$(sudo docker inspect $MYSQL_CONTAINER --format '{{.NetworkSettings.IPAddress}}')
     if [ -n "$CONTAINER_IP" ]; then
         DB_HOST=$CONTAINER_IP
         print_status "Detected MySQL container IP: $CONTAINER_IP"
@@ -201,8 +213,8 @@ else
     print_status "Connecting to database..."
     if sudo mysql -u root -p"$MYSQL_ROOT_PASSWORD" -h 127.0.0.1 -P 3306 << EOF 2>/dev/null
 CREATE DATABASE IF NOT EXISTS $DB_NAME CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER IF NOT EXISTS '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASSWORD';
-CREATE USER IF NOT EXISTS '$DB_USER'@'%' IDENTIFIED BY '$DB_PASSWORD';
+CREATE USER IF NOT EXISTS '$DB_USER'@'localhost' IDENTIFIED WITH mysql_native_password BY '$DB_PASSWORD';
+CREATE USER IF NOT EXISTS '$DB_USER'@'%' IDENTIFIED WITH mysql_native_password BY '$DB_PASSWORD';
 GRANT ALL PRIVILEGES ON $DB_NAME.* TO '$DB_USER'@'localhost';
 GRANT ALL PRIVILEGES ON $DB_NAME.* TO '$DB_USER'@'%';
 FLUSH PRIVILEGES;
