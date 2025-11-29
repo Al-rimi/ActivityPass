@@ -188,8 +188,8 @@ if [ -n "$MYSQL_CONTAINER" ]; then
     # Get the container IP for database connection
     CONTAINER_IP=$(sudo docker inspect $MYSQL_CONTAINER --format '{{.NetworkSettings.IPAddress}}')
     if [ -n "$CONTAINER_IP" ]; then
-        DB_HOST=$CONTAINER_IP
-        print_status "Detected MySQL container IP: $CONTAINER_IP"
+        DB_HOST=$MYSQL_CONTAINER  # Use container name for inter-container communication
+        print_status "Using MySQL container name: $MYSQL_CONTAINER"
     else
         DB_HOST="127.0.0.1"
         print_warning "Could not detect container IP, using 127.0.0.1"
@@ -293,6 +293,7 @@ print_step "Setting up Python backend..."
 $PYTHON_CMD -m venv .venv
 source .venv/bin/activate
 cp .env backend/.env
+cp .env .  # Copy .env to root for runtime compatibility
 cd backend
 
 # Upgrade pip with timeout and retry
@@ -358,6 +359,7 @@ cat > start.sh << EOF
 # ActivityPass startup script for 1Panel
 
 cd $DEPLOY_DIR
+export PYTHONPATH=$DEPLOY_DIR:$DEPLOY_DIR/backend
 source .venv/bin/activate
 exec python manage.py runserver 127.0.0.1:8000
 EOF
@@ -422,19 +424,23 @@ print_status "   - Go to 1Panel Web Interface (http://your-server-ip:9999)"
 print_status "   - Navigate to 'App Store' → 'Local' → 'Runtime'"
 print_status "   - Configure:"
 print_status "     - Name: activitypass-backend"
-print_status "     - Image: python:3.8"
+print_status "     - Image: python:3.8 (or the version available in 1Panel)"
 print_status "     - Port: 8000"
 print_status "     - Root Directory: /www/wwwroot/activitypass"
-print_status "     - Startup Command: pip install -r requirements.txt && python manage.py runserver 0.0.0.0:8000"
+print_status "     - Startup Command: export PYTHONPATH=/www/wwwroot/activitypass:/www/wwwroot/activitypass/backend && pip install -r requirements.txt && python manage.py runserver 0.0.0.0:8000"
 print_status ""
 print_status "3. After creating the runtime application, edit its configuration:"
 print_status "   - Add environment variables if needed"
 print_status "   - The startup command should already be set correctly"
 print_status ""
 print_status "4. For the website, edit the Nginx configuration:"
-print_status "   - Add this location block for API proxying:"
+print_status "   - Add this location block for SPA routing (before the root directive):"
+print_status "     location / {"
+print_status "         try_files \$uri \$uri/ /index.html;"
+print_status "     }"
+print_status "   - Update the API proxy location:"
 print_status "     location /api/ {"
-print_status "         proxy_pass http://127.0.0.1:8000;"
+print_status "         proxy_pass http://activitypass-backend:8000;"
 print_status "         proxy_set_header Host \$host;"
 print_status "         proxy_set_header X-Real-IP \$remote_addr;"
 print_status "         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;"
@@ -442,7 +448,7 @@ print_status "         proxy_set_header X-Forwarded-Proto \$scheme;"
 print_status "     }"
 print_status ""
 print_status "🚀 Manual Start Commands:"
-print_status "   cd $DEPLOY_DIR && pip install -r requirements.txt && python manage.py runserver 127.0.0.1:8000    # Start backend"
+print_status "   cd $DEPLOY_DIR && export PYTHONPATH=$DEPLOY_DIR:$DEPLOY_DIR/backend && pip install -r requirements.txt && python manage.py runserver 127.0.0.1:8000    # Start backend"
 print_status "   cd $DEPLOY_DIR && ./stop.sh     # Stop backend"
 print_status "   cd $DEPLOY_DIR && ./health.sh   # Health check"
 print_status ""
