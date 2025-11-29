@@ -272,7 +272,7 @@ fi
 sed -i "s/DB_NAME=.*/DB_NAME=$DB_NAME/" .env
 sed -i "s/DB_USER=.*/DB_USER=$DB_USER/" .env
 sed -i "s/DB_PASSWORD=.*/DB_PASSWORD=$DB_PASSWORD/" .env
-sed -i "s/DB_HOST=.*/DB_HOST=$DB_HOST/" .env
+sed -i "s/DB_HOST=.*/DB_HOST=127.0.0.1/" .env  # Use localhost for host migrations
 sed -i "s/DJANGO_SECRET_KEY=.*/DJANGO_SECRET_KEY=$SECRET_KEY/" .env
 sed -i "s/DJANGO_DEBUG=.*/DJANGO_DEBUG=false/" .env
 
@@ -331,10 +331,10 @@ else:
     print('Superuser already exists')
 "
 
-print_status "Collecting static files..."
-$PYTHON_CMD manage.py collectstatic --noinput
-
 cd ..
+
+# Now update .env to use container name for runtime
+sed -i "s/DB_HOST=.*/DB_HOST=$MYSQL_CONTAINER/" .env
 
 # Build frontend
 print_step "Building React frontend..."
