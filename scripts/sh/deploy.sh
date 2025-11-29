@@ -351,60 +351,19 @@ sudo cp -r frontend/build/* "$FRONTEND_DEPLOY_DIR/"
 sudo chown -R www-data:www-data "$FRONTEND_DEPLOY_DIR" 2>/dev/null || sudo chown -R nginx:nginx "$FRONTEND_DEPLOY_DIR" 2>/dev/null || sudo chown -R $USER:$USER "$FRONTEND_DEPLOY_DIR"
 sudo chmod -R 755 "$FRONTEND_DEPLOY_DIR"
 
-# Create a simple startup script for 1Panel
-print_step "Creating 1Panel startup script..."
-cat > start.sh << EOF
-#!/bin/bash
-# ActivityPass startup script for 1Panel
-
-cd $DEPLOY_DIR
-export PYTHONPATH=$DEPLOY_DIR:$DEPLOY_DIR/backend
-source .venv/bin/activate
-exec python manage.py runserver 127.0.0.1:8000
-EOF
-
-chmod +x start.sh
-
-# Copy manage.py to root directory for 1Panel runtime compatibility
-print_step "Setting up manage.py for 1Panel runtime..."
-cp backend/manage.py .
-# Update the settings module path in the copied manage.py
-sed -i "s/os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ActivityPass.settings')/os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.ActivityPass.settings')/" manage.py
-
-# Copy requirements.txt to root directory for 1Panel runtime
-cp backend/requirements.txt .
-
-# Create a stop script
-cat > stop.sh << EOF
-#!/bin/bash
-# ActivityPass stop script for 1Panel
-
-pkill -f "manage.py runserver"
-EOF
-
-chmod +x stop.sh
-
-# Create a health check script
-cat > health.sh << EOF
-#!/bin/bash
-# ActivityPass health check for 1Panel
-
-# Check if Django is running
-if pgrep -f "manage.py runserver" > /dev/null; then
-    echo "healthy"
-    exit 0
-else
-    echo "unhealthy"
+# Setup manage.py in backend (assuming it exists)
+print_step "Checking manage.py in backend..."
+if [ ! -f backend/manage.py ]; then
+    print_error "manage.py not found in backend/; please ensure it exists"
     exit 1
 fi
-EOF
 
-chmod +x health.sh
+chmod +x backend/manage.py 2>/dev/null || true
 
 print_status "🎉 1Panel deployment completed!"
 print_status ""
 print_status "📁 Deployment Directories:"
-print_status "   Backend: $DEPLOY_DIR"
+print_status "   Backend: $DEPLOY_DIR/backend"
 print_status "   Frontend: $FRONTEND_DEPLOY_DIR"
 print_status ""
 print_status "🔧 1Panel Configuration:"
@@ -425,8 +384,8 @@ print_status "   - Configure:"
 print_status "     - Name: activitypass-backend"
 print_status "     - Image: python:3.8 (or the version available in 1Panel)"
 print_status "     - Port: 8000"
-print_status "     - Root Directory: /www/wwwroot/activitypass"
-print_status "     - Startup Command: export PYTHONPATH=/www/wwwroot/activitypass:/www/wwwroot/activitypass/backend && pip install -r requirements.txt && python manage.py runserver 0.0.0.0:8000"
+print_status "     - Root Directory: /www/wwwroot/activitypass/backend"
+print_status "     - Startup Command: pip install -r requirements.txt && export PYTHONPATH=/www/wwwroot/activitypass && python manage.py runserver 0.0.0.0:8000"
 print_status ""
 print_status "3. After creating the runtime application, edit its configuration:"
 print_status "   - Add environment variables if needed"
@@ -445,11 +404,6 @@ print_status "         proxy_set_header X-Real-IP \$remote_addr;"
 print_status "         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;"
 print_status "         proxy_set_header X-Forwarded-Proto \$scheme;"
 print_status "     }"
-print_status ""
-print_status "🚀 Manual Start Commands:"
-print_status "   cd $DEPLOY_DIR && export PYTHONPATH=$DEPLOY_DIR:$DEPLOY_DIR/backend && pip install -r requirements.txt && python manage.py runserver 127.0.0.1:8000    # Start backend"
-print_status "   cd $DEPLOY_DIR && ./stop.sh     # Stop backend"
-print_status "   cd $DEPLOY_DIR && ./health.sh   # Health check"
 print_status ""
 print_status "📊 Access URLs:"
 print_status "   Frontend: http://$ALIAS/"
