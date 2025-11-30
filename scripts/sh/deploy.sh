@@ -287,7 +287,7 @@ fi
 
 # Update EXEC_SCRIPT with the new import check
 sed -i '/^EXEC_SCRIPT=/d' .env
-echo 'EXEC_SCRIPT="source .venv/bin/activate && python -c \"import django, rest_framework, rest_framework_simplejwt, dotenv, pymysql, corsheaders, tzdata, gunicorn\" 2>/dev/null || pip install -r requirements.txt && python manage.py migrate && gunicorn ActivityPass.wsgi:application --bind 0.0.0.0:8000"' >> .env
+echo 'EXEC_SCRIPT="source .venv/bin/activate && python -c \"import django\" 2>/dev/null && python manage.py migrate && gunicorn ActivityPass.wsgi:application --bind 0.0.0.0:8000"' >> .env
 
 print_status "Environment configuration completed"
 
@@ -369,7 +369,7 @@ chmod +x backend/manage.py 2>/dev/null || true
 RUNTIME_DIR="/opt/1panel/runtime/python/activitypass"
 sudo mkdir -p "$RUNTIME_DIR"
 cat > run.sh << 'EOF'
-source .venv/bin/activate && python -c "import django, rest_framework, rest_framework_simplejwt, dotenv, pymysql, corsheaders, tzdata, gunicorn" 2>/dev/null || pip install -r requirements.txt && python manage.py migrate && gunicorn ActivityPass.wsgi:application --bind 0.0.0.0:8000
+source .venv/bin/activate && python -c "import django" 2>/dev/null && python manage.py migrate && gunicorn ActivityPass.wsgi:application --bind 0.0.0.0:8000
 EOF
 sudo cp run.sh "$RUNTIME_DIR/"
 sudo chmod +x "$RUNTIME_DIR/run.sh"
@@ -383,7 +383,7 @@ print_status "     - Name: activitypass"
 print_status "     - Image: python:3.8"
 print_status "     - Port: 8000"
 print_status "     - Root Directory: /www/wwwroot/activitypass/backend"
-print_status "     - Startup Command: source .venv/bin/activate && python -c \"import django, rest_framework, rest_framework_simplejwt, dotenv, pymysql, corsheaders, tzdata, gunicorn\" 2>/dev/null || pip install -r requirements.txt && python manage.py migrate && gunicorn ActivityPass.wsgi:application --bind 0.0.0.0:8000"
+print_status "     - Startup Command: source .venv/bin/activate && python -c \"import django\" 2>/dev/null && python manage.py migrate && gunicorn ActivityPass.wsgi:application --bind 0.0.0.0:8000"
 print_status "   - Set the following environment variables in 1Panel runtime:"
 print_status "     - DB_ENGINE=mysql"
 print_status "     - DB_NAME=activitypass"
