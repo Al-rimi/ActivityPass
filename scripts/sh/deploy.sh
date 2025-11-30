@@ -93,7 +93,7 @@ else
     # Install pyenv if not present
     if ! command -v pyenv &> /dev/null; then
         print_status "Installing pyenv..."
-        curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
+        git clone https://github.com/pyenv/pyenv.git ~/.pyenv
         
         # Add pyenv to PATH for current session
         export PATH="$HOME/.pyenv/bin:$PATH"
