@@ -81,49 +81,38 @@ fi
 
 # Check and upgrade Python version if necessary
 print_step "Checking Python version..."
-PYTHON_VERSION=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
-REQUIRED_PYTHON="3.14"
+REQUIRED_PYTHON="3.14.0"
 
-if python3 -c "import sys; sys.exit(0 if sys.version_info >= (3, 14) else 1)"; then
-    print_status "Python $PYTHON_VERSION is compatible (Django 5.x requires Python 3.8+)"
+if python3 -c "import sys; sys.exit(0 if sys.version_info >= (3, 14) else 1)" 2>/dev/null; then
+    PYTHON_VERSION=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:3])))')
+    print_status "Python $PYTHON_VERSION is compatible"
     PYTHON_CMD="python3"
 else
-    print_warning "Python $PYTHON_VERSION is too old for Django 5.x. Installing Python 3.14+..."
+    print_warning "Python $(python3 --version 2>&1 | awk '{print $2}') is too old. Installing Python $REQUIRED_PYTHON via pyenv..."
     
-    # Try different methods based on OS
-    OS_VERSION=$(cat /etc/os-release | grep -E "^VERSION_ID=" | cut -d'"' -f2 | cut -d'.' -f1)
-    OS_NAME=$(cat /etc/os-release | grep -E "^ID=" | cut -d'"' -f2)
-    
-    if [[ "$OS_NAME" == "centos" ]] && [[ "$OS_VERSION" -ge 8 ]]; then
-        # CentOS 8+ has python3.14 in appstream
-        print_status "Installing Python 3.14 on CentOS $OS_VERSION..."
-        sudo dnf install -y python3.14 python3.14-pip python3.14-devel
-        PYTHON_CMD="python3.14"
-    elif [[ "$OS_NAME" == "rocky" ]] || [[ "$OS_NAME" == "almalinux" ]]; then
-        # Rocky Linux/AlmaLinux 8+
-        print_status "Installing Python 3.14 on $OS_NAME $OS_VERSION..."
-        sudo dnf install -y python3.14 python3.14-pip python3.14-devel
-        PYTHON_CMD="python3.14"
-    elif [[ "$OS_NAME" == "centos" ]] && [[ "$OS_VERSION" -eq 7 ]]; then
-        # CentOS 7 - use SCL
-        print_status "Installing Python 3.14 via SCL on CentOS 7..."
-        sudo yum install -y centos-release-scl
-        sudo yum install -y rh-python314 rh-python314-python-pip rh-python314-python-devel
-        source /opt/rh/rh-python314/enable
-        PYTHON_CMD="python3.14"
-    else
-        # Try generic python3.14 package
-        print_status "Trying to install python3.14 package..."
-        if sudo dnf install -y python3.14 python3.14-pip python3.14-devel 2>/dev/null; then
-            PYTHON_CMD="python3.14"
-        else
-            print_error "Unable to install Python 3.14+. Please upgrade your system Python manually to version 3.14 or higher."
-            print_error "You can try: sudo dnf install python3.14 python3.14-pip python3.14-devel"
-            exit 1
-        fi
+    # Install pyenv if not present
+    if ! command -v pyenv &> /dev/null; then
+        print_status "Installing pyenv..."
+        curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
+        
+        # Add pyenv to PATH for current session
+        export PATH="$HOME/.pyenv/bin:$PATH"
+        eval "$(pyenv init --path)"
+        eval "$(pyenv virtualenv-init -)"
     fi
     
-    print_status "Python 3.14+ installed successfully"
+    # Install Python 3.14.0 via pyenv
+    if ! pyenv versions | grep -q "3.14.0"; then
+        print_status "Installing Python $REQUIRED_PYTHON..."
+        pyenv install $REQUIRED_PYTHON
+    fi
+    
+    # Set local Python version
+    pyenv local $REQUIRED_PYTHON
+    PYTHON_CMD="$HOME/.pyenv/versions/$REQUIRED_PYTHON/bin/python"
+    PYTHON_VERSION=$REQUIRED_PYTHON
+    
+    print_status "Python $REQUIRED_PYTHON installed and set via pyenv"
 fi
 
 # Install MySQL/MariaDB
@@ -290,7 +279,7 @@ sed -i '/^EXEC_SCRIPT=/d' .env
 echo 'EXEC_SCRIPT="source .venv/bin/activate && echo \"Venv activated\" && python -c '\''import django'\'' && echo \"Django imported\" && python manage.py migrate && echo \"Migrations done\" && gunicorn ActivityPass.wsgi:application --bind 0.0.0.0:8000"' >> .env
 
 # Update PYTHON_VERSION to match the detected Python
-sed -i "s/PYTHON_VERSION=.*/PYTHON_VERSION=3.14/" .env
+sed -i "s/PYTHON_VERSION=.*/PYTHON_VERSION=$REQUIRED_PYTHON/" .env
 
 print_status "Environment configuration completed"
 
@@ -383,7 +372,7 @@ print_status "   Frontend: $FRONTEND_DEPLOY_DIR"
 print_status ""
 print_status "Configure:"
 print_status "     - Name: activitypass"
-print_status "     - Image: python:3.14"
+print_status "     - Image: python:$REQUIRED_PYTHON"
 print_status "     - Port: 8000"
 print_status "     - Root Directory: /www/wwwroot/activitypass/backend"
 print_status "     - Startup Command: source .venv/bin/activate && echo \"Venv activated\" && python -c '\''import django'\'' && echo \"Django imported\" && python manage.py migrate && echo \"Migrations done\" && gunicorn ActivityPass.wsgi:application --bind 0.0.0.0:8000"
