@@ -307,14 +307,19 @@ done
 
 # Install requirements with timeout and retry (optimized for speed)
 print_status "Installing Python requirements..."
-for i in {1..3}; do
-    if $PYTHON_CMD -m pip install --timeout=60 --no-cache-dir --only-binary=all -r requirements.txt; then
-        break
-    else
-        print_warning "Requirements installation attempt $i failed, retrying..."
-        sleep 5
-    fi
-done
+if $PYTHON_CMD -c "import django, djangorestframework, djangorestframework_simplejwt, dotenv, PyMySQL, corsheaders, tzdata, gunicorn" 2>/dev/null; then
+    print_status "Python requirements already installed, skipping installation..."
+else
+    print_status "Installing Python requirements..."
+    for i in {1..3}; do
+        if $PYTHON_CMD -m pip install --timeout=60 --no-cache-dir --only-binary=all -r requirements.txt; then
+            break
+        else
+            print_warning "Requirements installation attempt $i failed, retrying..."
+            sleep 5
+        fi
+    done
+fi
 
 print_status "Initializing application (migrations + seeding + superuser)..."
 if $PYTHON_CMD manage.py init_app; then
@@ -360,7 +365,7 @@ chmod +x backend/manage.py 2>/dev/null || true
 RUNTIME_DIR="/opt/1panel/runtime/python/activitypass"
 sudo mkdir -p "$RUNTIME_DIR"
 cat > run.sh << 'EOF'
-source .venv/bin/activate && python -c "import gunicorn" 2>/dev/null || pip install -r requirements.txt && python manage.py migrate && gunicorn ActivityPass.wsgi:application --bind 0.0.0.0:8000
+source .venv/bin/activate && python -c "import django, djangorestframework, djangorestframework_simplejwt, dotenv, PyMySQL, corsheaders, tzdata, gunicorn" 2>/dev/null || pip install -r requirements.txt && python manage.py migrate && gunicorn ActivityPass.wsgi:application --bind 0.0.0.0:8000
 EOF
 sudo cp run.sh "$RUNTIME_DIR/"
 sudo chmod +x "$RUNTIME_DIR/run.sh"
@@ -374,7 +379,7 @@ print_status "     - Name: activitypass"
 print_status "     - Image: python:3.8"
 print_status "     - Port: 8000"
 print_status "     - Root Directory: /www/wwwroot/activitypass/backend"
-print_status "     - Startup Command: source .venv/bin/activate && python -c \"import django\" 2>/dev/null || pip install -r requirements.txt && python manage.py migrate && python manage.py shell -c \"from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin', 'admin@example.com', 'admin123')\" && gunicorn ActivityPass.wsgi:application --bind 0.0.0.0:8000"
+print_status "     - Startup Command: source .venv/bin/activate && python -c \"import django, djangorestframework, djangorestframework_simplejwt, dotenv, PyMySQL, corsheaders, tzdata, gunicorn\" 2>/dev/null || pip install -r requirements.txt && python manage.py migrate && gunicorn ActivityPass.wsgi:application --bind 0.0.0.0:8000"
 print_status "   - Set the following environment variables in 1Panel runtime:"
 print_status "     - DB_ENGINE=mysql"
 print_status "     - DB_NAME=activitypass"
