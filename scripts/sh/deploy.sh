@@ -356,6 +356,15 @@ fi
 
 chmod +x backend/manage.py 2>/dev/null || true
 
+# Update runtime configuration to avoid re-downloading and ensure correct startup
+RUNTIME_DIR="/opt/1panel/runtime/python/activitypass"
+sudo mkdir -p "$RUNTIME_DIR"
+cat > run.sh << 'EOF'
+source .venv/bin/activate && python -c "import gunicorn" 2>/dev/null || pip install -r requirements.txt && python manage.py migrate && gunicorn ActivityPass.wsgi:application --bind 0.0.0.0:8000
+EOF
+sudo cp run.sh "$RUNTIME_DIR/"
+sudo chmod +x "$RUNTIME_DIR/run.sh"
+
 print_status "Deployment Directories:"
 print_status "   Backend: $DEPLOY_DIR/backend"
 print_status "   Frontend: $FRONTEND_DEPLOY_DIR"
