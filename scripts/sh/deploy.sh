@@ -286,7 +286,8 @@ if ! grep -q "^DOMAIN_NAME=" .env; then
 fi
 
 # Update EXEC_SCRIPT with the new import check
-sed -i 's|EXEC_SCRIPT=.*|EXEC_SCRIPT="source .venv/bin/activate \&\& python -c \"import django, rest_framework, rest_framework_simplejwt, dotenv, pymysql, corsheaders, tzdata, gunicorn\" 2>/dev/null || pip install -r requirements.txt \&\& python manage.py migrate \&\& gunicorn ActivityPass.wsgi:application --bind 0.0.0.0:8000"|' .env
+sed -i '/^EXEC_SCRIPT=/d' .env
+echo 'EXEC_SCRIPT="source .venv/bin/activate && python -c \"import django, rest_framework, rest_framework_simplejwt, dotenv, pymysql, corsheaders, tzdata, gunicorn\" 2>/dev/null || pip install -r requirements.txt && python manage.py migrate && gunicorn ActivityPass.wsgi:application --bind 0.0.0.0:8000"' >> .env
 
 print_status "Environment configuration completed"
 
