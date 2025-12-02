@@ -5,6 +5,9 @@
 
 set -e  # Exit on any error
 
+# Set BUILD_LOCALLY=true to pull pre-built image instead of building locally
+BUILD_LOCALLY=${BUILD_LOCALLY:-false}
+
 echo "ActivityPass 1Panel Deployment"
 
 # Colors for output
@@ -243,17 +246,18 @@ fi
 
 print_status "Environment configuration completed"
 
-# Check if Docker is installed
-if ! command -v docker &> /dev/null; then
-    print_error "Docker is required for containerized deployment. Please install Docker first."
-    exit 1
+# Build or pull backend Docker image
+print_step "Setting up backend Docker image..."
+if [ "$BUILD_LOCALLY" = "true" ]; then
+    print_status "Pulling pre-built image from Docker Hub..."
+    docker pull alrimi/activitypass-backend:latest
+    docker tag alrimi/activitypass-backend:latest activitypass-backend:latest
+else
+    print_status "Building backend Docker image locally..."
+    docker build -f Dockerfile.backend -t activitypass-backend:latest .
 fi
 
-# Build backend Docker image
-print_step "Building backend Docker image..."
-docker build -f Dockerfile.backend -t activitypass-backend:latest .
-
-print_status "Backend Docker image built successfully"
+print_status "Backend Docker image ready"
 
 # Now update .env to use container name for runtime
 sed -i "s/DB_HOST=.*/DB_HOST=$MYSQL_CONTAINER/" .env
