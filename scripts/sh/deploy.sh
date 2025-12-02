@@ -79,41 +79,8 @@ else
     print_status "Node.js already installed: $(node --version)"
 fi
 
-# Check and upgrade Python version if necessary
-print_step "Checking Python version..."
-REQUIRED_PYTHON="3.14.0"
-
-if python3 -c "import sys; sys.exit(0 if sys.version_info >= (3, 14) else 1)" 2>/dev/null; then
-    PYTHON_VERSION=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:3])))')
-    print_status "Python $PYTHON_VERSION is compatible"
-    PYTHON_CMD="python3"
-else
-    print_warning "Python $(python3 --version 2>&1 | awk '{print $2}') is too old. Installing Python $REQUIRED_PYTHON via pyenv..."
-    
-    # Install pyenv if not present
-    if ! command -v pyenv &> /dev/null; then
-        print_status "Installing pyenv..."
-        git clone https://github.com/pyenv/pyenv.git ~/.pyenv
-        
-        # Add pyenv to PATH for current session
-        export PATH="$HOME/.pyenv/bin:$PATH"
-        eval "$(pyenv init --path)"
-        eval "$(pyenv virtualenv-init -)"
-    fi
-    
-    # Install Python 3.14.0 via pyenv
-    if ! pyenv versions | grep -q "3.14.0"; then
-        print_status "Installing Python $REQUIRED_PYTHON..."
-        pyenv install $REQUIRED_PYTHON
-    fi
-    
-    # Set local Python version
-    pyenv local $REQUIRED_PYTHON
-    PYTHON_CMD="$HOME/.pyenv/versions/$REQUIRED_PYTHON/bin/python"
-    PYTHON_VERSION=$REQUIRED_PYTHON
-    
-    print_status "Python $REQUIRED_PYTHON installed and set via pyenv"
-fi
+# Check and upgrade Python version if necessary (not needed for Docker deployment)
+print_step "Skipping Python version check (using Docker container)..."
 
 # Install MySQL/MariaDB
 print_step "Checking database service..."
@@ -274,61 +241,19 @@ if ! grep -q "^DOMAIN_NAME=" .env; then
     echo "DOMAIN_NAME=$DOMAIN_NAME" >> .env
 fi
 
-# Update EXEC_SCRIPT with the new import check
-sed -i '/^EXEC_SCRIPT=/d' .env
-echo 'EXEC_SCRIPT="source .venv/bin/activate && echo \"Venv activated\" && python -c '\''import django'\'' && echo \"Django imported\" && python manage.py migrate && echo \"Migrations done\" && gunicorn ActivityPass.wsgi:application --bind 0.0.0.0:8000"' >> .env
-
-# Update PYTHON_VERSION to match the detected Python
-sed -i "s/PYTHON_VERSION=.*/PYTHON_VERSION=$REQUIRED_PYTHON/" .env
-
 print_status "Environment configuration completed"
 
-# Setup backend
-print_step "Setting up Python backend..."
-$PYTHON_CMD -m venv backend/.venv
-source backend/.venv/bin/activate
-sudo cp .env backend/.env  # Copy .env to backend for runtime
-cd backend
-
-# Upgrade pip with timeout and retry
-print_status "Upgrading pip..."
-for i in {1..3}; do
-    if $PYTHON_CMD -m pip install --upgrade --timeout=60 --no-cache-dir pip; then
-        break
-    else
-        print_warning "Pip upgrade attempt $i failed, retrying..."
-        sleep 5
-    fi
-done
-
-# Install requirements with timeout and retry (optimized for speed)
-print_status "Installing Python requirements..."
-if $PYTHON_CMD -c "import django, rest_framework, rest_framework_simplejwt, dotenv, pymysql, corsheaders, tzdata, gunicorn" 2>/dev/null; then
-    print_status "Python requirements already installed, skipping installation..."
-else
-    print_status "Installing Python requirements..."
-    for i in {1..3}; do
-        if $PYTHON_CMD -m pip install --timeout=60 --no-cache-dir --only-binary=all -r requirements.txt; then
-            break
-        else
-            print_warning "Requirements installation attempt $i failed, retrying..."
-            sleep 5
-        fi
-    done
+# Check if Docker is installed
+if ! command -v docker &> /dev/null; then
+    print_error "Docker is required for containerized deployment. Please install Docker first."
+    exit 1
 fi
 
-print_status "Initializing application (migrations + seeding + superuser)..."
-if $PYTHON_CMD manage.py init_app; then
-    print_status "Application initialized successfully"
-else
-    print_warning "init_app failed; falling back to separate commands"
-    print_status "Running database migrations..."
-    $PYTHON_CMD manage.py migrate
-    print_status "Seeding initial data..."
-    $PYTHON_CMD manage.py seed_students
-fi
+# Build backend Docker image
+print_step "Building backend Docker image..."
+docker build -f Dockerfile.backend -t activitypass-backend:latest .
 
-cd ..
+print_status "Backend Docker image built successfully"
 
 # Now update .env to use container name for runtime
 sed -i "s/DB_HOST=.*/DB_HOST=$MYSQL_CONTAINER/" .env
@@ -357,35 +282,26 @@ fi
 
 chmod +x backend/manage.py 2>/dev/null || true
 
-# Update runtime configuration to avoid re-downloading and ensure correct startup
-RUNTIME_DIR="/opt/1panel/runtime/python/activitypass"
-sudo mkdir -p "$RUNTIME_DIR"
-cat > run.sh << 'EOF'
-source .venv/bin/activate && echo "Venv activated" && python -c 'import django' && echo "Django imported" && python manage.py migrate && echo "Migrations done" && gunicorn ActivityPass.wsgi:application --bind 0.0.0.0:8000
-EOF
-sudo cp run.sh "$RUNTIME_DIR/"
-sudo chmod +x "$RUNTIME_DIR/run.sh"
-
 print_status "Deployment Directories:"
 print_status "   Backend: $DEPLOY_DIR/backend"
 print_status "   Frontend: $FRONTEND_DEPLOY_DIR"
 print_status ""
-print_status "Configure:"
+print_status "Configure 1Panel Runtime:"
 print_status "     - Name: activitypass"
-print_status "     - Image: python:$REQUIRED_PYTHON"
+print_status "     - Image: activitypass-backend:latest"
 print_status "     - Port: 8000"
 print_status "     - Root Directory: /www/wwwroot/activitypass/backend"
-print_status "     - Startup Command: source .venv/bin/activate && echo \"Venv activated\" && python -c '\''import django'\'' && echo \"Django imported\" && python manage.py migrate && echo \"Migrations done\" && gunicorn ActivityPass.wsgi:application --bind 0.0.0.0:8000"
+print_status "     - Startup Command: (leave default, handled by Dockerfile CMD)"
 print_status "   - Set the following environment variables in 1Panel runtime:"
 print_status "     - DB_ENGINE=mysql"
-print_status "     - DB_NAME=activitypass"
-print_status "     - DB_USER=activitypass"
-print_status "     - DB_PASSWORD=Csb6B4sCGEX3anbe"
-print_status "     - DB_HOST=1Panel-mysql-zBv1"
+print_status "     - DB_NAME=$DB_NAME"
+print_status "     - DB_USER=$DB_USER"
+print_status "     - DB_PASSWORD=$DB_PASSWORD"
+print_status "     - DB_HOST=$MYSQL_CONTAINER"
 print_status "     - DB_PORT=3306"
 print_status "     - DJANGO_DEBUG=false"
-print_status "     - DJANGO_SECRET_KEY=<your-secret-key>"
-print_status "     - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,your-domain.com"
+print_status "     - DJANGO_SECRET_KEY=$SECRET_KEY"
+print_status "     - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,$DOMAIN_NAME"
 print_status ""
 print_status "Nginx configuration:"
 print_status "   - Add this location block for SPA routing (before the root directive):"
