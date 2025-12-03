@@ -315,7 +315,6 @@
     "admin.courseSaveSuccess": "课程已保存。",
     "admin.courseSaveError": "无法保存课程。",
     "admin.courseDelete": "删除",
-    "admin.courseDeleteConfirm": "确认删除该课程？",
     "admin.weekday.1": "周一",
     "admin.weekday.2": "周二",
     "admin.weekday.3": "周三",
