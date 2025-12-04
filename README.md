@@ -275,13 +275,14 @@ python manage.py init_app
 - [ ] Configure log rotation and monitoring
 - [ ] Setup backup strategy for database
 
-### Deploying with Docker + 1Panel
+### Deploying Without Docker
 
 - Use `scripts/sh/deploy.sh` for both bootstrap and updates (see `README_DEPLOYMENT.md`).
-- Copy `deploy.env.example` to `deploy.env` and adjust image name, branch, and frontend target directory as needed.
-- `./scripts/sh/deploy.sh bootstrap` builds `activitypass-backend:<git-sha>` and (optionally) syncs the Vite build to the configured web root.
-- `./scripts/sh/deploy.sh update` pulls latest code, rebuilds the backend image, and resyncs the frontend bundle.
-- Configure your 1Panel runtime to use the `activitypass-backend:latest` image and mirror the `.env` values.
+- Ensure the target host provides `python3`, `python3-venv`, `pip`, `git`, `npm`, and `sudo` before running the script.
+- `./scripts/sh/deploy.sh bootstrap --domain yourdomain.com` creates/refreshes the virtualenv, installs dependencies, runs migrations and seed data, builds the frontend, and syncs assets into `/opt/1panel/apps/openresty/openresty/www/sites/yourdomain.com/index`.
+- `./scripts/sh/deploy.sh update --domain yourdomain.com` pulls the latest code (when `PULL_FIRST=true`), refreshes the backend environment, rebuilds the frontend, and executes any `RESTART_COMMAND` you provide inline.
+- Export overrides inline (e.g. `RUN_COLLECTSTATIC=true`, `WAIT_FOR_DB=true`, `RESTART_COMMAND="sudo systemctl restart activitypass"`) as needed for your environment.
+- Hook your process manager (systemd, supervisor, etc.) to the virtualenv in `backend/.venv` and let the script restart it via `RESTART_COMMAND`.
 
 ## Contributing
 

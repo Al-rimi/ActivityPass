@@ -10,47 +10,39 @@ fi
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
-DEPLOY_ENV_PATH="${DEPLOY_ENV_PATH:-$ROOT_DIR/deploy.env}"
-if [[ -f "$DEPLOY_ENV_PATH" ]]; then
-    # shellcheck disable=SC1090
-    source "$DEPLOY_ENV_PATH"
-fi
+SITE_DOMAIN="${SITE_DOMAIN:-}"
 
 GIT_REMOTE="${GIT_REMOTE:-origin}"
 GIT_BRANCH="${GIT_BRANCH:-main}"
-BACKEND_IMAGE="${BACKEND_IMAGE:-activitypass-backend}"
-BACKEND_TAG="${BACKEND_TAG:-$(git rev-parse --short HEAD 2>/dev/null || echo latest)}"
 BACKEND_CONTEXT="${BACKEND_CONTEXT:-$ROOT_DIR/backend}"
-BACKEND_DOCKERFILE="${BACKEND_DOCKERFILE:-$BACKEND_CONTEXT/Dockerfile}"
-BACKEND_CONTAINER="${BACKEND_CONTAINER:-activitypass-backend}"
-BACKEND_SOURCE="${BACKEND_SOURCE:-build}"
-BACKEND_TAR_PATH="${BACKEND_TAR_PATH:-}"
-TAG_LATEST="${TAG_LATEST:-true}"
-BACKEND_ENV_FILE="${BACKEND_ENV_FILE:-$ROOT_DIR/.env}"
-BACKEND_HOST_PORT="${BACKEND_HOST_PORT:-8000}"
-BACKEND_CONTAINER_PORT="${BACKEND_CONTAINER_PORT:-8000}"
-BACKEND_EXTRA_ARGS="${BACKEND_EXTRA_ARGS:-}"
-BACKEND_BUILD_ARGS="${BACKEND_BUILD_ARGS:-}"
-DEPLOY_BACKEND_CONTAINER="${DEPLOY_BACKEND_CONTAINER:-true}"
-FRONTEND_TARGET="${FRONTEND_TARGET:-}"
-FRONTEND_OWNER="${FRONTEND_OWNER:-www-data:www-data}"
-FRONTEND_PERMISSIONS="${FRONTEND_PERMISSIONS:-755}"
+REQUIREMENTS_FILE="${REQUIREMENTS_FILE:-$BACKEND_CONTEXT/requirements.txt}"
+PYTHON_BIN="${PYTHON_BIN:-python3}"
+VENV_DIR="${VENV_DIR:-$BACKEND_CONTEXT/.venv}"
+VENV_PYTHON="${VENV_PYTHON:-$VENV_DIR/bin/python}"
+PIP_BIN="${PIP_BIN:-$VENV_DIR/bin/pip}"
+MANAGE_PY="${MANAGE_PY:-$BACKEND_CONTEXT/manage.py}"
+INSTALL_REQUIREMENTS="${INSTALL_REQUIREMENTS:-true}"
+PIP_UPGRADE="${PIP_UPGRADE:-true}"
+EXTRA_PIP_PACKAGES="${EXTRA_PIP_PACKAGES:-}"
+RUN_MIGRATIONS="${RUN_MIGRATIONS:-true}"
+MIGRATION_FLAGS="${MIGRATION_FLAGS:---noinput}"
+RUN_SEED="${RUN_SEED:-true}"
+SEED_COMMAND="${SEED_COMMAND:-seed_students}"
+RUN_COLLECTSTATIC="${RUN_COLLECTSTATIC:-false}"
+COLLECTSTATIC_ARGS="${COLLECTSTATIC_ARGS:---noinput}"
+WAIT_FOR_DB="${WAIT_FOR_DB:-false}"
+DB_WAIT_TIMEOUT="${DB_WAIT_TIMEOUT:-120}"
+DB_WAIT_INTERVAL="${DB_WAIT_INTERVAL:-5}"
+RESTART_COMMAND="${RESTART_COMMAND:-}"
+STATUS_COMMAND="${STATUS_COMMAND:-}"
+FRONTEND_BASE_PATH="/opt/1panel/apps/openresty/openresty/www/sites"
+FRONTEND_OWNER="www-data:www-data"
+FRONTEND_PERMISSIONS="755"
+FRONTEND_TARGET=""
 SKIP_FRONTEND="${SKIP_FRONTEND:-false}"
 SKIP_BACKEND="${SKIP_BACKEND:-false}"
 PULL_FIRST="${PULL_FIRST:-true}"
 BACKUP_ENV="${BACKUP_ENV:-true}"
-DOCKER_NETWORK="${DOCKER_NETWORK:-activitypass-net}"
-ENSURE_NETWORK="${ENSURE_NETWORK:-true}"
-DB_AUTOSTART="${DB_AUTOSTART:-false}"
-DB_CONTAINER="${DB_CONTAINER:-activitypass-db}"
-DB_IMAGE="${DB_IMAGE:-mysql:8.0}"
-DB_NAME="${DB_NAME:-activitypass}"
-DB_USER="${DB_USER:-activityuser}"
-DB_PASSWORD="${DB_PASSWORD:-Str0ngPass!}"
-DB_ROOT_PASSWORD="${DB_ROOT_PASSWORD:-}"
-DB_HOST_PORT="${DB_HOST_PORT:-}"
-DB_EXTRA_ARGS="${DB_EXTRA_ARGS:---character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci}"
-DB_WAIT_SECONDS="${DB_WAIT_SECONDS:-60}"
 
 log() { printf '[INFO] %s\n' "$1"; }
 warn() { printf '[WARN] %s\n' "$1" 1>&2; }
@@ -62,58 +54,71 @@ usage() {
 Usage: scripts/sh/deploy.sh <command> [options]
 
 Commands
-    auto        Default. Detect whether to run bootstrap (first deploy) or update
-    bootstrap   Provision backend image/container, optional database, and frontend bundle
-    update      Sync repo then refresh backend image/container and frontend bundle
-    backend     Refresh backend image/container (optional database)
-    frontend    Build frontend bundle and sync to target directory
-    status      Show container image information reported by Docker
+  auto        Detect whether to run bootstrap (first deploy) or update
+  bootstrap   Create environment, install deps, run migrations/seed, build frontend
+  update      Sync repo then refresh backend environment and frontend bundle
+  backend     Run backend pipeline only (install, migrate, seed, restart)
+  frontend    Build frontend bundle and sync to target directory
+  status      Run Django system check and optional STATUS_COMMAND
   help        Show this message
 
-Environment variables (set in deploy.env or inline):
-  GIT_REMOTE           Git remote to pull from (default: origin)
-  GIT_BRANCH           Branch to track (default: main)
-  BACKEND_IMAGE        Docker image name (default: activitypass-backend)
-  BACKEND_TAG          Optional explicit tag (default: current commit)
-  BACKEND_CONTEXT      Build context (default: ./backend)
-  BACKEND_DOCKERFILE   Dockerfile path (default: ./backend/Dockerfile)
-    BACKEND_SOURCE       build|pull|load|skip (default: build)
-    BACKEND_TAR_PATH     Tarball path when BACKEND_SOURCE=load
-    TAG_LATEST           true to also tag the image as :latest
-    BACKEND_ENV_FILE     Path to pass as docker --env-file (default: ./.env)
-    BACKEND_HOST_PORT    Host port to expose for backend (default: 8000)
-    BACKEND_CONTAINER_PORT Container port to expose (default: 8000)
-    BACKEND_EXTRA_ARGS   Extra docker run args for backend container
-    BACKEND_BUILD_ARGS   Additional docker build args (e.g., "--build-arg KEY=value")
-    DEPLOY_BACKEND_CONTAINER true to run the backend container (default: true)
-  FRONTEND_TARGET      Absolute path to copy frontend/build into
-  FRONTEND_OWNER       Owner to apply to FRONTEND_TARGET (default: www-data:www-data)
-  FRONTEND_PERMISSIONS Directory permissions (default: 755)
-  SKIP_FRONTEND        true to skip frontend steps
-  SKIP_BACKEND         true to skip backend steps
-  PULL_FIRST           true to run git fetch/reset on update/backend/frontend
-  BACKUP_ENV           true to backup .env before update
-    DOCKER_NETWORK       Docker network used for backend/database (default: activitypass-net)
-    ENSURE_NETWORK       true to create DOCKER_NETWORK if missing
-    DB_AUTOSTART         true to create or start MySQL container automatically
-    DB_CONTAINER         Name for the database container (default: activitypass-db)
-    DB_IMAGE             Database image reference (default: mysql:8.0)
-    DB_NAME              MySQL database name (default: activitypass)
-    DB_USER              MySQL database user (default: activityuser)
-    DB_PASSWORD          MySQL database password (default: Str0ngPass!)
-    DB_ROOT_PASSWORD     Root password when DB_AUTOSTART=true
-    DB_HOST_PORT         Host port to publish for MySQL (optional)
-    DB_EXTRA_ARGS        Extra docker run args for MySQL container
-    DB_WAIT_SECONDS      Seconds to wait after starting MySQL (default: 60)
+Options
+    --domain <domain>    Override the frontend domain (e.g. activitypass.example)
+
+Environment variables (optional overrides set via the shell environment):
+  GIT_REMOTE             Git remote to pull from (default: origin)
+  GIT_BRANCH             Branch to track (default: main)
+  BACKEND_CONTEXT        Path to Django backend (default: ./backend)
+  REQUIREMENTS_FILE      Pip requirements file (default: backend/requirements.txt)
+  PYTHON_BIN             Python executable used to create the venv (default: python3)
+  VENV_DIR               Virtualenv directory (default: backend/.venv)
+  INSTALL_REQUIREMENTS   true to install backend dependencies (default: true)
+  EXTRA_PIP_PACKAGES     Additional pip packages to install (space separated)
+  RUN_MIGRATIONS         true to run manage.py migrate (default: true)
+  MIGRATION_FLAGS        Flags passed to migrate (default: --noinput)
+  RUN_SEED               true to run the seed command (default: true)
+  SEED_COMMAND           Management command to seed data (default: seed_students)
+  RUN_COLLECTSTATIC      true to run collectstatic (default: false)
+  COLLECTSTATIC_ARGS     Flags passed to collectstatic (default: --noinput)
+  WAIT_FOR_DB            true to wait for the database before migrations
+  DB_WAIT_TIMEOUT        Seconds to wait for DB readiness (default: 120)
+  DB_WAIT_INTERVAL       Seconds between DB checks (default: 5)
+    RESTART_COMMAND        Shell command to restart backend service (optional)
+    STATUS_COMMAND         Extra status command run with `status` (optional)
+  SKIP_FRONTEND          true to skip frontend steps
+  SKIP_BACKEND           true to skip backend steps
+  PULL_FIRST             true to run git fetch/reset before update (default: true)
+  BACKUP_ENV             true to backup .env before update (default: true)
 
 Examples
     ./scripts/sh/deploy.sh
     ./scripts/sh/deploy.sh bootstrap
-    FRONTEND_TARGET=/opt/1panel/apps/openresty/openresty/www/sites/activitypass/index \
-        ./scripts/sh/deploy.sh update
+    ./scripts/sh/deploy.sh update --domain activitypass.example
     SKIP_FRONTEND=true ./scripts/sh/deploy.sh backend
 EOF
 }
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --domain)
+            if [[ $# -lt 2 ]]; then
+                err "--domain requires a value"
+                exit 1
+            fi
+            SITE_DOMAIN="$2"
+            shift 2
+            ;;
+        --domain=*)
+            SITE_DOMAIN="${1#*=}"
+            shift
+            ;;
+        *)
+            err "Unknown option: $1"
+            usage
+            exit 1
+            ;;
+    esac
+done
 
 require() {
     if ! command -v "$1" >/dev/null 2>&1; then
@@ -122,297 +127,211 @@ require() {
     fi
 }
 
-auto_action() {
-    if command -v docker >/dev/null 2>&1; then
-        if docker ps -a --format '{{.Names}}' | grep -Fx "$BACKEND_CONTAINER" >/dev/null 2>&1; then
-            echo "update"
+ensure_virtualenv() {
+    if [[ "$SKIP_BACKEND" == "true" ]]; then
+        return
+    fi
+    if [[ -x "$VENV_PYTHON" ]]; then
+        return
+    fi
+    require "$PYTHON_BIN"
+    step "Creating Python virtual environment ($VENV_DIR)"
+    "$PYTHON_BIN" -m venv "$VENV_DIR"
+}
+
+    install_backend_dependencies() {
+        if [[ "$SKIP_BACKEND" == "true" ]]; then
             return
         fi
-    fi
-
-    if [[ -f "$ROOT_DIR/.env" ]]; then
-        echo "update"
-        return
-    fi
-
-    echo "bootstrap"
-}
-
-ensure_env_file() {
-    local env_path="$ROOT_DIR/.env"
-    local example_path="$ROOT_DIR/.env.example"
-
-    if [[ -f "$env_path" ]]; then
-        return
-    fi
-
-    if [[ ! -f "$example_path" ]]; then
-        warn "No .env.example found; skipping env creation"
-        return
-    fi
-
-    step "Creating .env from template"
-    cp "$example_path" "$env_path"
-
-    local secret
-    if command -v python3 >/dev/null 2>&1; then
-        secret=$(python3 - <<'PY'
-import secrets
-print(secrets.token_urlsafe(48))
-PY
-        )
-    else
-        secret=$(openssl rand -base64 48 2>/dev/null || uuidgen)
-    fi
-
-    if [[ -n "$secret" ]]; then
-        sed -i "s|DJANGO_SECRET_KEY=.*|DJANGO_SECRET_KEY=${secret}|" "$env_path"
-    fi
-
-    warn "Review $env_path and update database credentials before deploying."
-}
-
-backup_env_file() {
-    local env_path="$ROOT_DIR/.env"
-    if [[ "$BACKUP_ENV" != "true" || ! -f "$env_path" ]]; then
-        return
-    fi
-    local backup_path="${env_path}.backup.$(date +%Y%m%d%H%M%S)"
-    cp "$env_path" "$backup_path"
-    log "Backed up .env to ${backup_path}"
-}
-
-git_refresh() {
-    if [[ "$PULL_FIRST" != "true" ]]; then
-        return
-    fi
-    require git
-    step "Syncing repository ($GIT_REMOTE/$GIT_BRANCH)"
-    git fetch "$GIT_REMOTE" "$GIT_BRANCH"
-    git reset --hard "$GIT_REMOTE/$GIT_BRANCH"
-}
-
-build_backend_image() {
-    require docker
-    if [[ ! -f "$BACKEND_DOCKERFILE" ]]; then
-        err "Dockerfile not found at $BACKEND_DOCKERFILE"
-        exit 1
-    fi
-
-    local build_args=()
-    if [[ -n "$BACKEND_BUILD_ARGS" ]]; then
-        # shellcheck disable=SC2206
-        build_args=($BACKEND_BUILD_ARGS)
-    fi
-
-    step "Building backend Docker image"
-    docker build \
-        --file "$BACKEND_DOCKERFILE" \
-        --tag "$BACKEND_IMAGE:$BACKEND_TAG" \
-        "${build_args[@]}" \
-        "$BACKEND_CONTEXT"
-
-    log "Built $BACKEND_IMAGE:$BACKEND_TAG"
-}
-
-pull_backend_image() {
-    require docker
-    step "Pulling backend image $BACKEND_IMAGE:$BACKEND_TAG"
-    docker pull "$BACKEND_IMAGE:$BACKEND_TAG"
-}
-
-load_backend_image() {
-    require docker
-    if [[ -z "$BACKEND_TAR_PATH" ]]; then
-        err "BACKEND_TAR_PATH must be set when BACKEND_SOURCE=load"
-        exit 1
-    fi
-    if [[ ! -f "$BACKEND_TAR_PATH" ]]; then
-        err "Image tarball not found at $BACKEND_TAR_PATH"
-        exit 1
-    fi
-    step "Loading backend image from $BACKEND_TAR_PATH"
-    local loaded
-    loaded=$(docker load -i "$BACKEND_TAR_PATH")
-    log "$loaded"
-}
-
-tag_backend_latest() {
-    if [[ "$TAG_LATEST" != "true" ]]; then
-        return
-    fi
-    if docker image inspect "$BACKEND_IMAGE:$BACKEND_TAG" >/dev/null 2>&1; then
-        docker tag "$BACKEND_IMAGE:$BACKEND_TAG" "$BACKEND_IMAGE:latest"
-    else
-        warn "Cannot tag $BACKEND_IMAGE:$BACKEND_TAG as latest (image not found)"
-    fi
-}
-
-ensure_backend_image() {
-    if [[ "$SKIP_BACKEND" == "true" ]]; then
-        warn "Skipping backend image provisioning (SKIP_BACKEND=true)"
-        return
-    fi
-
-    case "$BACKEND_SOURCE" in
-        build)
-            build_backend_image
-            ;;
-        pull)
-            pull_backend_image
-            ;;
-        load)
-            load_backend_image
-            ;;
-        skip)
-            warn "BACKEND_SOURCE=skip; assuming image already available"
-            ;;
-        *)
-            err "Unknown BACKEND_SOURCE: $BACKEND_SOURCE"
-            exit 1
-            ;;
-    esac
-
-    tag_backend_latest
-}
-
-ensure_network() {
-    if [[ "$ENSURE_NETWORK" != "true" ]]; then
-        return
-    fi
-    if [[ -z "$DOCKER_NETWORK" ]]; then
-        return
-    fi
-    require docker
-    if docker network inspect "$DOCKER_NETWORK" >/dev/null 2>&1; then
-        return
-    fi
-    step "Creating Docker network $DOCKER_NETWORK"
-    docker network create "$DOCKER_NETWORK"
-}
-
-resolve_backend_image_ref() {
-    if docker image inspect "$BACKEND_IMAGE:$BACKEND_TAG" >/dev/null 2>&1; then
-        printf '%s' "$BACKEND_IMAGE:$BACKEND_TAG"
-        return 0
-    fi
-    if docker image inspect "$BACKEND_IMAGE:latest" >/dev/null 2>&1; then
-        warn "Falling back to $BACKEND_IMAGE:latest"
-        printf '%s' "$BACKEND_IMAGE:latest"
-        return 0
-    fi
-    err "Backend image $BACKEND_IMAGE:$BACKEND_TAG (or :latest) not found."
-    exit 1
-}
-
-deploy_backend_container() {
-    if [[ "$SKIP_BACKEND" == "true" ]]; then
-        warn "Skipping backend container deployment (SKIP_BACKEND=true)"
-        return
-    fi
-    if [[ "$DEPLOY_BACKEND_CONTAINER" != "true" ]]; then
-        return
-    fi
-    require docker
-    ensure_network
-
-    local image_ref
-    image_ref=$(resolve_backend_image_ref)
-
-    if docker ps -a --format '{{.Names}}' | grep -Fx "$BACKEND_CONTAINER" >/dev/null; then
-        step "Removing existing backend container $BACKEND_CONTAINER"
-        docker rm -f "$BACKEND_CONTAINER" >/dev/null 2>&1 || true
-    fi
-
-    local env_file="$BACKEND_ENV_FILE"
-    local env_args=()
-    if [[ -f "$env_file" ]]; then
-        env_args=(--env-file "$env_file")
-    else
-        warn "Environment file $env_file not found; starting container without --env-file"
-    fi
-
-    local publish_args=()
-    if [[ -n "$BACKEND_HOST_PORT" ]]; then
-        publish_args=(-p "${BACKEND_HOST_PORT}:${BACKEND_CONTAINER_PORT}")
-    fi
-
-    local extra_args=()
-    if [[ -n "$BACKEND_EXTRA_ARGS" ]]; then
-        # shellcheck disable=SC2206
-        extra_args=($BACKEND_EXTRA_ARGS)
-    fi
-
-    local run_cmd=(docker run -d --name "$BACKEND_CONTAINER")
-    if [[ -n "$DOCKER_NETWORK" ]]; then
-        run_cmd+=(--network "$DOCKER_NETWORK")
-    fi
-    run_cmd+=("${env_args[@]}")
-    run_cmd+=("${publish_args[@]}")
-    run_cmd+=("${extra_args[@]}")
-    run_cmd+=("$image_ref")
-
-    step "Starting backend container $BACKEND_CONTAINER using $image_ref"
-    "${run_cmd[@]}"
-}
-
-maybe_start_database() {
-    if [[ "$DB_AUTOSTART" != "true" ]]; then
-        return
-    fi
-    require docker
-    ensure_network
-
-    if docker ps -a --format '{{.Names}}' | grep -Fx "$DB_CONTAINER" >/dev/null; then
-        local running
-        running=$(docker inspect -f '{{.State.Running}}' "$DB_CONTAINER" 2>/dev/null || echo false)
-        if [[ "$running" == "true" ]]; then
-            log "Database container $DB_CONTAINER already running"
+        if [[ "$INSTALL_REQUIREMENTS" != "true" ]]; then
             return
         fi
-        step "Starting existing database container $DB_CONTAINER"
-        docker start "$DB_CONTAINER" >/dev/null
-    else
-        if [[ -z "$DB_ROOT_PASSWORD" ]]; then
-            err "DB_ROOT_PASSWORD must be set when DB_AUTOSTART=true"
+        local pip_bin="$PIP_BIN"
+        if [[ ! -x "$pip_bin" ]]; then
+            err "pip not found at $pip_bin"
             exit 1
         fi
-
-        local run_cmd=(docker run -d --name "$DB_CONTAINER")
-        if [[ -n "$DOCKER_NETWORK" ]]; then
-            run_cmd+=(--network "$DOCKER_NETWORK")
+        if [[ ! -f "$REQUIREMENTS_FILE" ]]; then
+            warn "Requirements file not found at $REQUIREMENTS_FILE; skipping install"
+            return
         fi
-        if [[ -n "$DB_HOST_PORT" ]]; then
-            run_cmd+=(-p "${DB_HOST_PORT}:3306")
+        step "Installing backend dependencies"
+        if [[ "$PIP_UPGRADE" == "true" ]]; then
+            "$pip_bin" install --upgrade pip wheel
         fi
-        run_cmd+=(
-            -e "MYSQL_DATABASE=$DB_NAME"
-            -e "MYSQL_USER=$DB_USER"
-            -e "MYSQL_PASSWORD=$DB_PASSWORD"
-            -e "MYSQL_ROOT_PASSWORD=$DB_ROOT_PASSWORD"
-            "$DB_IMAGE"
-        )
+        "$pip_bin" install -r "$REQUIREMENTS_FILE"
+        if [[ -n "$EXTRA_PIP_PACKAGES" ]]; then
+            # shellcheck disable=SC2086
+            "$pip_bin" install $EXTRA_PIP_PACKAGES
+        fi
+    }
 
-        if [[ -n "$DB_EXTRA_ARGS" ]]; then
+    load_env_vars() {
+        local env_path="$ROOT_DIR/.env"
+        if [[ -f "$env_path" ]]; then
+            set -a
+            # shellcheck disable=SC1090
+            source "$env_path"
+            set +a
+        fi
+    }
+
+    wait_for_database() {
+        if [[ "$WAIT_FOR_DB" != "true" ]]; then
+            return
+        fi
+        if [[ -z "${DB_HOST:-}" ]]; then
+            warn "DB_HOST not set; skipping database wait"
+            return
+        fi
+        if [[ ! -x "$VENV_PYTHON" ]]; then
+            warn "Virtualenv Python not found at $VENV_PYTHON; skipping database wait"
+            return
+        fi
+        if ! "$VENV_PYTHON" -c "import pymysql" >/dev/null 2>&1; then
+            warn "pymysql not available; skipping database wait"
+            return
+        fi
+        local timeout="$DB_WAIT_TIMEOUT"
+        local interval="$DB_WAIT_INTERVAL"
+        local start
+        start=$(date +%s)
+        step "Waiting for database at ${DB_HOST}:${DB_PORT:-3306}"
+        while true; do
+            if "$VENV_PYTHON" - <<'PY'
+    import os
+    import pymysql
+
+    def check():
+        host=os.environ.get("DB_HOST")
+        user=os.environ.get("DB_USER")
+        password=os.environ.get("DB_PASSWORD")
+        name=os.environ.get("DB_NAME")
+        port=int(os.environ.get("DB_PORT", "3306"))
+        conn=pymysql.connect(host=host, user=user, password=password, database=name, port=port, connect_timeout=5)
+        conn.close()
+
+    try:
+        check()
+    except Exception as exc:
+        raise SystemExit(1) from exc
+    PY
+            then
+                break
+            fi
+            local now
+            now=$(date +%s)
+            if (( now - start >= timeout )); then
+                err "Database did not become ready within ${timeout}s"
+                exit 1
+            fi
+            sleep "$interval"
+        done
+    }
+
+    run_manage() {
+        local python_bin="$VENV_PYTHON"
+        if [[ ! -x "$python_bin" ]]; then
+            err "Python executable not found at $python_bin"
+            exit 1
+        fi
+        if [[ ! -f "$MANAGE_PY" ]]; then
+            err "manage.py not found at $MANAGE_PY"
+            exit 1
+        fi
+        (cd "$BACKEND_CONTEXT" && "$python_bin" "$MANAGE_PY" "$@")
+    }
+
+    apply_migrations() {
+        if [[ "$RUN_MIGRATIONS" != "true" ]]; then
+            return
+        fi
+        step "Applying database migrations"
+        local args=()
+        if [[ -n "$MIGRATION_FLAGS" ]]; then
             # shellcheck disable=SC2206
-            local db_extra=($DB_EXTRA_ARGS)
-            run_cmd+=(${db_extra[@]})
+            args=($MIGRATION_FLAGS)
         fi
+        run_manage migrate "${args[@]}"
+    }
 
-        step "Launching database container $DB_CONTAINER"
-        "${run_cmd[@]}"
+    run_seed_command() {
+        if [[ "$RUN_SEED" != "true" ]]; then
+            return
+        fi
+        if [[ -z "$SEED_COMMAND" ]]; then
+            return
+        fi
+        step "Running seed command ($SEED_COMMAND)"
+        # shellcheck disable=SC2086
+        run_manage $SEED_COMMAND
+    }
+
+    collect_static() {
+        if [[ "$RUN_COLLECTSTATIC" != "true" ]]; then
+            return
+        fi
+        step "Collecting static files"
+        local args=()
+        if [[ -n "$COLLECTSTATIC_ARGS" ]]; then
+            # shellcheck disable=SC2206
+            args=($COLLECTSTATIC_ARGS)
+        fi
+        run_manage collectstatic "${args[@]}"
+    }
+
+    restart_backend_service() {
+        if [[ -z "$RESTART_COMMAND" ]]; then
+            return
+        fi
+        step "Restarting backend service"
+        bash -c "$RESTART_COMMAND"
+    }
+
+    run_backend_pipeline() {
+        if [[ "$SKIP_BACKEND" == "true" ]]; then
+            warn "Skipping backend tasks (SKIP_BACKEND=true)"
+            return
+        fi
+        ensure_virtualenv
+        install_backend_dependencies
+        load_env_vars
+        wait_for_database
+        apply_migrations
+        run_seed_command
+        collect_static
+        restart_backend_service
+    }
+
+    check_backend_status() {
+        if [[ "$SKIP_BACKEND" == "true" ]]; then
+            warn "Backend tasks skipped; nothing to check"
+            return
+        fi
+        ensure_virtualenv
+        load_env_vars
+        step "Running Django system check"
+        run_manage check --deploy
+        if [[ -n "$STATUS_COMMAND" ]]; then
+            step "Running custom status command"
+            bash -c "$STATUS_COMMAND"
+        fi
+    }
+
+ensure_site_domain() {
+    if [[ "$SKIP_FRONTEND" == "true" ]]; then
+        return
     fi
-
-    if [[ "$DB_WAIT_SECONDS" -gt 0 ]]; then
-        step "Waiting ${DB_WAIT_SECONDS}s for database to initialize"
-        sleep "$DB_WAIT_SECONDS"
+    if [[ -n "$SITE_DOMAIN" ]]; then
+        return
     fi
-}
-
-run_backend_pipeline() {
-    ensure_backend_image
-    maybe_start_database
-    deploy_backend_container
+    if [[ -t 0 ]]; then
+        read -rp "Enter site domain (e.g. example.com): " SITE_DOMAIN
+    fi
+    if [[ -z "$SITE_DOMAIN" ]]; then
+        err "SITE_DOMAIN must be provided via --domain or environment variable when frontend deployment is enabled"
+        exit 1
+    fi
 }
 
 build_frontend_bundle() {
@@ -438,52 +357,38 @@ sync_frontend_bundle() {
         return
     fi
 
-    if [[ -z "$FRONTEND_TARGET" ]]; then
-        warn "FRONTEND_TARGET not set; skipping asset sync"
-        return
-    fi
+    ensure_site_domain
 
+    local target="$FRONTEND_BASE_PATH/$SITE_DOMAIN/index"
     local source_dir="$ROOT_DIR/frontend/build"
     if [[ ! -d "$source_dir" ]]; then
         warn "Frontend build output not found at $source_dir"
         return
     fi
 
-    step "Syncing frontend bundle to $FRONTEND_TARGET"
-    sudo mkdir -p "$FRONTEND_TARGET"
+    step "Syncing frontend bundle to $target"
+    sudo mkdir -p "$target"
     if command -v rsync >/dev/null 2>&1; then
-        sudo rsync -a --delete "$source_dir/" "$FRONTEND_TARGET/"
+        sudo rsync -a --delete "$source_dir/" "$target/"
     else
-        sudo rm -rf "${FRONTEND_TARGET:?}/"*
-        sudo cp -r "$source_dir/"* "$FRONTEND_TARGET/"
+        sudo rm -rf "${target:?}/"*
+        sudo cp -r "$source_dir/"* "$target/"
     fi
 
     if [[ -n "$FRONTEND_OWNER" ]]; then
-        sudo chown -R "$FRONTEND_OWNER" "$FRONTEND_TARGET"
+        sudo chown -R "$FRONTEND_OWNER" "$target"
     fi
-    sudo chmod -R "$FRONTEND_PERMISSIONS" "$FRONTEND_TARGET"
-}
-
-docker_status() {
-    require docker
-    docker ps --filter "name=${BACKEND_CONTAINER}" --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}'
+    sudo chmod -R "$FRONTEND_PERMISSIONS" "$target"
+    FRONTEND_TARGET="$target"
 }
 
 print_next_steps() {
-    local db_line
-    if [[ "$DB_AUTOSTART" == "true" ]]; then
-        db_line="Check database container: docker ps --filter \"name=${DB_CONTAINER}\""
-    else
-        db_line="Database container not managed (DB_AUTOSTART=false)"
-    fi
-
     cat <<EOF
 
 Next steps:
-    - Verify backend container: docker ps --filter "name=${BACKEND_CONTAINER}"
-    - Tail backend logs if needed: docker logs -f ${BACKEND_CONTAINER}
-    - Frontend assets synced to: ${FRONTEND_TARGET:-<skipped>}
-    - ${db_line}
+  - Backend virtualenv: $VENV_DIR
+  - Restart command run: ${RESTART_COMMAND:-<none>}
+  - Frontend assets synced to: ${FRONTEND_TARGET:-<skipped>}
 EOF
 }
 
@@ -522,7 +427,9 @@ case "$ACTION" in
         sync_frontend_bundle
         ;;
     status)
-        docker_status
+        git_refresh
+        ensure_env_file
+        check_backend_status
         ;;
     help|-h|--help)
         usage
