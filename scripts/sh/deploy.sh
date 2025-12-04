@@ -215,7 +215,7 @@ ensure_virtualenv() {
         check()
     except Exception as exc:
         raise SystemExit(1) from exc
-    PY
+PY
             then
                 break
             fi
