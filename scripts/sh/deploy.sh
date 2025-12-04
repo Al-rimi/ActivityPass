@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-ACTION="${1:-help}"
+ACTION="${1:-auto}"
 if [[ $# -gt 0 ]]; then
     shift
 fi
@@ -61,6 +61,7 @@ usage() {
 Usage: scripts/sh/deploy.sh <command> [options]
 
 Commands
+    auto        Default. Detect whether to run bootstrap (first deploy) or update
     bootstrap   Provision backend image/container, optional database, and frontend bundle
     update      Sync repo then refresh backend image/container and frontend bundle
     backend     Refresh backend image/container (optional database)
@@ -104,6 +105,7 @@ Environment variables (set in deploy.env or inline):
     DB_WAIT_SECONDS      Seconds to wait after starting MySQL (default: 60)
 
 Examples
+    ./scripts/sh/deploy.sh
   ./scripts/sh/deploy.sh bootstrap
   FRONTEND_TARGET=/opt/1panel/apps/openresty/openresty/www/sites/activitypass/index \
     ./scripts/sh/deploy.sh update
@@ -116,6 +118,22 @@ require() {
         err "Missing required command: $1"
         exit 1
     fi
+}
+
+auto_action() {
+    if command -v docker >/dev/null 2>&1; then
+        if docker ps -a --format '{{.Names}}' | grep -Fx "$BACKEND_CONTAINER" >/dev/null 2>&1; then
+            echo "update"
+            return
+        fi
+    fi
+
+    if [[ -f "$ROOT_DIR/.env" ]]; then
+        echo "update"
+        return
+    fi
+
+    echo "bootstrap"
 }
 
 ensure_env_file() {
@@ -461,6 +479,12 @@ EOF
 }
 
 case "$ACTION" in
+    auto)
+        ACTION="$(auto_action)"
+        log "Auto-detected action: $ACTION"
+        "$0" "$ACTION" "$@"
+        exit $?
+        ;;
     bootstrap)
         ensure_env_file
         run_backend_pipeline
