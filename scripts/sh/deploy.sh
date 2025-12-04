@@ -1,532 +1,393 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-set -euo pipefail
+# ActivityPass 1Panel-Optimized Deployment Script
+# This script deploys ActivityPass in a way that's fully manageable by 1Panel
 
-ACTION="${1:-auto}"
-if [[ $# -gt 0 ]]; then
-    shift
-fi
+set -e  # Exit on any error
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-cd "$ROOT_DIR"
+echo "ActivityPass 1Panel Deployment"
 
-SITE_DOMAIN="${SITE_DOMAIN:-}"
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
 
-GIT_REMOTE="${GIT_REMOTE:-origin}"
-GIT_BRANCH="${GIT_BRANCH:-main}"
-BACKEND_CONTEXT="${BACKEND_CONTEXT:-$ROOT_DIR/backend}"
-REQUIREMENTS_FILE="${REQUIREMENTS_FILE:-$BACKEND_CONTEXT/requirements.txt}"
-PYTHON_BIN="${PYTHON_BIN:-python3}"
-MANAGE_PY="${MANAGE_PY:-$BACKEND_CONTEXT/manage.py}"
-INSTALL_REQUIREMENTS="${INSTALL_REQUIREMENTS:-true}"
-PIP_UPGRADE="${PIP_UPGRADE:-true}"
-EXTRA_PIP_PACKAGES="${EXTRA_PIP_PACKAGES:-}"
-RUN_MIGRATIONS="${RUN_MIGRATIONS:-true}"
-MIGRATION_FLAGS="${MIGRATION_FLAGS:---noinput}"
-RUN_SEED="${RUN_SEED:-true}"
-SEED_COMMAND="${SEED_COMMAND:-seed_students}"
-RUN_COLLECTSTATIC="${RUN_COLLECTSTATIC:-false}"
-COLLECTSTATIC_ARGS="${COLLECTSTATIC_ARGS:---noinput}"
-WAIT_FOR_DB="${WAIT_FOR_DB:-false}"
-DB_WAIT_TIMEOUT="${DB_WAIT_TIMEOUT:-120}"
-DB_WAIT_INTERVAL="${DB_WAIT_INTERVAL:-5}"
-RESTART_COMMAND="${RESTART_COMMAND:-}"
-STATUS_COMMAND="${STATUS_COMMAND:-}"
-FRONTEND_BASE_PATH="/opt/1panel/apps/openresty/openresty/www/sites"
-FRONTEND_OWNER="www-data:www-data"
-FRONTEND_PERMISSIONS="755"
-FRONTEND_TARGET=""
-ENV_FILE="${ENV_FILE:-$ROOT_DIR/.env}"
-ENV_BACKUP_DIR="${ENV_BACKUP_DIR:-$ROOT_DIR/.backups}"
-USE_VENV="${USE_VENV:-true}"
-if [[ "$USE_VENV" == "true" ]]; then
-    VENV_DIR="${VENV_DIR:-$BACKEND_CONTEXT/.venv}"
-    VENV_PYTHON="${VENV_PYTHON:-$VENV_DIR/bin/python}"
-else
-    VENV_DIR="${VENV_DIR:-}"
-    VENV_PYTHON="${VENV_PYTHON:-$PYTHON_BIN}"
-fi
-SKIP_FRONTEND="${SKIP_FRONTEND:-false}"
-SKIP_BACKEND="${SKIP_BACKEND:-false}"
-PULL_FIRST="${PULL_FIRST:-true}"
-BACKUP_ENV="${BACKUP_ENV:-true}"
-
-log() { printf '[INFO] %s\n' "$1"; }
-warn() { printf '[WARN] %s\n' "$1" 1>&2; }
-err() { printf '[ERR ] %s\n' "$1" 1>&2; }
-step() { printf '\n== %s ==\n' "$1"; }
-
-usage() {
-    cat <<'EOF'
-Usage: scripts/sh/deploy.sh <command> [options]
-
-Commands
-  auto        Detect whether to run bootstrap (first deploy) or update
-  bootstrap   Create environment, install deps, run migrations/seed, build frontend
-  update      Sync repo then refresh backend environment and frontend bundle
-  backend     Run backend pipeline only (install, migrate, seed, restart)
-  frontend    Build frontend bundle and sync to target directory
-  status      Run Django system check and optional STATUS_COMMAND
-  help        Show this message
-
-Options
-    --domain <domain>    Override the frontend domain (e.g. activitypass.example)
-
-Environment variables (optional overrides set via the shell environment):
-  GIT_REMOTE             Git remote to pull from (default: origin)
-  GIT_BRANCH             Branch to track (default: main)
-  BACKEND_CONTEXT        Path to Django backend (default: ./backend)
-  REQUIREMENTS_FILE      Pip requirements file (default: backend/requirements.txt)
-    PYTHON_BIN             Python executable used for backend tasks (default: python3)
-    USE_VENV               true to create/use a virtualenv (default: true)
-    VENV_DIR               Virtualenv directory (default: backend/.venv)
-  INSTALL_REQUIREMENTS   true to install backend dependencies (default: true)
-  EXTRA_PIP_PACKAGES     Additional pip packages to install (space separated)
-  RUN_MIGRATIONS         true to run manage.py migrate (default: true)
-  MIGRATION_FLAGS        Flags passed to migrate (default: --noinput)
-  RUN_SEED               true to run the seed command (default: true)
-  SEED_COMMAND           Management command to seed data (default: seed_students)
-  RUN_COLLECTSTATIC      true to run collectstatic (default: false)
-  COLLECTSTATIC_ARGS     Flags passed to collectstatic (default: --noinput)
-  WAIT_FOR_DB            true to wait for the database before migrations
-  DB_WAIT_TIMEOUT        Seconds to wait for DB readiness (default: 120)
-  DB_WAIT_INTERVAL       Seconds between DB checks (default: 5)
-    RESTART_COMMAND        Shell command to restart backend service (optional)
-    STATUS_COMMAND         Extra status command run with `status` (optional)
-  SKIP_FRONTEND          true to skip frontend steps
-  SKIP_BACKEND           true to skip backend steps
-  PULL_FIRST             true to run git fetch/reset before update (default: true)
-  BACKUP_ENV             true to backup .env before update (default: true)
-
-Examples
-    ./scripts/sh/deploy.sh
-    ./scripts/sh/deploy.sh bootstrap
-    ./scripts/sh/deploy.sh update --domain activitypass.example
-    SKIP_FRONTEND=true ./scripts/sh/deploy.sh backend
-EOF
+# Function to print colored output
+print_status() {
+    echo -e "${GREEN}[INFO]${NC} $1"
 }
 
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        --domain)
-            if [[ $# -lt 2 ]]; then
-                err "--domain requires a value"
-                exit 1
-            fi
-            SITE_DOMAIN="$2"
-            shift 2
-            ;;
-        --domain=*)
-            SITE_DOMAIN="${1#*=}"
-            shift
-            ;;
-        *)
-            err "Unknown option: $1"
-            usage
+print_warning() {
+    echo -e "${YELLOW}[WARN]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+print_step() {
+    echo -e "${BLUE}[STEP]${NC} $1"
+}
+
+# Check if running as root
+if [[ $EUID -eq 0 ]]; then
+   print_error "This script should not be run as root. Please run as a regular user with sudo access."
+   exit 1
+fi
+
+# Check for existing domain name in .env
+DOMAIN_NAME=""
+if [ -f .env ]; then
+    DOMAIN_NAME=$(grep "^DOMAIN_NAME=" .env | cut -d'=' -f2- | sed 's/^"//' | sed 's/"$//')
+fi
+
+if [ -z "$DOMAIN_NAME" ]; then
+    read -p "Enter domain name: " DOMAIN_NAME
+fi
+
+# Ask for deployment folder name (alias)
+print_step "Configuring deployment..."
+ALIAS="$DOMAIN_NAME"
+
+# Determine the deployment directories
+DEPLOY_DIR="/www/wwwroot/activitypass"
+SITES_DIR="/opt/1panel/apps/openresty/openresty/www/sites"
+FRONTEND_DEPLOY_DIR="${SITES_DIR}/${ALIAS}/index"
+
+print_status "Alias: $ALIAS"
+print_status "Backend will be deployed to: $DEPLOY_DIR"
+print_status "Frontend will be deployed to: $FRONTEND_DEPLOY_DIR"
+
+# Create deployment directories
+print_step "Creating deployment directories..."
+sudo mkdir -p "$FRONTEND_DEPLOY_DIR"
+sudo chown -R $USER:$USER "$FRONTEND_DEPLOY_DIR"
+
+# Update system and install dependencies
+print_step "Installing system dependencies..."
+sudo dnf update -y
+
+# Install Node.js
+if ! command -v node &> /dev/null; then
+    print_status "Installing Node.js..."
+    curl -fsSL https://rpm.nodesource.com/setup_lts.x | sudo bash -
+    sudo dnf install -y nodejs
+    print_status "Node.js installed: $(node --version)"
+else
+    print_status "Node.js already installed: $(node --version)"
+fi
+
+# Check and upgrade Python version if necessary
+print_step "Checking Python version..."
+PYTHON_VERSION=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
+REQUIRED_PYTHON="3.8"
+
+if python3 -c "import sys; sys.exit(0 if sys.version_info >= (3, 8) else 1)"; then
+    print_status "Python $PYTHON_VERSION is compatible (Django 5.x requires Python 3.8+)"
+    PYTHON_CMD="python3"
+else
+    print_warning "Python $PYTHON_VERSION is too old for Django 5.x. Installing Python 3.8+..."
+    
+    # Try different methods based on OS
+    OS_VERSION=$(cat /etc/os-release | grep -E "^VERSION_ID=" | cut -d'"' -f2 | cut -d'.' -f1)
+    OS_NAME=$(cat /etc/os-release | grep -E "^ID=" | cut -d'"' -f2)
+    
+    if [[ "$OS_NAME" == "centos" ]] && [[ "$OS_VERSION" -ge 8 ]]; then
+        # CentOS 8+ has python38 in appstream
+        print_status "Installing Python 3.8 on CentOS $OS_VERSION..."
+        sudo dnf install -y python38 python38-pip python38-devel
+        PYTHON_CMD="python3.8"
+    elif [[ "$OS_NAME" == "rocky" ]] || [[ "$OS_NAME" == "almalinux" ]]; then
+        # Rocky Linux/AlmaLinux 8+
+        print_status "Installing Python 3.8 on $OS_NAME $OS_VERSION..."
+        sudo dnf install -y python38 python38-pip python38-devel
+        PYTHON_CMD="python3.8"
+    elif [[ "$OS_NAME" == "centos" ]] && [[ "$OS_VERSION" -eq 7 ]]; then
+        # CentOS 7 - use SCL
+        print_status "Installing Python 3.8 via SCL on CentOS 7..."
+        sudo yum install -y centos-release-scl
+        sudo yum install -y rh-python38 rh-python38-python-pip rh-python38-python-devel
+        source /opt/rh/rh-python38/enable
+        PYTHON_CMD="python3.8"
+    else
+        # Try generic python38 package
+        print_status "Trying to install python38 package..."
+        if sudo dnf install -y python38 python38-pip python38-devel 2>/dev/null; then
+            PYTHON_CMD="python3.8"
+        else
+            print_error "Unable to install Python 3.8+. Please upgrade your system Python manually to version 3.8 or higher."
+            print_error "You can try: sudo dnf install python38 python38-pip python38-devel"
             exit 1
-            ;;
-    esac
+        fi
+    fi
+    
+    print_status "Python 3.8+ installed successfully"
+fi
+
+# Install MySQL/MariaDB
+print_step "Checking database service..."
+MYSQL_RUNNING=false
+MYSQL_CONTAINER=""
+
+# Check if system MariaDB/MySQL is running
+if systemctl is-active --quiet mariadb 2>/dev/null || systemctl is-active --quiet mysql 2>/dev/null; then
+    MYSQL_RUNNING=true
+    print_status "System MariaDB/MySQL is running"
+# Check for 1Panel Docker MySQL containers
+elif sudo docker ps --format "table {{.Names}}\t{{.Ports}}" | grep -q "3306"; then
+    MYSQL_CONTAINER=$(sudo docker ps --format "table {{.Names}}\t{{.Ports}}" | grep "3306" | head -1 | awk '{print $1}')
+    MYSQL_RUNNING=true
+    print_status "Found 1Panel MySQL container: $MYSQL_CONTAINER"
+fi
+
+if [ "$MYSQL_RUNNING" = false ]; then
+    print_status "Installing MariaDB..."
+    sudo dnf install -y mariadb-server
+    sudo systemctl start mariadb
+    sudo systemctl enable mariadb
+    print_status "MariaDB installed and started"
+else
+    print_status "Using existing MySQL/MariaDB service"
+fi
+
+# Setup database
+print_step "Setting up database..."
+
+# Read existing database config from .env if it exists
+if [ -f .env ]; then
+    DB_NAME=$(grep "^DB_NAME=" .env | cut -d'=' -f2- | sed 's/^"//' | sed 's/"$//')
+    DB_USER=$(grep "^DB_USER=" .env | cut -d'=' -f2- | sed 's/^"//' | sed 's/"$//')
+    DB_PASSWORD=$(grep "^DB_PASSWORD=" .env | cut -d'=' -f2- | sed 's/^"//' | sed 's/"$//')
+fi
+
+# Prompt for database credentials if not set
+if [ -z "$DB_NAME" ]; then
+    read -p "Enter database name: " DB_NAME
+fi
+if [ -z "$DB_USER" ]; then
+    read -p "Enter database user: " DB_USER
+fi
+if [ -z "$DB_PASSWORD" ]; then
+    read -p "Enter database password: " DB_PASSWORD
+fi
+
+if [ -n "$MYSQL_CONTAINER" ]; then
+    print_status "Using 1Panel MySQL container: $MYSQL_CONTAINER"
+    print_warning "⚠️  IMPORTANT: You must create the database and user manually in 1Panel"
+    print_warning "1. Go to 1Panel Web UI (http://your-server-ip:9999)"
+    print_warning "2. Navigate to 'Database' → 'MySQL'"
+    print_warning "3. Create database: $DB_NAME"
+    print_warning "4. Create user: $DB_USER with password: $DB_PASSWORD"
+    print_warning "5. Grant ALL privileges on $DB_NAME to $DB_USER"
+    print_warning "6. When creating the user, specify: IDENTIFIED WITH mysql_native_password BY '$DB_PASSWORD';"
+    print_warning ""
+    
+    # Get the container IP for database connection
+    CONTAINER_IP=$(sudo docker inspect $MYSQL_CONTAINER --format '{{.NetworkSettings.IPAddress}}')
+    if [ -n "$CONTAINER_IP" ]; then
+        DB_HOST=$MYSQL_CONTAINER  # Use container name for inter-container communication
+        print_status "Using MySQL container name: $MYSQL_CONTAINER"
+    else
+        DB_HOST=$MYSQL_CONTAINER  # Still use container name even if IP not detected
+        print_warning "Could not detect container IP, using container name: $MYSQL_CONTAINER"
+    fi
+    
+    print_warning "The database host in .env will be set to: $DB_HOST"
+    print_warning ""
+    print_warning "Press Enter when you have created the database and user in 1Panel..."
+    read -p ""
+    
+    # Skip automatic database creation for 1Panel containers
+    print_status "Skipping automatic database setup for 1Panel container"
+else
+    # System MariaDB setup
+    if [ -z "$MYSQL_ROOT_PASSWORD" ]; then
+        read -p "Enter MySQL root password: " -s MYSQL_ROOT_PASSWORD
+        echo
+    fi
+    
+    # Try to connect and setup database
+    print_status "Connecting to database..."
+    if sudo mysql -u root -p"$MYSQL_ROOT_PASSWORD" -h 127.0.0.1 -P 3306 << EOF 2>/dev/null
+CREATE DATABASE IF NOT EXISTS $DB_NAME CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER IF NOT EXISTS '$DB_USER'@'localhost' IDENTIFIED WITH mysql_native_password BY '$DB_PASSWORD';
+CREATE USER IF NOT EXISTS '$DB_USER'@'%' IDENTIFIED WITH mysql_native_password BY '$DB_PASSWORD';
+GRANT ALL PRIVILEGES ON $DB_NAME.* TO '$DB_USER'@'localhost';
+GRANT ALL PRIVILEGES ON $DB_NAME.* TO '$DB_USER'@'%';
+FLUSH PRIVILEGES;
+EOF
+    then
+        print_status "Database setup completed successfully"
+    else
+        print_warning "Could not connect to database with provided credentials"
+        print_warning "You may need to:"
+        print_warning "1. Check MySQL root password"
+        print_warning "2. Create database manually"
+        print_warning "3. Update .env file with correct database credentials"
+    fi
+fi
+
+# Setup environment file
+print_step "Setting up environment configuration..."
+
+# Read existing AMap key from .env if it exists
+AMAP_KEY=""
+if [ -f .env ]; then
+    AMAP_KEY=$(grep "^VITE_AMAP_KEY=" .env | cut -d'=' -f2- | sed 's/^"//' | sed 's/"$//')
+    print_status ".env file already exists, reading existing configuration..."
+else
+    print_status "Creating new .env file..."
+    # Create basic .env file
+    cat > .env << 'EOF'
+DJANGO_SECRET_KEY=change-me-in-production
+DJANGO_DEBUG=false
+DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
+DB_ENGINE=mysql
+DB_NAME=activitypass
+DB_USER=root
+DB_PASSWORD=your-password-here
+DB_HOST=127.0.0.1
+DB_PORT=3306
+CORS_ALLOW_ALL=true
+VITE_AMAP_KEY=your-amap-key-here
+DOMAIN_NAME=your-domain-here
+EOF
+fi
+
+# Prompt for AMap API key if not found
+if [ -z "$AMAP_KEY" ] || [ "$AMAP_KEY" = "your-amap-key-here" ]; then
+    read -p "Enter AMap API key (leave empty to skip): " AMAP_KEY
+fi
+
+# Generate random secret key if not set
+SECRET_KEY=$(grep "^DJANGO_SECRET_KEY=" .env | cut -d'=' -f2- | sed 's/^"//' | sed 's/"$//')
+if [ -z "$SECRET_KEY" ] || [ "$SECRET_KEY" = "change-me-in-production" ]; then
+    SECRET_KEY=$($PYTHON_CMD -c "import secrets; print(secrets.token_urlsafe(50))")
+fi
+
+# Update .env file with current values
+sed -i "s/DB_NAME=.*/DB_NAME=$DB_NAME/" .env
+sed -i "s/DB_USER=.*/DB_USER=$DB_USER/" .env
+sed -i "s/DB_PASSWORD=.*/DB_PASSWORD=$DB_PASSWORD/" .env
+sed -i "s/DB_HOST=.*/DB_HOST=127.0.0.1/" .env  # Use localhost for host migrations
+sed -i "s/DJANGO_SECRET_KEY=.*/DJANGO_SECRET_KEY=$SECRET_KEY/" .env
+sed -i "s/DJANGO_DEBUG=.*/DJANGO_DEBUG=false/" .env
+
+if [ -n "$AMAP_KEY" ]; then
+    sed -i "s|VITE_AMAP_KEY=.*|VITE_AMAP_KEY=$AMAP_KEY|" .env
+fi
+
+# Update DOMAIN_NAME
+sed -i "s/DOMAIN_NAME=.*/DOMAIN_NAME=$DOMAIN_NAME/" .env
+if ! grep -q "^DOMAIN_NAME=" .env; then
+    echo "DOMAIN_NAME=$DOMAIN_NAME" >> .env
+fi
+
+print_status "Environment configuration completed"
+
+# Setup backend
+print_step "Setting up Python backend..."
+$PYTHON_CMD -m venv backend/.venv
+source backend/.venv/bin/activate
+sudo cp .env backend/.env  # Copy .env to backend for runtime
+cd backend
+
+# Upgrade pip with timeout and retry
+print_status "Upgrading pip..."
+for i in {1..3}; do
+    if $PYTHON_CMD -m pip install --upgrade --timeout=60 --no-cache-dir pip; then
+        break
+    else
+        print_warning "Pip upgrade attempt $i failed, retrying..."
+        sleep 5
+    fi
 done
 
-require() {
-    if ! command -v "$1" >/dev/null 2>&1; then
-        err "Missing required command: $1"
-        exit 1
+# Install requirements with timeout and retry (optimized for speed)
+print_status "Installing Python requirements..."
+for i in {1..3}; do
+    if $PYTHON_CMD -m pip install --timeout=60 --no-cache-dir --only-binary=all -r requirements.txt; then
+        break
+    else
+        print_warning "Requirements installation attempt $i failed, retrying..."
+        sleep 5
     fi
-}
+done
 
-resolve_python_bin() {
-    local candidate="$1"
-    if [[ -z "$candidate" ]]; then
-        return 1
-    fi
-    if [[ -x "$candidate" ]]; then
-        printf '%s\n' "$candidate"
-        return 0
-    fi
-    local resolved
-    resolved="$(command -v "$candidate" 2>/dev/null || true)"
-    if [[ -n "$resolved" ]]; then
-        printf '%s\n' "$resolved"
-        return 0
-    fi
-    return 1
-}
+print_status "Initializing application (migrations + seeding + superuser)..."
+if $PYTHON_CMD manage.py init_app; then
+    print_status "Application initialized successfully"
+else
+    print_warning "init_app failed; falling back to separate commands"
+    print_status "Running database migrations..."
+    $PYTHON_CMD manage.py migrate
+    print_status "Creating superuser..."
+    $PYTHON_CMD manage.py shell -c "
+from django.contrib.auth import get_user_model
+User = get_user_model()
+if not User.objects.filter(username='admin').exists():
+    User.objects.create_superuser('admin', 'admin@example.com', 'admin123')
+    print('Superuser created')
+else:
+    print('Superuser already exists')
+"
+    print_status "Seeding initial data..."
+    $PYTHON_CMD manage.py seed_students
+fi
 
-ensure_virtualenv() {
-    if [[ "$USE_VENV" != "true" ]]; then
-        return
-    fi
-    if [[ "$SKIP_BACKEND" == "true" ]]; then
-        return
-    fi
-    if [[ -x "$VENV_PYTHON" ]]; then
-        return
-    fi
-    require "$PYTHON_BIN"
-    step "Creating Python virtual environment ($VENV_DIR)"
-    "$PYTHON_BIN" -m venv "$VENV_DIR"
-}
+cd ..
 
-install_backend_dependencies() {
-    if [[ "$SKIP_BACKEND" == "true" ]]; then
-        return
-    fi
-    if [[ "$INSTALL_REQUIREMENTS" != "true" ]]; then
-        return
-    fi
-    local python_bin
-    python_bin="$(resolve_python_bin "$VENV_PYTHON" || true)"
-    if [[ -z "$python_bin" ]]; then
-        err "Python executable not found at or via PATH: $VENV_PYTHON"
-        exit 1
-    fi
-    if [[ ! -f "$REQUIREMENTS_FILE" ]]; then
-        warn "Requirements file not found at $REQUIREMENTS_FILE; skipping install"
-        return
-    fi
-    step "Installing backend dependencies"
-    local -a pip_cmd=("$python_bin" -m pip)
-    if [[ "$PIP_UPGRADE" == "true" ]]; then
-        "${pip_cmd[@]}" install --upgrade pip wheel
-    fi
-    "${pip_cmd[@]}" install -r "$REQUIREMENTS_FILE"
-    if [[ -n "$EXTRA_PIP_PACKAGES" ]]; then
-        # shellcheck disable=SC2086
-        "${pip_cmd[@]}" install $EXTRA_PIP_PACKAGES
-    fi
-}
+# Now update .env to use container name for runtime
+sed -i "s/DB_HOST=.*/DB_HOST=$MYSQL_CONTAINER/" .env
 
-load_env_vars() {
-    local env_path="$ENV_FILE"
-    if [[ -f "$env_path" ]]; then
-        set -a
-        # shellcheck disable=SC1090
-        source "$env_path"
-        set +a
-    fi
-}
+# Build frontend
+print_step "Building React frontend..."
+cd frontend
+# Skip puppeteer browser download to avoid network timeouts
+export PUPPETEER_SKIP_DOWNLOAD=true
+npm install
+npm run build
+cd ..
 
-wait_for_database() {
-    if [[ "$WAIT_FOR_DB" != "true" ]]; then
-        return
-    fi
-    if [[ -z "${DB_HOST:-}" ]]; then
-        warn "DB_HOST not set; skipping database wait"
-        return
-    fi
-    local python_bin
-    python_bin="$(resolve_python_bin "$VENV_PYTHON" || true)"
-    if [[ -z "$python_bin" ]]; then
-        warn "Python executable unavailable for database wait: $VENV_PYTHON"
-        return
-    fi
-    if ! "$python_bin" -c "import pymysql" >/dev/null 2>&1; then
-        warn "pymysql not available; skipping database wait"
-        return
-    fi
-    local timeout="$DB_WAIT_TIMEOUT"
-    local interval="$DB_WAIT_INTERVAL"
-    local start
-    start=$(date +%s)
-    step "Waiting for database at ${DB_HOST}:${DB_PORT:-3306}"
-    while true; do
-        if "$python_bin" - <<'PY'
-    import os
-    import pymysql
+# Deploy frontend to 1Panel sites directory
+print_step "Deploying frontend to 1Panel sites directory..."
+sudo cp -r frontend/build/* "$FRONTEND_DEPLOY_DIR/"
+sudo chown -R www-data:www-data "$FRONTEND_DEPLOY_DIR" 2>/dev/null || sudo chown -R nginx:nginx "$FRONTEND_DEPLOY_DIR" 2>/dev/null || sudo chown -R $USER:$USER "$FRONTEND_DEPLOY_DIR"
+sudo chmod -R 755 "$FRONTEND_DEPLOY_DIR"
 
-    def check():
-        host=os.environ.get("DB_HOST")
-        user=os.environ.get("DB_USER")
-        password=os.environ.get("DB_PASSWORD")
-        name=os.environ.get("DB_NAME")
-        port=int(os.environ.get("DB_PORT", "3306"))
-        conn=pymysql.connect(host=host, user=user, password=password, database=name, port=port, connect_timeout=5)
-        conn.close()
-
-    try:
-        check()
-    except Exception as exc:
-        raise SystemExit(1) from exc
-PY
-        then
-            break
-        fi
-        local now
-        now=$(date +%s)
-        if (( now - start >= timeout )); then
-            err "Database did not become ready within ${timeout}s"
-            exit 1
-        fi
-        sleep "$interval"
-    done
-}
-
-run_manage() {
-    local python_bin
-    python_bin="$(resolve_python_bin "$VENV_PYTHON" || true)"
-    if [[ -z "$python_bin" ]]; then
-        err "Python executable not found at or via PATH: $VENV_PYTHON"
-        exit 1
-    fi
-    if [[ ! -f "$MANAGE_PY" ]]; then
-        err "manage.py not found at $MANAGE_PY"
-        exit 1
-    fi
-    (cd "$BACKEND_CONTEXT" && "$python_bin" "$MANAGE_PY" "$@")
-}
-
-apply_migrations() {
-    if [[ "$RUN_MIGRATIONS" != "true" ]]; then
-        return
-    fi
-    step "Applying database migrations"
-    local args=()
-    if [[ -n "$MIGRATION_FLAGS" ]]; then
-        # shellcheck disable=SC2206
-        args=($MIGRATION_FLAGS)
-    fi
-    run_manage migrate "${args[@]}"
-}
-
-run_seed_command() {
-    if [[ "$RUN_SEED" != "true" ]]; then
-        return
-    fi
-    if [[ -z "$SEED_COMMAND" ]]; then
-        return
-    fi
-    step "Running seed command ($SEED_COMMAND)"
-    # shellcheck disable=SC2086
-    run_manage $SEED_COMMAND
-}
-
-collect_static() {
-    if [[ "$RUN_COLLECTSTATIC" != "true" ]]; then
-        return
-    fi
-    step "Collecting static files"
-    local args=()
-    if [[ -n "$COLLECTSTATIC_ARGS" ]]; then
-        # shellcheck disable=SC2206
-        args=($COLLECTSTATIC_ARGS)
-    fi
-    run_manage collectstatic "${args[@]}"
-}
-
-restart_backend_service() {
-    if [[ -z "$RESTART_COMMAND" ]]; then
-        return
-    fi
-    step "Restarting backend service"
-    bash -c "$RESTART_COMMAND"
-}
-
-run_backend_pipeline() {
-    if [[ "$SKIP_BACKEND" == "true" ]]; then
-        warn "Skipping backend tasks (SKIP_BACKEND=true)"
-        return
-    fi
-    ensure_virtualenv
-    install_backend_dependencies
-    load_env_vars
-    wait_for_database
-    apply_migrations
-    run_seed_command
-    collect_static
-    restart_backend_service
-}
-
-check_backend_status() {
-    if [[ "$SKIP_BACKEND" == "true" ]]; then
-        warn "Backend tasks skipped; nothing to check"
-        return
-    fi
-    ensure_virtualenv
-    load_env_vars
-    step "Running Django system check"
-    run_manage check --deploy
-    if [[ -n "$STATUS_COMMAND" ]]; then
-        step "Running custom status command"
-        bash -c "$STATUS_COMMAND"
-    fi
-}
-
-git_refresh() {
-    if [[ "$PULL_FIRST" != "true" ]]; then
-        return
-    fi
-    if [[ ! -d "$ROOT_DIR/.git" ]]; then
-        warn "No git repository found; skipping git refresh"
-        return
-    fi
-    step "Refreshing git repository ($GIT_REMOTE/$GIT_BRANCH)"
-    git fetch "$GIT_REMOTE" "$GIT_BRANCH"
-    git reset --hard "$GIT_REMOTE/$GIT_BRANCH"
-}
-
-ensure_env_file() {
-    if [[ -f "$ENV_FILE" ]]; then
-        return
-    fi
-    err "Environment file not found at $ENV_FILE"
-    err "Create the file or set ENV_FILE to the correct path before deploying"
+# Setup manage.py in backend (assuming it exists)
+print_step "Checking manage.py in backend..."
+if [ ! -f backend/manage.py ]; then
+    print_error "manage.py not found in backend/; please ensure it exists"
     exit 1
-}
+fi
 
-backup_env_file() {
-    if [[ "$BACKUP_ENV" != "true" ]]; then
-        return
-    fi
-    if [[ ! -f "$ENV_FILE" ]]; then
-        warn "No environment file at $ENV_FILE; skipping backup"
-        return
-    fi
-    mkdir -p "$ENV_BACKUP_DIR"
-    local timestamp
-    timestamp="$(date +%Y%m%d%H%M%S)"
-    local backup_path="$ENV_BACKUP_DIR/.env.${timestamp}.bak"
-    cp "$ENV_FILE" "$backup_path"
-    log "Backed up $ENV_FILE to $backup_path"
-}
+chmod +x backend/manage.py 2>/dev/null || true
 
-ensure_site_domain() {
-    if [[ "$SKIP_FRONTEND" == "true" ]]; then
-        return
-    fi
-    if [[ -n "$SITE_DOMAIN" ]]; then
-        return
-    fi
-    if [[ -t 0 ]]; then
-        read -rp "Enter site domain (e.g. example.com): " SITE_DOMAIN
-    fi
-    if [[ -z "$SITE_DOMAIN" ]]; then
-        err "SITE_DOMAIN must be provided via --domain or environment variable when frontend deployment is enabled"
-        exit 1
-    fi
-}
-
-build_frontend_bundle() {
-    if [[ "$SKIP_FRONTEND" == "true" ]]; then
-        warn "Skipping frontend build (SKIP_FRONTEND=true)"
-        return
-    fi
-
-    require npm
-    step "Building frontend bundle"
-    pushd "$ROOT_DIR/frontend" >/dev/null
-    if [[ -f package-lock.json ]]; then
-        npm ci
-    else
-        npm install
-    fi
-    npm run build
-    popd >/dev/null
-}
-
-sync_frontend_bundle() {
-    if [[ "$SKIP_FRONTEND" == "true" ]]; then
-        return
-    fi
-
-    ensure_site_domain
-
-    local target="$FRONTEND_BASE_PATH/$SITE_DOMAIN/index"
-    local source_dir="$ROOT_DIR/frontend/build"
-    if [[ ! -d "$source_dir" ]]; then
-        warn "Frontend build output not found at $source_dir"
-        return
-    fi
-
-    step "Syncing frontend bundle to $target"
-    sudo mkdir -p "$target"
-    if command -v rsync >/dev/null 2>&1; then
-        sudo rsync -a --delete "$source_dir/" "$target/"
-    else
-        sudo rm -rf "${target:?}/"*
-        sudo cp -r "$source_dir/"* "$target/"
-    fi
-
-    if [[ -n "$FRONTEND_OWNER" ]]; then
-        sudo chown -R "$FRONTEND_OWNER" "$target"
-    fi
-    sudo chmod -R "$FRONTEND_PERMISSIONS" "$target"
-    FRONTEND_TARGET="$target"
-}
-
-auto_action() {
-    if [[ ! -f "$ENV_FILE" ]]; then
-        echo "bootstrap"
-        return
-    fi
-    if [[ "$USE_VENV" == "true" && ! -d "$VENV_DIR" ]]; then
-        echo "bootstrap"
-        return
-    fi
-    echo "update"
-}
-
-print_next_steps() {
-        local backend_runtime
-        if [[ "$USE_VENV" == "true" ]]; then
-                backend_runtime="${VENV_DIR:-<missing>}"
-        else
-                backend_runtime="system python ($VENV_PYTHON)"
-        fi
-    cat <<EOF
-
-Next steps:
-    - Backend runtime: $backend_runtime
-  - Restart command run: ${RESTART_COMMAND:-<none>}
-  - Frontend assets synced to: ${FRONTEND_TARGET:-<skipped>}
-EOF
-}
-
-case "$ACTION" in
-    auto)
-        ACTION="$(auto_action)"
-        log "Auto-detected action: $ACTION"
-        "$0" "$ACTION" "$@"
-        exit $?
-        ;;
-    bootstrap)
-        ensure_env_file
-        run_backend_pipeline
-        build_frontend_bundle
-        sync_frontend_bundle
-        print_next_steps
-        ;;
-    update)
-        git_refresh
-        ensure_env_file
-        backup_env_file
-        run_backend_pipeline
-        build_frontend_bundle
-        sync_frontend_bundle
-        print_next_steps
-        ;;
-    backend)
-        git_refresh
-        ensure_env_file
-        run_backend_pipeline
-        print_next_steps
-        ;;
-    frontend)
-        git_refresh
-        build_frontend_bundle
-        sync_frontend_bundle
-        ;;
-    status)
-        git_refresh
-        ensure_env_file
-        check_backend_status
-        ;;
-    help|-h|--help)
-        usage
-        ;;
-    *)
-        err "Unknown command: $ACTION"
-        usage
-        exit 1
-        ;;
-esac
+print_status "Deployment Directories:"
+print_status "   Backend: $DEPLOY_DIR/backend"
+print_status "   Frontend: $FRONTEND_DEPLOY_DIR"
+print_status ""
+print_status "Configure:"
+print_status "     - Name: activitypass"
+print_status "     - Image: python:3.8"
+print_status "     - Port: 8000"
+print_status "     - Root Directory: /www/wwwroot/activitypass/backend"
+print_status "     - Startup Command: source .venv/bin/activate && python -c \"import django\" 2>/dev/null || pip install -r requirements.txt && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+print_status ""
+print_status "Nginx configuration:"
+print_status "   - Add this location block for SPA routing (before the root directive):"
+print_status "     location / {"
+print_status "         try_files \$uri \$uri/ /index.html;"
+print_status "     }"
+print_status "   - Update the API proxy location:"
+print_status "     location /api/ {"
+print_status "         proxy_pass http://activitypass-backend:8000;"
+print_status "         proxy_set_header Host \$host;"
+print_status "         proxy_set_header X-Real-IP \$remote_addr;"
+print_status "         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;"
+print_status "         proxy_set_header X-Forwarded-Proto \$scheme;"
+print_status "     }"
+print_status ""
