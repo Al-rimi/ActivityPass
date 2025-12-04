@@ -37,6 +37,7 @@ media/
 staticfiles/
 .env
 .env.*
+deploy.env
 # Keep example env in version control (must come after .env.* rule)
 !.env.example
 
