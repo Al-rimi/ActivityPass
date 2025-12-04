@@ -39,6 +39,8 @@ FRONTEND_BASE_PATH="/opt/1panel/apps/openresty/openresty/www/sites"
 FRONTEND_OWNER="www-data:www-data"
 FRONTEND_PERMISSIONS="755"
 FRONTEND_TARGET=""
+ENV_FILE="${ENV_FILE:-$ROOT_DIR/.env}"
+ENV_BACKUP_DIR="${ENV_BACKUP_DIR:-$ROOT_DIR/.backups}"
 SKIP_FRONTEND="${SKIP_FRONTEND:-false}"
 SKIP_BACKEND="${SKIP_BACKEND:-false}"
 PULL_FIRST="${PULL_FIRST:-true}"
@@ -318,6 +320,44 @@ PY
         fi
     }
 
+git_refresh() {
+    if [[ "$PULL_FIRST" != "true" ]]; then
+        return
+    fi
+    if [[ ! -d "$ROOT_DIR/.git" ]]; then
+        warn "No git repository found; skipping git refresh"
+        return
+    fi
+    step "Refreshing git repository ($GIT_REMOTE/$GIT_BRANCH)"
+    git fetch "$GIT_REMOTE" "$GIT_BRANCH"
+    git reset --hard "$GIT_REMOTE/$GIT_BRANCH"
+}
+
+ensure_env_file() {
+    if [[ -f "$ENV_FILE" ]]; then
+        return
+    fi
+    err "Environment file not found at $ENV_FILE"
+    err "Create the file or set ENV_FILE to the correct path before deploying"
+    exit 1
+}
+
+backup_env_file() {
+    if [[ "$BACKUP_ENV" != "true" ]]; then
+        return
+    fi
+    if [[ ! -f "$ENV_FILE" ]]; then
+        warn "No environment file at $ENV_FILE; skipping backup"
+        return
+    fi
+    mkdir -p "$ENV_BACKUP_DIR"
+    local timestamp
+    timestamp="$(date +%Y%m%d%H%M%S)"
+    local backup_path="$ENV_BACKUP_DIR/.env.${timestamp}.bak"
+    cp "$ENV_FILE" "$backup_path"
+    log "Backed up $ENV_FILE to $backup_path"
+}
+
 ensure_site_domain() {
     if [[ "$SKIP_FRONTEND" == "true" ]]; then
         return
@@ -380,6 +420,18 @@ sync_frontend_bundle() {
     fi
     sudo chmod -R "$FRONTEND_PERMISSIONS" "$target"
     FRONTEND_TARGET="$target"
+}
+
+auto_action() {
+    if [[ ! -f "$ENV_FILE" ]]; then
+        echo "bootstrap"
+        return
+    fi
+    if [[ ! -d "$VENV_DIR" ]]; then
+        echo "bootstrap"
+        return
+    fi
+    echo "update"
 }
 
 print_next_steps() {
