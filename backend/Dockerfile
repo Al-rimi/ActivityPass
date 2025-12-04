@@ -16,10 +16,10 @@ RUN --mount=type=cache,target=/var/cache/apt \
     sed -i "s|http://security.debian.org/debian-security|${DEBIAN_SECURITY_MIRROR}|g" /etc/apt/sources.list || true; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
-        bash \
-        gcc \
-        default-libmysqlclient-dev \
-        pkg-config; \
+    bash \
+    gcc \
+    default-libmysqlclient-dev \
+    pkg-config; \
     rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt /tmp/requirements.txt
