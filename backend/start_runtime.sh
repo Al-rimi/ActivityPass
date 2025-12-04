@@ -21,6 +21,13 @@ log "Whoami=$(whoami)"
 log "Listing current directory"
 ls -al
 
+if [ -d ".venv" ]; then
+    log "Listing .venv/bin contents"
+    ls -al .venv/bin 2>/dev/null || warn "Unable to list .venv/bin"
+else
+    warn ".venv directory missing before activation"
+fi
+
 if [ -f .env ]; then
     log "Found .env file"
 else
@@ -28,40 +35,60 @@ else
 fi
 
 VENV_PATH="${SCRIPT_DIR}/.venv"
-if [ -d "$VENV_PATH" ]; then
-    log "Activating virtualenv at $VENV_PATH"
+PY_BIN="$VENV_PATH/bin/python"
+PIP_BIN="$VENV_PATH/bin/pip"
+
+if [ ! -f "$VENV_PATH/bin/activate" ]; then
+    warn "Virtualenv activate script missing; creating fresh venv"
+    python -m venv "$VENV_PATH"
+fi
+
+log "Activating virtualenv at $VENV_PATH"
+# shellcheck disable=SC1090
+source "$VENV_PATH/bin/activate"
+
+log "VIRTUAL_ENV=$VIRTUAL_ENV"
+log "PATH=$PATH"
+
+if [ ! -x "$PY_BIN" ]; then
+    warn "Virtualenv python missing; recreating venv"
+    deactivate 2>/dev/null || true
+    python -m venv "$VENV_PATH"
     # shellcheck disable=SC1090
     source "$VENV_PATH/bin/activate"
-else
-    warn "Virtualenv missing at $VENV_PATH"
 fi
 
-if command -v python >/dev/null 2>&1; then
-    log "Python executable: $(command -v python)"
-    python -V
-else
-    warn "python command not found"
+PY_BIN="$VENV_PATH/bin/python"
+PIP_BIN="$VENV_PATH/bin/pip"
+
+if [ ! -x "$PY_BIN" ]; then
+    warn "Unable to locate python inside venv even after recreation"
 fi
 
-if command -v pip >/dev/null 2>&1; then
-    log "pip executable: $(command -v pip)"
-    pip -V
+log "Python executable: $PY_BIN"
+"$PY_BIN" -V
+
+if [ -x "$PIP_BIN" ]; then
+    log "pip executable: $PIP_BIN"
+    "$PIP_BIN" -V
 else
-    warn "pip command not found"
+    warn "pip executable missing in venv; bootstrapping"
+    "$PY_BIN" -m ensurepip --upgrade
+    PIP_BIN="$VENV_PATH/bin/pip"
 fi
 
-if python -c "import django" >/dev/null 2>&1; then
+if "$PY_BIN" -c "import django" >/dev/null 2>&1; then
     log "Django import succeeded"
 else
     warn "Django import failed; installing requirements"
-    python -m pip install --no-cache-dir -r requirements.txt
+    "$PIP_BIN" install --no-cache-dir -r requirements.txt
 fi
 
 log "Running database migrations"
-python manage.py migrate --noinput
+"$PY_BIN" manage.py migrate --noinput
 
 log "Installed packages snapshot"
-python -m pip freeze | head -n 40 || warn "pip freeze failed"
+"$PIP_BIN" freeze | head -n 40 || warn "pip freeze failed"
 
 log "Launching Django runserver"
-exec python manage.py runserver 0.0.0.0:8000
+exec "$PY_BIN" manage.py runserver 0.0.0.0:8000
