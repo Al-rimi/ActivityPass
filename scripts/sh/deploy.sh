@@ -339,6 +339,9 @@ fi
 
 cd ..
 
+# Ensure runtime script is executable for 1Panel startup
+chmod +x backend/start_runtime.sh 2>/dev/null || true
+
 # Now update .env to use container name for runtime
 sed -i "s/DB_HOST=.*/DB_HOST=$MYSQL_CONTAINER/" .env
 
@@ -375,7 +378,7 @@ print_status "     - Name: activitypass"
 print_status "     - Image: python:3.8"
 print_status "     - Port: 8000"
 print_status "     - Root Directory: /www/wwwroot/activitypass/backend"
-print_status "     - Startup Command: source .venv/bin/activate && python -c \"import django\" 2>/dev/null || pip install -r requirements.txt && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+print_status "     - Startup Command: bash start_runtime.sh"
 print_status ""
 print_status "Nginx configuration:"
 print_status "   - Add this location block for SPA routing (before the root directive):"
