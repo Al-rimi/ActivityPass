@@ -30,6 +30,7 @@ BACKEND_ENV_FILE="${BACKEND_ENV_FILE:-$ROOT_DIR/.env}"
 BACKEND_HOST_PORT="${BACKEND_HOST_PORT:-8000}"
 BACKEND_CONTAINER_PORT="${BACKEND_CONTAINER_PORT:-8000}"
 BACKEND_EXTRA_ARGS="${BACKEND_EXTRA_ARGS:-}"
+BACKEND_BUILD_ARGS="${BACKEND_BUILD_ARGS:-}"
 DEPLOY_BACKEND_CONTAINER="${DEPLOY_BACKEND_CONTAINER:-true}"
 FRONTEND_TARGET="${FRONTEND_TARGET:-}"
 FRONTEND_OWNER="${FRONTEND_OWNER:-www-data:www-data}"
@@ -83,6 +84,7 @@ Environment variables (set in deploy.env or inline):
     BACKEND_HOST_PORT    Host port to expose for backend (default: 8000)
     BACKEND_CONTAINER_PORT Container port to expose (default: 8000)
     BACKEND_EXTRA_ARGS   Extra docker run args for backend container
+    BACKEND_BUILD_ARGS   Additional docker build args (e.g., "--build-arg KEY=value")
     DEPLOY_BACKEND_CONTAINER true to run the backend container (default: true)
   FRONTEND_TARGET      Absolute path to copy frontend/build into
   FRONTEND_OWNER       Owner to apply to FRONTEND_TARGET (default: www-data:www-data)
@@ -106,10 +108,10 @@ Environment variables (set in deploy.env or inline):
 
 Examples
     ./scripts/sh/deploy.sh
-  ./scripts/sh/deploy.sh bootstrap
-  FRONTEND_TARGET=/opt/1panel/apps/openresty/openresty/www/sites/activitypass/index \
-    ./scripts/sh/deploy.sh update
-  SKIP_FRONTEND=true ./scripts/sh/deploy.sh backend
+    ./scripts/sh/deploy.sh bootstrap
+    FRONTEND_TARGET=/opt/1panel/apps/openresty/openresty/www/sites/activitypass/index \
+        ./scripts/sh/deploy.sh update
+    SKIP_FRONTEND=true ./scripts/sh/deploy.sh backend
 EOF
 }
 
@@ -197,10 +199,17 @@ build_backend_image() {
         exit 1
     fi
 
+    local build_args=()
+    if [[ -n "$BACKEND_BUILD_ARGS" ]]; then
+        # shellcheck disable=SC2206
+        build_args=($BACKEND_BUILD_ARGS)
+    fi
+
     step "Building backend Docker image"
     docker build \
         --file "$BACKEND_DOCKERFILE" \
         --tag "$BACKEND_IMAGE:$BACKEND_TAG" \
+        "${build_args[@]}" \
         "$BACKEND_CONTEXT"
 
     log "Built $BACKEND_IMAGE:$BACKEND_TAG"
