@@ -88,11 +88,19 @@ else
     PIP_BIN="$VENV_PATH/bin/pip"
 fi
 
-if "$PY_BIN" -c "import django" >/dev/null 2>&1; then
-    log "Django import succeeded"
+install_marker="$VENV_PATH/.deps_installed"
+
+if [ -f "$install_marker" ]; then
+    if "$PY_BIN" -c "import django" >/dev/null 2>&1; then
+        log "Dependencies already installed; continuing"
+    else
+        warn "Marker present but Django missing; reinstalling requirements"
+        "$PIP_BIN" install --no-cache-dir -r requirements.txt
+    fi
 else
-    warn "Django import failed; installing requirements"
+    warn "No dependency marker found; installing requirements"
     "$PIP_BIN" install --no-cache-dir -r requirements.txt
+    touch "$install_marker"
 fi
 
 log "Running database migrations"
