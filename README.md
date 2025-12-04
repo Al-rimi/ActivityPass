@@ -278,11 +278,11 @@ python manage.py init_app
 ### Deploying Without Docker
 
 - Use `scripts/sh/deploy.sh` for both bootstrap and updates (see `README_DEPLOYMENT.md`).
-- Ensure the target host provides `python3`, `python3-venv`, `pip`, `git`, `npm`, and `sudo` before running the script.
-- `./scripts/sh/deploy.sh bootstrap --domain yourdomain.com` creates/refreshes the virtualenv, installs dependencies, runs migrations and seed data, builds the frontend, and syncs assets into `/opt/1panel/apps/openresty/openresty/www/sites/yourdomain.com/index`.
+- Ensure the target host provides `python3`, `python3-venv`, `pip`, `git`, `npm`, and `sudo` before running the script (or set `USE_VENV=false PYTHON_BIN=python` to rely on a pre-provisioned system interpreter).
+- `./scripts/sh/deploy.sh bootstrap --domain yourdomain.com` creates/refreshes the virtualenv, installs dependencies, runs migrations and seed data, builds the frontend, and syncs assets into `/opt/1panel/apps/openresty/openresty/www/sites/yourdomain.com/index` (the virtualenv step is skipped when `USE_VENV=false`).
 - `./scripts/sh/deploy.sh update --domain yourdomain.com` pulls the latest code (when `PULL_FIRST=true`), refreshes the backend environment, rebuilds the frontend, and executes any `RESTART_COMMAND` you provide inline.
 - Export overrides inline (e.g. `RUN_COLLECTSTATIC=true`, `WAIT_FOR_DB=true`, `RESTART_COMMAND="sudo systemctl restart activitypass"`) as needed for your environment.
-- Hook your process manager (systemd, supervisor, etc.) to the virtualenv in `backend/.venv` and let the script restart it via `RESTART_COMMAND`.
+- Hook your process manager (systemd, supervisor, etc.) to the virtualenv in `backend/.venv`—or the system interpreter when `USE_VENV=false`—and let the script restart it via `RESTART_COMMAND`.
 
 ## Contributing
 

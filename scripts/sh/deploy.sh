@@ -17,9 +17,6 @@ GIT_BRANCH="${GIT_BRANCH:-main}"
 BACKEND_CONTEXT="${BACKEND_CONTEXT:-$ROOT_DIR/backend}"
 REQUIREMENTS_FILE="${REQUIREMENTS_FILE:-$BACKEND_CONTEXT/requirements.txt}"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
-VENV_DIR="${VENV_DIR:-$BACKEND_CONTEXT/.venv}"
-VENV_PYTHON="${VENV_PYTHON:-$VENV_DIR/bin/python}"
-PIP_BIN="${PIP_BIN:-$VENV_DIR/bin/pip}"
 MANAGE_PY="${MANAGE_PY:-$BACKEND_CONTEXT/manage.py}"
 INSTALL_REQUIREMENTS="${INSTALL_REQUIREMENTS:-true}"
 PIP_UPGRADE="${PIP_UPGRADE:-true}"
@@ -41,6 +38,14 @@ FRONTEND_PERMISSIONS="755"
 FRONTEND_TARGET=""
 ENV_FILE="${ENV_FILE:-$ROOT_DIR/.env}"
 ENV_BACKUP_DIR="${ENV_BACKUP_DIR:-$ROOT_DIR/.backups}"
+USE_VENV="${USE_VENV:-true}"
+if [[ "$USE_VENV" == "true" ]]; then
+    VENV_DIR="${VENV_DIR:-$BACKEND_CONTEXT/.venv}"
+    VENV_PYTHON="${VENV_PYTHON:-$VENV_DIR/bin/python}"
+else
+    VENV_DIR="${VENV_DIR:-}"
+    VENV_PYTHON="${VENV_PYTHON:-$PYTHON_BIN}"
+fi
 SKIP_FRONTEND="${SKIP_FRONTEND:-false}"
 SKIP_BACKEND="${SKIP_BACKEND:-false}"
 PULL_FIRST="${PULL_FIRST:-true}"
@@ -72,8 +77,9 @@ Environment variables (optional overrides set via the shell environment):
   GIT_BRANCH             Branch to track (default: main)
   BACKEND_CONTEXT        Path to Django backend (default: ./backend)
   REQUIREMENTS_FILE      Pip requirements file (default: backend/requirements.txt)
-  PYTHON_BIN             Python executable used to create the venv (default: python3)
-  VENV_DIR               Virtualenv directory (default: backend/.venv)
+    PYTHON_BIN             Python executable used for backend tasks (default: python3)
+    USE_VENV               true to create/use a virtualenv (default: true)
+    VENV_DIR               Virtualenv directory (default: backend/.venv)
   INSTALL_REQUIREMENTS   true to install backend dependencies (default: true)
   EXTRA_PIP_PACKAGES     Additional pip packages to install (space separated)
   RUN_MIGRATIONS         true to run manage.py migrate (default: true)
@@ -129,7 +135,28 @@ require() {
     fi
 }
 
+resolve_python_bin() {
+    local candidate="$1"
+    if [[ -z "$candidate" ]]; then
+        return 1
+    fi
+    if [[ -x "$candidate" ]]; then
+        printf '%s\n' "$candidate"
+        return 0
+    fi
+    local resolved
+    resolved="$(command -v "$candidate" 2>/dev/null || true)"
+    if [[ -n "$resolved" ]]; then
+        printf '%s\n' "$resolved"
+        return 0
+    fi
+    return 1
+}
+
 ensure_virtualenv() {
+    if [[ "$USE_VENV" != "true" ]]; then
+        return
+    fi
     if [[ "$SKIP_BACKEND" == "true" ]]; then
         return
     fi
@@ -141,66 +168,70 @@ ensure_virtualenv() {
     "$PYTHON_BIN" -m venv "$VENV_DIR"
 }
 
-    install_backend_dependencies() {
-        if [[ "$SKIP_BACKEND" == "true" ]]; then
-            return
-        fi
-        if [[ "$INSTALL_REQUIREMENTS" != "true" ]]; then
-            return
-        fi
-        local pip_bin="$PIP_BIN"
-        if [[ ! -x "$pip_bin" ]]; then
-            err "pip not found at $pip_bin"
-            exit 1
-        fi
-        if [[ ! -f "$REQUIREMENTS_FILE" ]]; then
-            warn "Requirements file not found at $REQUIREMENTS_FILE; skipping install"
-            return
-        fi
-        step "Installing backend dependencies"
-        if [[ "$PIP_UPGRADE" == "true" ]]; then
-            "$pip_bin" install --upgrade pip wheel
-        fi
-        "$pip_bin" install -r "$REQUIREMENTS_FILE"
-        if [[ -n "$EXTRA_PIP_PACKAGES" ]]; then
-            # shellcheck disable=SC2086
-            "$pip_bin" install $EXTRA_PIP_PACKAGES
-        fi
-    }
+install_backend_dependencies() {
+    if [[ "$SKIP_BACKEND" == "true" ]]; then
+        return
+    fi
+    if [[ "$INSTALL_REQUIREMENTS" != "true" ]]; then
+        return
+    fi
+    local python_bin
+    python_bin="$(resolve_python_bin "$VENV_PYTHON" || true)"
+    if [[ -z "$python_bin" ]]; then
+        err "Python executable not found at or via PATH: $VENV_PYTHON"
+        exit 1
+    fi
+    if [[ ! -f "$REQUIREMENTS_FILE" ]]; then
+        warn "Requirements file not found at $REQUIREMENTS_FILE; skipping install"
+        return
+    fi
+    step "Installing backend dependencies"
+    local -a pip_cmd=("$python_bin" -m pip)
+    if [[ "$PIP_UPGRADE" == "true" ]]; then
+        "${pip_cmd[@]}" install --upgrade pip wheel
+    fi
+    "${pip_cmd[@]}" install -r "$REQUIREMENTS_FILE"
+    if [[ -n "$EXTRA_PIP_PACKAGES" ]]; then
+        # shellcheck disable=SC2086
+        "${pip_cmd[@]}" install $EXTRA_PIP_PACKAGES
+    fi
+}
 
-    load_env_vars() {
-        local env_path="$ROOT_DIR/.env"
-        if [[ -f "$env_path" ]]; then
-            set -a
-            # shellcheck disable=SC1090
-            source "$env_path"
-            set +a
-        fi
-    }
+load_env_vars() {
+    local env_path="$ENV_FILE"
+    if [[ -f "$env_path" ]]; then
+        set -a
+        # shellcheck disable=SC1090
+        source "$env_path"
+        set +a
+    fi
+}
 
-    wait_for_database() {
-        if [[ "$WAIT_FOR_DB" != "true" ]]; then
-            return
-        fi
-        if [[ -z "${DB_HOST:-}" ]]; then
-            warn "DB_HOST not set; skipping database wait"
-            return
-        fi
-        if [[ ! -x "$VENV_PYTHON" ]]; then
-            warn "Virtualenv Python not found at $VENV_PYTHON; skipping database wait"
-            return
-        fi
-        if ! "$VENV_PYTHON" -c "import pymysql" >/dev/null 2>&1; then
-            warn "pymysql not available; skipping database wait"
-            return
-        fi
-        local timeout="$DB_WAIT_TIMEOUT"
-        local interval="$DB_WAIT_INTERVAL"
-        local start
-        start=$(date +%s)
-        step "Waiting for database at ${DB_HOST}:${DB_PORT:-3306}"
-        while true; do
-            if "$VENV_PYTHON" - <<'PY'
+wait_for_database() {
+    if [[ "$WAIT_FOR_DB" != "true" ]]; then
+        return
+    fi
+    if [[ -z "${DB_HOST:-}" ]]; then
+        warn "DB_HOST not set; skipping database wait"
+        return
+    fi
+    local python_bin
+    python_bin="$(resolve_python_bin "$VENV_PYTHON" || true)"
+    if [[ -z "$python_bin" ]]; then
+        warn "Python executable unavailable for database wait: $VENV_PYTHON"
+        return
+    fi
+    if ! "$python_bin" -c "import pymysql" >/dev/null 2>&1; then
+        warn "pymysql not available; skipping database wait"
+        return
+    fi
+    local timeout="$DB_WAIT_TIMEOUT"
+    local interval="$DB_WAIT_INTERVAL"
+    local start
+    start=$(date +%s)
+    step "Waiting for database at ${DB_HOST}:${DB_PORT:-3306}"
+    while true; do
+        if "$python_bin" - <<'PY'
     import os
     import pymysql
 
@@ -218,107 +249,108 @@ ensure_virtualenv() {
     except Exception as exc:
         raise SystemExit(1) from exc
 PY
-            then
-                break
-            fi
-            local now
-            now=$(date +%s)
-            if (( now - start >= timeout )); then
-                err "Database did not become ready within ${timeout}s"
-                exit 1
-            fi
-            sleep "$interval"
-        done
-    }
-
-    run_manage() {
-        local python_bin="$VENV_PYTHON"
-        if [[ ! -x "$python_bin" ]]; then
-            err "Python executable not found at $python_bin"
+        then
+            break
+        fi
+        local now
+        now=$(date +%s)
+        if (( now - start >= timeout )); then
+            err "Database did not become ready within ${timeout}s"
             exit 1
         fi
-        if [[ ! -f "$MANAGE_PY" ]]; then
-            err "manage.py not found at $MANAGE_PY"
-            exit 1
-        fi
-        (cd "$BACKEND_CONTEXT" && "$python_bin" "$MANAGE_PY" "$@")
-    }
+        sleep "$interval"
+    done
+}
 
-    apply_migrations() {
-        if [[ "$RUN_MIGRATIONS" != "true" ]]; then
-            return
-        fi
-        step "Applying database migrations"
-        local args=()
-        if [[ -n "$MIGRATION_FLAGS" ]]; then
-            # shellcheck disable=SC2206
-            args=($MIGRATION_FLAGS)
-        fi
-        run_manage migrate "${args[@]}"
-    }
+run_manage() {
+    local python_bin
+    python_bin="$(resolve_python_bin "$VENV_PYTHON" || true)"
+    if [[ -z "$python_bin" ]]; then
+        err "Python executable not found at or via PATH: $VENV_PYTHON"
+        exit 1
+    fi
+    if [[ ! -f "$MANAGE_PY" ]]; then
+        err "manage.py not found at $MANAGE_PY"
+        exit 1
+    fi
+    (cd "$BACKEND_CONTEXT" && "$python_bin" "$MANAGE_PY" "$@")
+}
 
-    run_seed_command() {
-        if [[ "$RUN_SEED" != "true" ]]; then
-            return
-        fi
-        if [[ -z "$SEED_COMMAND" ]]; then
-            return
-        fi
-        step "Running seed command ($SEED_COMMAND)"
-        # shellcheck disable=SC2086
-        run_manage $SEED_COMMAND
-    }
+apply_migrations() {
+    if [[ "$RUN_MIGRATIONS" != "true" ]]; then
+        return
+    fi
+    step "Applying database migrations"
+    local args=()
+    if [[ -n "$MIGRATION_FLAGS" ]]; then
+        # shellcheck disable=SC2206
+        args=($MIGRATION_FLAGS)
+    fi
+    run_manage migrate "${args[@]}"
+}
 
-    collect_static() {
-        if [[ "$RUN_COLLECTSTATIC" != "true" ]]; then
-            return
-        fi
-        step "Collecting static files"
-        local args=()
-        if [[ -n "$COLLECTSTATIC_ARGS" ]]; then
-            # shellcheck disable=SC2206
-            args=($COLLECTSTATIC_ARGS)
-        fi
-        run_manage collectstatic "${args[@]}"
-    }
+run_seed_command() {
+    if [[ "$RUN_SEED" != "true" ]]; then
+        return
+    fi
+    if [[ -z "$SEED_COMMAND" ]]; then
+        return
+    fi
+    step "Running seed command ($SEED_COMMAND)"
+    # shellcheck disable=SC2086
+    run_manage $SEED_COMMAND
+}
 
-    restart_backend_service() {
-        if [[ -z "$RESTART_COMMAND" ]]; then
-            return
-        fi
-        step "Restarting backend service"
-        bash -c "$RESTART_COMMAND"
-    }
+collect_static() {
+    if [[ "$RUN_COLLECTSTATIC" != "true" ]]; then
+        return
+    fi
+    step "Collecting static files"
+    local args=()
+    if [[ -n "$COLLECTSTATIC_ARGS" ]]; then
+        # shellcheck disable=SC2206
+        args=($COLLECTSTATIC_ARGS)
+    fi
+    run_manage collectstatic "${args[@]}"
+}
 
-    run_backend_pipeline() {
-        if [[ "$SKIP_BACKEND" == "true" ]]; then
-            warn "Skipping backend tasks (SKIP_BACKEND=true)"
-            return
-        fi
-        ensure_virtualenv
-        install_backend_dependencies
-        load_env_vars
-        wait_for_database
-        apply_migrations
-        run_seed_command
-        collect_static
-        restart_backend_service
-    }
+restart_backend_service() {
+    if [[ -z "$RESTART_COMMAND" ]]; then
+        return
+    fi
+    step "Restarting backend service"
+    bash -c "$RESTART_COMMAND"
+}
 
-    check_backend_status() {
-        if [[ "$SKIP_BACKEND" == "true" ]]; then
-            warn "Backend tasks skipped; nothing to check"
-            return
-        fi
-        ensure_virtualenv
-        load_env_vars
-        step "Running Django system check"
-        run_manage check --deploy
-        if [[ -n "$STATUS_COMMAND" ]]; then
-            step "Running custom status command"
-            bash -c "$STATUS_COMMAND"
-        fi
-    }
+run_backend_pipeline() {
+    if [[ "$SKIP_BACKEND" == "true" ]]; then
+        warn "Skipping backend tasks (SKIP_BACKEND=true)"
+        return
+    fi
+    ensure_virtualenv
+    install_backend_dependencies
+    load_env_vars
+    wait_for_database
+    apply_migrations
+    run_seed_command
+    collect_static
+    restart_backend_service
+}
+
+check_backend_status() {
+    if [[ "$SKIP_BACKEND" == "true" ]]; then
+        warn "Backend tasks skipped; nothing to check"
+        return
+    fi
+    ensure_virtualenv
+    load_env_vars
+    step "Running Django system check"
+    run_manage check --deploy
+    if [[ -n "$STATUS_COMMAND" ]]; then
+        step "Running custom status command"
+        bash -c "$STATUS_COMMAND"
+    fi
+}
 
 git_refresh() {
     if [[ "$PULL_FIRST" != "true" ]]; then
@@ -427,7 +459,7 @@ auto_action() {
         echo "bootstrap"
         return
     fi
-    if [[ ! -d "$VENV_DIR" ]]; then
+    if [[ "$USE_VENV" == "true" && ! -d "$VENV_DIR" ]]; then
         echo "bootstrap"
         return
     fi
@@ -435,10 +467,16 @@ auto_action() {
 }
 
 print_next_steps() {
+        local backend_runtime
+        if [[ "$USE_VENV" == "true" ]]; then
+                backend_runtime="${VENV_DIR:-<missing>}"
+        else
+                backend_runtime="system python ($VENV_PYTHON)"
+        fi
     cat <<EOF
 
 Next steps:
-  - Backend virtualenv: $VENV_DIR
+    - Backend runtime: $backend_runtime
   - Restart command run: ${RESTART_COMMAND:-<none>}
   - Frontend assets synced to: ${FRONTEND_TARGET:-<skipped>}
 EOF
