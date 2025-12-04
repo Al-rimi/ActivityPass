@@ -37,10 +37,22 @@ fi
 VENV_PATH="${SCRIPT_DIR}/.venv"
 PY_BIN="$VENV_PATH/bin/python"
 PIP_BIN="$VENV_PATH/bin/pip"
+SYSTEM_PYTHON="$(command -v python3 || command -v python || true)"
+
+if [ -z "$SYSTEM_PYTHON" ]; then
+    warn "No system python interpreter found; cannot create virtualenv"
+    exit 1
+fi
+
+refresh_venv() {
+    local reason="$1"
+    warn "$reason"
+    rm -rf "$VENV_PATH"
+    "$SYSTEM_PYTHON" -m venv "$VENV_PATH"
+}
 
 if [ ! -f "$VENV_PATH/bin/activate" ]; then
-    warn "Virtualenv activate script missing; creating fresh venv"
-    python -m venv "$VENV_PATH"
+    refresh_venv "Virtualenv activate script missing; creating fresh venv"
 fi
 
 log "Activating virtualenv at $VENV_PATH"
@@ -50,10 +62,9 @@ source "$VENV_PATH/bin/activate"
 log "VIRTUAL_ENV=$VIRTUAL_ENV"
 log "PATH=$PATH"
 
-if [ ! -x "$PY_BIN" ]; then
-    warn "Virtualenv python missing; recreating venv"
+if [ ! -x "$PY_BIN" ] || ! "$PY_BIN" -c "import sys" >/dev/null 2>&1; then
     deactivate 2>/dev/null || true
-    python -m venv "$VENV_PATH"
+    refresh_venv "Virtualenv python missing or broken; recreating venv"
     # shellcheck disable=SC1090
     source "$VENV_PATH/bin/activate"
 fi
