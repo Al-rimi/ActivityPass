@@ -12,8 +12,22 @@ WORKDIR /app
 RUN --mount=type=cache,target=/var/cache/apt \
     --mount=type=cache,target=/var/lib/apt \
     set -eux; \
-    sed -i "s|http://deb.debian.org/debian|${DEBIAN_MIRROR}|g" /etc/apt/sources.list; \
-    sed -i "s|http://security.debian.org/debian-security|${DEBIAN_SECURITY_MIRROR}|g" /etc/apt/sources.list || true; \
+    if [ -f /etc/apt/sources.list ]; then \
+        sed -i "s|http://deb.debian.org/debian|${DEBIAN_MIRROR}|g" /etc/apt/sources.list; \
+    else \
+        printf 'deb %s bookworm main\n' "${DEBIAN_MIRROR}" > /etc/apt/sources.list; \
+        printf 'deb %s bookworm-updates main\n' "${DEBIAN_MIRROR}" >> /etc/apt/sources.list; \
+        printf 'deb %s bookworm-security main\n' "${DEBIAN_SECURITY_MIRROR}" >> /etc/apt/sources.list; \
+    fi; \
+    if [ -d /etc/apt/sources.list.d ]; then \
+        find /etc/apt/sources.list.d -type f -name '*.list' -print0 | xargs -0 -r sed -i "s|http://deb.debian.org/debian|${DEBIAN_MIRROR}|g" || true; \
+    fi; \
+    if [ -f /etc/apt/sources.list ]; then \
+        sed -i "s|http://security.debian.org/debian-security|${DEBIAN_SECURITY_MIRROR}|g" /etc/apt/sources.list || true; \
+    fi; \
+    if [ -d /etc/apt/sources.list.d ]; then \
+        find /etc/apt/sources.list.d -type f -name '*.list' -print0 | xargs -0 -r sed -i "s|http://security.debian.org/debian-security|${DEBIAN_SECURITY_MIRROR}|g" || true; \
+    fi; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
     bash \
