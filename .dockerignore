@@ -1,0 +1,4 @@
+# Limit backend image build context to backend code only
+**
+!backend/
+!backend/**

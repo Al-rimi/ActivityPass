@@ -1,0 +1,10 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.pytest_cache
+.venv
+media
+media/**
+staticfiles
+staticfiles/**
