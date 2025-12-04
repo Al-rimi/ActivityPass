@@ -275,23 +275,13 @@ python manage.py init_app
 - [ ] Configure log rotation and monitoring
 - [ ] Setup backup strategy for database
 
-### Docker Deployment (Future)
+### Deploying with Docker + 1Panel
 
-```yaml
-# docker-compose.yml (planned)
-version: "3.8"
-services:
-  db:
-    image: mysql:8.0
-    environment:
-      MYSQL_DATABASE: activitypass
-  backend:
-    build: ./backend
-    environment:
-      - DJANGO_DEBUG=false
-  frontend:
-    build: ./frontend
-```
+- Use `scripts/sh/deploy.sh` for both bootstrap and updates (see `README_DEPLOYMENT.md`).
+- Copy `deploy.env.example` to `deploy.env` and adjust image name, branch, and frontend target directory as needed.
+- `./scripts/sh/deploy.sh bootstrap` builds `activitypass-backend:<git-sha>` and (optionally) syncs the Vite build to the configured web root.
+- `./scripts/sh/deploy.sh update` pulls latest code, rebuilds the backend image, and resyncs the frontend bundle.
+- Configure your 1Panel runtime to use the `activitypass-backend:latest` image and mirror the `.env` values.
 
 ## Contributing
 

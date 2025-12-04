@@ -1,254 +1,148 @@
 # ActivityPass Deployment Guide
 
-## Overview
+Updated for the backend-only Docker build and the new unified deployment tooling.
 
-This guide explains how to deploy and update ActivityPass on your server using the automated scripts.
+---
 
-## How `run_all.py` Works
+## Local Development (`run_all.py` recap)
 
-The `run_all.py` script (for local development) handles:
+`run_all.py` is still the fastest way to bootstrap a development environment. The script now delegates the heavy lifting to reusable helpers in `scripts/automation/`, but the flow is unchanged:
 
-1. **Environment Setup**: Checks for `.env` file
+1. Ensure `.env` exists (prompts for database credentials on first run).
+2. Create `backend/.venv` and install Python requirements.
+3. Run `manage.py init_app` (migrations + seed data).
+4. Optionally install frontend dependencies, build the production bundle, or launch the dev server.
 
-   - If no `.env` exists, prompts for MySQL credentials
-   - Reads `.env.example` and replaces:
-     - `DB_USER=root` → user input
-     - `DB_PASSWORD=your-password-here` → user input
-     - `DJANGO_SECRET_KEY=change-me-example` → generated random key
-   - **Note**: Does NOT handle `VITE_AMAP_KEY` - remains as placeholder
+You can invoke it exactly as before:
 
-2. **Virtual Environment**: Creates Python venv in `backend/.venv`
+```bash
+python run_all.py --host 0.0.0.0 --port 8000
+python run_all.py --skip-seed --no-frontend
+```
 
-3. **Dependencies**: Installs Python packages from `requirements.txt`
+---
 
-4. **Database**: Runs Django migrations
+## Production Deployment Overview
 
-5. **Frontend**: Installs npm packages and builds/serves React app
+`scripts/sh/deploy.sh` is now the single entry point for server deployments. It exposes explicit sub-commands and reads optional overrides from `deploy.env` (copy `deploy.env.example`).
 
-## Server Deployment Process
+Highlights:
 
-### Initial Deployment
+- Backend Dockerfile lives in `backend/Dockerfile`; the build context is the `backend/` folder only.
+- Repository-level `.dockerignore` keeps the frontend and tooling out of the Docker context.
+- Frontend deployment is optional—only runs when `FRONTEND_TARGET` is configured.
+- Every build produces the tags `activitypass-backend:<git-sha>` and `activitypass-backend:latest`, ideal for 1Panel refreshes.
 
-1. **Transfer files to server**:
+---
 
+## One-Time Server Setup
+
+1. **Clone or update the repository** to the desired location (e.g. `/www/wwwroot/activitypass`).
+
+2. **Prepare deployment settings**:
    ```bash
-   scp scripts/sh/deploy.sh root@120.55.94.224:/root/
-   scp scripts/sh/update.sh root@120.55.94.224:/root/
-   scp scripts/sh/status.sh root@120.55.94.224:/root/
+   cd /www/wwwroot/activitypass
+   cp deploy.env.example deploy.env
    ```
+   Adjust any values you need—image name, frontend target directory, nginx user, etc. Leave a variable unset to stick with the default.
 
-2. **On server, run initial deployment**:
+3. **Verify environment variables**:
+   - Ensure `.env` exists before the first deployment (copy `.env.example` and edit, or let the script create it and then tweak credentials).
+   - Confirm your database is reachable (`DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`).
 
+4. **Bootstrap build artefacts**:
    ```bash
-   cd /www/wwwroot
-   sudo mkdir -p activitypass
-   sudo chown $USER:$USER activitypass
-   cd activitypass
-
-   # Clone repository
-   git clone https://github.com/Al-rimi/ActivityPass.git .
-
-   # Make scripts executable (use sudo if permission denied)
-   chmod +x scripts/sh/deploy.sh scripts/sh/update.sh scripts/sh/status.sh || sudo chmod +x scripts/sh/deploy.sh scripts/sh/update.sh scripts/sh/status.sh
-
-   # Run deployment
-   ./scripts/sh/deploy.sh
+   chmod +x scripts/sh/deploy.sh
+   ./scripts/sh/deploy.sh bootstrap
    ```
+   This will:
+   - Create `.env` if missing and generate a strong `DJANGO_SECRET_KEY`.
+   - Build the backend Docker image (`activitypass-backend:<git-sha>` + `latest`).
+   - Install frontend dependencies and run `npm run build` (skip by setting `SKIP_FRONTEND=true`).
+   - Sync the Vite build output to `FRONTEND_TARGET` when configured (handy for 1Panel nginx sites).
 
-3. **What deploy.sh does** (1Panel-optimized):
-   - Automatically detects 1Panel directory structure (`/www/wwwroot/`)
-   - Installs Node.js and MariaDB
-   - Prompts for database configuration
-   - Prompts for AMap API key (optional)
-   - Sets up Python virtual environment
-   - Installs dependencies and runs migrations
-   - Builds React frontend
-   - Creates 1Panel-compatible directory structure with `public/` folder
-   - Creates `start.sh`, `stop.sh`, and `health.sh` scripts for 1Panel management
-   - Sets proper permissions for 1Panel
+5. **Finish configuration inside 1Panel**:
+   - Point your runtime/container to the freshly built `activitypass-backend:latest` image.
+   - Mirror the `.env` settings in 1Panel (database credentials, allowed hosts, etc.).
+   - If you copied frontend assets, set the website root to `FRONTEND_TARGET` and make sure SPA routing falls back to `index.html`.
 
-### Environment Variables Setup
+---
 
-The deployment script handles these variables:
+## Fast Code Updates
 
-- **Database**: `DB_NAME`, `DB_USER`, `DB_PASSWORD`
-- **Security**: `DJANGO_SECRET_KEY` (auto-generated)
-- **Debug**: `DJANGO_DEBUG=false` (production)
-- **Hosts**: `DJANGO_ALLOWED_HOSTS` (needs manual update)
-- **Maps**: `VITE_AMAP_KEY` (optional, prompted during setup)
-
-### Update Process
-
-For future updates, simply run:
+When you push new commits, log in to your server and run:
 
 ```bash
 cd /www/wwwroot/activitypass
-./scripts/sh/update.sh
+./scripts/sh/deploy.sh update
 ```
 
-**What update.sh does**:
+`update` performs:
 
-1. **Git Pull**: Gets latest changes from repository
-2. **Backup .env**: Preserves current configuration
-3. **Update Dependencies**: Python and Node.js packages
-4. **Database Migrations**: Applies any new migrations
-5. **Rebuild Frontend**: Creates new production build
-6. **Restart Services**: Reloads Django and Nginx
-7. **Cleanup**: Removes old backups (keeps last 5)
+1. `git fetch` + `git reset --hard origin/<branch>` (disable with `PULL_FIRST=false`).
+2. Optional `.env` backup with a timestamp suffix (`BACKUP_ENV=true`).
+3. Backend Docker rebuild and retag.
+4. Frontend rebuild and sync if `FRONTEND_TARGET` is set and `SKIP_FRONTEND` is false.
+5. Summary of what changed and reminders to redeploy the container in 1Panel.
 
-## File Structure After Deployment
+Additional commands:
 
-```
-/www/wwwroot/activitypass/
-├── .env                    # Environment configuration
-├── .env.backup.*          # Backup files (created during updates)
-├── public/                # 1Panel website root directory
-│   ├── index.html         # React app entry point
-│   ├── static/ -> ../backend/static/  # Django static files
-│   └── media/ -> ../backend/media/    # Django media files
-├── backend/               # Django application
-│   ├── .venv/            # Python virtual environment
-│   ├── static/           # Collected static files
-│   └── media/            # User uploaded files
-├── frontend/
-│   ├── build/            # Production React build
-│   └── node_modules/     # Node.js dependencies
-├── start.sh              # 1Panel start script
-├── stop.sh               # 1Panel stop script
-├── health.sh             # 1Panel health check
-├── scripts/
-│   └── sh/
-│       ├── deploy.sh     # Deployment script
-│       ├── update.sh     # Update script
-│       └── status.sh     # Status check script
-└── 1panel_integration.md # 1Panel configuration guide
-```
+- `./scripts/sh/deploy.sh backend` — rebuild image only.
+- `./scripts/sh/deploy.sh frontend` — rebuild & sync frontend bundle only.
+- `./scripts/sh/deploy.sh status` — quick Docker overview for the configured container name.
+- `./scripts/sh/deploy.sh help` — full usage details and environment variable overrides.
 
-## Services Configuration
+Tip: If you prefer to manage `git pull` manually on the server, set `PULL_FIRST=false` in `deploy.env` and the script will respect your working tree.
 
-### Django Backend (Port 8000)
+---
 
-- **Management**: 1Panel application manager
-- **Start Script**: `/www/wwwroot/activitypass/start.sh`
-- **Stop Script**: `/www/wwwroot/activitypass/stop.sh`
-- **Health Check**: `/www/wwwroot/activitypass/health.sh`
-- **Working Directory**: `/www/wwwroot/activitypass/backend`
-- **Virtual Environment**: `/www/wwwroot/activitypass/backend/.venv`
+## Backend Image Notes
 
-### Nginx (Port 80) - Managed by 1Panel
+- Base image: `python:3.12-slim` with `bash`, `gcc`, and MySQL headers installed.
+- Entry point: `backend/entrypoint.sh` (Gunicorn + migrations + optional seeding).
+- Build context: only `backend/` thanks to both `backend/.dockerignore` and the top-level `.dockerignore`.
+- Consider pushing the `activitypass-backend:<git-sha>` tag to your private registry if you want 1Panel to pull instead of building locally.
 
-- **Configuration**: Managed through 1Panel web interface
-- **Website Root**: `/www/wwwroot/activitypass/public/`
-- **API Proxy**: Configured in 1Panel reverse proxy rules
-- **Static Files**: Served directly by Nginx through 1Panel
+---
 
-## 1Panel Integration
+## Frontend Publishing Tips
 
-After deployment, follow the `1panel_integration.md` guide to:
+- Set `FRONTEND_TARGET` in `deploy.env` (e.g. `/opt/1panel/apps/openresty/openresty/www/sites/activitypass/index`).
+- Use `FRONTEND_OWNER` to match your web server user (`www-data:www-data`, `nginx:nginx`, etc.).
+- The script prefers `rsync`; if unavailable it falls back to `cp` after clearing the directory.
+- Configure nginx/1Panel to:
+  - Serve the frontend from `FRONTEND_TARGET`.
+  - Proxy `/api/` to the backend container on port 8000.
+  - Route unknown paths to `/index.html` (`try_files $uri $uri/ /index.html;`).
 
-1. Add ActivityPass as a website in 1Panel
-2. Configure reverse proxy rules
-3. Set up SSL certificates
-4. Configure monitoring and backups
-
-## Access URLs
-
-- **Main Application**: `http://your-server-ip/`
-- **API Endpoints**: `http://your-server-ip/api/`
-- **Admin Panel**: `http://your-server-ip/admin/`
-- **Health Check**: `http://your-server-ip/health/`
-
-## Default Credentials
-
-- **Admin User**: `admin`
-- **Admin Password**: `admin123` (change immediately!)
-
-## Security Checklist
-
-- [ ] Update `DJANGO_ALLOWED_HOSTS` with actual domain/IP
-- [ ] Change default admin password
-- [ ] Set up SSL/HTTPS certificates
-- [ ] Configure firewall rules
-- [ ] Set up log rotation
-- [ ] Enable 1Panel monitoring
-- [ ] Configure automated backups
+---
 
 ## Troubleshooting
 
-### Common Issues
+| Symptom | Suggested Checks |
+| --- | --- |
+| `deploy.sh` complains about missing commands | Ensure `docker`, `npm`, `git`, and `sudo` are available on the PATH. |
+| `docker build` cannot find files | Keep the repository layout intact (`backend/requirements.txt`, `backend/manage.py`, etc.). |
+| Frontend sync skipped | `FRONTEND_TARGET` not set or `SKIP_FRONTEND=true`. Update `deploy.env`. |
+| 1Panel still uses the old image | Redeploy or restart the runtime so it pulls `activitypass-backend:latest` (or use the explicit `<git-sha>` tag printed in the summary). |
+| Local changes lost after update | `update` runs `git reset --hard`. Disable with `PULL_FIRST=false` if you need a dirty worktree. |
 
-1. **Permission Errors**:
+For verbose debugging you can run `bash -x scripts/sh/deploy.sh <command>`.
 
-   ```bash
-   sudo chown -R $USER:$USER /www/wwwroot/activitypass
-   sudo chown -R www-data:www-data /www/wwwroot/activitypass 2>/dev/null || true
-   ```
+---
 
-2. **Script Permission Errors**:
+## Security Checklist
 
-   ```bash
-   # If chmod fails with "Operation not permitted"
-   sudo chmod +x scripts/sh/deploy.sh scripts/sh/update.sh scripts/sh/status.sh
-   ```
+- Update `DJANGO_ALLOWED_HOSTS` in `.env` for your domains.
+- Rotate default admin credentials immediately after bootstrap.
+- Configure HTTPS/SSL via 1Panel and enforce it at the proxy layer.
+- Schedule automated backups for your MySQL data and the `.env` file.
+- Monitor container logs from within 1Panel after each deployment.
 
-3. **MySQL Port 3306 Already in Use**:
+---
 
-   If you see "Bind on TCP/IP port. Got error: 98: Address already in use", it means port 3306 is already occupied by a 1Panel MySQL container. The deployment script will automatically detect and use the existing MySQL service.
+## Need Help?
 
-   ```bash
-   # Check what's using port 3306
-   sudo netstat -tlnp | grep :3306
-
-   # If it's a Docker container, the script will handle it automatically
-   sudo docker ps | grep mysql
-   ```
-
-   **1Panel MySQL Default Credentials**:
-
-   - Root Password: Often empty or "1panel"
-   - Host: 127.0.0.1
-   - Port: 3306
-
-4. **Database Connection**:
-
-   ```bash
-   sudo systemctl status mariadb
-   mysql -u activitypass -p activitypass -e "SELECT 1;"
-   ```
-
-5. **Backend Not Starting**:
-
-   ```bash
-   cd /www/wwwroot/activitypass
-   ./health.sh
-   ./start.sh
-   ```
-
-6. **1Panel Configuration Issues**:
-   - Check 1Panel website configuration
-   - Verify reverse proxy rules
-   - Ensure correct root directory: `/www/wwwroot/activitypass/public/`
-
-### Logs
-
-- **Django Backend**: Check through 1Panel application logs or run `./health.sh` for status
-- **Nginx**: Check through 1Panel website logs
-- **System**: Check through 1Panel system monitoring
-- **Application Logs**: May be available in `/www/wwwroot/activitypass/backend/logs/` (if configured)
-
-## Update Frequency
-
-- Run `./scripts/sh/update.sh` whenever you push changes to the repository
-- The script safely preserves your `.env` configuration
-- Automatic backups ensure you can rollback if needed
-
-## Support
-
-If you encounter issues:
-
-1. Check the application status: `./scripts/sh/status.sh`
-2. Verify all services are running through 1Panel interface
-3. Test database connectivity
-4. Check file permissions on `/www/wwwroot/activitypass/`
-5. Review 1Panel website and application configurations
-6. Check 1Panel system logs and monitoring
+- `./scripts/sh/deploy.sh help` — full list of flags and environment variables.
+- `./scripts/sh/deploy.sh status` — confirm the backend container is running with the expected image.
+- Re-run `bootstrap` in a clean clone to rebuild artefacts without touching the live container if you need to troubleshoot offline.
