@@ -18,8 +18,15 @@ import warnings
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Load environment variables from .env if present
-load_dotenv(BASE_DIR.parent / '.env')
+# Load environment variables from .env if present (support both repo root and backend root)
+ENV_LOCATIONS = [
+    BASE_DIR / '.env',
+    BASE_DIR.parent / '.env',
+]
+for env_path in ENV_LOCATIONS:
+    if env_path.exists():
+        load_dotenv(env_path)
+        break
 
 
 # Quick-start development settings - unsuitable for production
