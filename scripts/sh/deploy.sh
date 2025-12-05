@@ -48,6 +48,11 @@ if [ -z "$DOMAIN_NAME" ]; then
     read -p "Enter domain name: " DOMAIN_NAME
 fi
 
+read -p "Enter SPA sub-path (leave empty for root): " SPA_SUBPATH_RAW
+SPA_SUBPATH_RAW=${SPA_SUBPATH_RAW// /}
+SPA_SUBPATH=${SPA_SUBPATH_RAW#/}
+SPA_SUBPATH=${SPA_SUBPATH%/}
+
 # Ask for deployment folder name (alias)
 print_step "Configuring deployment..."
 ALIAS="$DOMAIN_NAME"
@@ -55,10 +60,20 @@ ALIAS="$DOMAIN_NAME"
 # Determine the deployment directories
 DEPLOY_DIR="/www/wwwroot/activitypass"
 SITES_DIR="/opt/1panel/apps/openresty/openresty/www/sites"
-FRONTEND_DEPLOY_DIR="${SITES_DIR}/${ALIAS}/index"
+
+if [ -n "$SPA_SUBPATH" ]; then
+    FRONTEND_BASE_PATH="/${SPA_SUBPATH}/"
+    FRONTEND_DEPLOY_DIR="${SITES_DIR}/${ALIAS}/index/${SPA_SUBPATH}"
+    NGINX_SPA_LOCATION="/${SPA_SUBPATH}/"
+else
+    FRONTEND_BASE_PATH="/"
+    FRONTEND_DEPLOY_DIR="${SITES_DIR}/${ALIAS}/index"
+    NGINX_SPA_LOCATION="/"
+fi
 
 print_status "Alias: $ALIAS"
 print_status "Backend will be deployed to: $DEPLOY_DIR"
+print_status "Frontend base path: $FRONTEND_BASE_PATH"
 print_status "Frontend will be deployed to: $FRONTEND_DEPLOY_DIR"
 
 # Create deployment directories
@@ -283,6 +298,7 @@ DB_PORT=3306
 CORS_ALLOW_ALL=true
 VITE_AMAP_KEY=your-amap-key-here
 DOMAIN_NAME=your-domain-here
+VITE_BASE_PATH=/
 EOF
 fi
 
@@ -314,6 +330,12 @@ if [ -n "$AMAP_KEY" ]; then
     sed -i "s|VITE_AMAP_KEY=.*|VITE_AMAP_KEY=$AMAP_KEY|" .env
 fi
 
+if grep -q "^VITE_BASE_PATH=" .env; then
+    sed -i "s|VITE_BASE_PATH=.*|VITE_BASE_PATH=$FRONTEND_BASE_PATH|" .env
+else
+    echo "VITE_BASE_PATH=$FRONTEND_BASE_PATH" >> .env
+fi
+
 # Update DOMAIN_NAME
 sed -i "s/DOMAIN_NAME=.*/DOMAIN_NAME=$DOMAIN_NAME/" .env
 if ! grep -q "^DOMAIN_NAME=" .env; then
@@ -343,6 +365,11 @@ fi
 print_status "Environment configuration completed"
 
 # Setup backend
+# Helper to run backend manage.py commands with host-resolvable DB host
+run_backend_cmd() {
+    DB_HOST="$HOST_DB_HOST" "$PYTHON_CMD" "$@"
+}
+
 print_step "Setting up Python backend..."
 $PYTHON_CMD -m venv backend/.venv
 source backend/.venv/bin/activate
@@ -370,10 +397,6 @@ for i in {1..3}; do
         sleep 5
     fi
 done
-
-run_backend_cmd() {
-    DB_HOST="$HOST_DB_HOST" "$PYTHON_CMD" "$@"
-}
 
 print_status "Initializing application (migrations + seeding + superuser)..."
 if run_backend_cmd manage.py init_app; then
@@ -414,11 +437,12 @@ cd frontend
 # Skip puppeteer browser download to avoid network timeouts
 export PUPPETEER_SKIP_DOWNLOAD=true
 npm install
-npm run build
+VITE_BASE_PATH="$FRONTEND_BASE_PATH" npm run build
 cd ..
 
 # Deploy frontend to 1Panel sites directory
 print_step "Deploying frontend to 1Panel sites directory..."
+"${SUDO[@]}" rm -rf "$FRONTEND_DEPLOY_DIR"/*
 "${SUDO[@]}" cp -r frontend/build/* "$FRONTEND_DEPLOY_DIR/"
 "${SUDO[@]}" chown -R www-data:www-data "$FRONTEND_DEPLOY_DIR" 2>/dev/null || "${SUDO[@]}" chown -R nginx:nginx "$FRONTEND_DEPLOY_DIR" 2>/dev/null || "${SUDO[@]}" chown -R $USER:$USER "$FRONTEND_DEPLOY_DIR"
 "${SUDO[@]}" chmod -R 755 "$FRONTEND_DEPLOY_DIR"
@@ -444,12 +468,22 @@ print_status "     - Root Directory: /www/wwwroot/activitypass/backend"
 print_status "     - Startup Command: bash start_runtime.sh"
 print_status ""
 print_status "Nginx configuration:"
-print_status "   - Add this location block for SPA routing (before the root directive):"
-print_status "     location / {"
-print_status "         try_files \$uri \$uri/ /index.html;"
-print_status "     }"
-print_status "   - Update the API proxy location:"
-print_status "     location /api/ {"
+if [ "$FRONTEND_BASE_PATH" = "/" ]; then
+    print_status "   - Add this location block for SPA routing (before the root directive):"
+    print_status "     location / {"
+    print_status "         try_files \$uri \$uri/ /index.html;"
+    print_status "     }"
+    print_status "   - Update the API proxy location:"
+    print_status "     location /api/ {"
+else
+    print_status "   - Add this location block for SPA routing (before the root directive):"
+    print_status "     location $NGINX_SPA_LOCATION {"
+    print_status "         alias ${FRONTEND_DEPLOY_DIR}/;"
+    print_status "         try_files \$uri \$uri/ ${FRONTEND_BASE_PATH}index.html;"
+    print_status "     }"
+    print_status "   - Update the API proxy location:"
+    print_status "     location ${NGINX_SPA_LOCATION}api/ {"
+fi
 print_status "         proxy_pass http://activitypass-backend:8000;"
 print_status "         proxy_set_header Host \$host;"
 print_status "         proxy_set_header X-Real-IP \$remote_addr;"
