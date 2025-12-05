@@ -31,10 +31,11 @@ print_step() {
     echo -e "${BLUE}[STEP]${NC} $1"
 }
 
-# Check if running as root
+# Determine privilege escalation command
 if [[ $EUID -eq 0 ]]; then
-   print_error "This script should not be run as root. Please run as a regular user with sudo access."
-   exit 1
+    SUDO=()
+else
+    SUDO=(sudo)
 fi
 
 # Check for existing domain name in .env
@@ -62,18 +63,18 @@ print_status "Frontend will be deployed to: $FRONTEND_DEPLOY_DIR"
 
 # Create deployment directories
 print_step "Creating deployment directories..."
-sudo mkdir -p "$FRONTEND_DEPLOY_DIR"
-sudo chown -R $USER:$USER "$FRONTEND_DEPLOY_DIR"
+"${SUDO[@]}" mkdir -p "$FRONTEND_DEPLOY_DIR"
+"${SUDO[@]}" chown -R $USER:$USER "$FRONTEND_DEPLOY_DIR"
 
 # Update system and install dependencies
 print_step "Installing system dependencies..."
-sudo dnf update -y
+"${SUDO[@]}" dnf update -y
 
 # Install Node.js
 if ! command -v node &> /dev/null; then
     print_status "Installing Node.js..."
-    curl -fsSL https://rpm.nodesource.com/setup_lts.x | sudo bash -
-    sudo dnf install -y nodejs
+    curl -fsSL https://rpm.nodesource.com/setup_lts.x | "${SUDO[@]}" bash -
+    "${SUDO[@]}" dnf install -y nodejs
     print_status "Node.js installed: $(node --version)"
 else
     print_status "Node.js already installed: $(node --version)"
@@ -97,24 +98,24 @@ else
     if [[ "$OS_NAME" == "centos" ]] && [[ "$OS_VERSION" -ge 8 ]]; then
         # CentOS 8+ has python38 in appstream
         print_status "Installing Python 3.8 on CentOS $OS_VERSION..."
-        sudo dnf install -y python38 python38-pip python38-devel
+        "${SUDO[@]}" dnf install -y python38 python38-pip python38-devel
         PYTHON_CMD="python3.8"
     elif [[ "$OS_NAME" == "rocky" ]] || [[ "$OS_NAME" == "almalinux" ]]; then
         # Rocky Linux/AlmaLinux 8+
         print_status "Installing Python 3.8 on $OS_NAME $OS_VERSION..."
-        sudo dnf install -y python38 python38-pip python38-devel
+        "${SUDO[@]}" dnf install -y python38 python38-pip python38-devel
         PYTHON_CMD="python3.8"
     elif [[ "$OS_NAME" == "centos" ]] && [[ "$OS_VERSION" -eq 7 ]]; then
         # CentOS 7 - use SCL
         print_status "Installing Python 3.8 via SCL on CentOS 7..."
-        sudo yum install -y centos-release-scl
-        sudo yum install -y rh-python38 rh-python38-python-pip rh-python38-python-devel
+        "${SUDO[@]}" yum install -y centos-release-scl
+        "${SUDO[@]}" yum install -y rh-python38 rh-python38-python-pip rh-python38-python-devel
         source /opt/rh/rh-python38/enable
         PYTHON_CMD="python3.8"
     else
         # Try generic python38 package
         print_status "Trying to install python38 package..."
-        if sudo dnf install -y python38 python38-pip python38-devel 2>/dev/null; then
+        if "${SUDO[@]}" dnf install -y python38 python38-pip python38-devel 2>/dev/null; then
             PYTHON_CMD="python3.8"
         else
             print_error "Unable to install Python 3.8+. Please upgrade your system Python manually to version 3.8 or higher."
@@ -132,21 +133,21 @@ MYSQL_RUNNING=false
 MYSQL_CONTAINER=""
 
 # Check if system MariaDB/MySQL is running
-if systemctl is-active --quiet mariadb 2>/dev/null || systemctl is-active --quiet mysql 2>/dev/null; then
+if "${SUDO[@]}" systemctl is-active --quiet mariadb 2>/dev/null || "${SUDO[@]}" systemctl is-active --quiet mysql 2>/dev/null; then
     MYSQL_RUNNING=true
     print_status "System MariaDB/MySQL is running"
 # Check for 1Panel Docker MySQL containers
-elif sudo docker ps --format "table {{.Names}}\t{{.Ports}}" | grep -q "3306"; then
-    MYSQL_CONTAINER=$(sudo docker ps --format "table {{.Names}}\t{{.Ports}}" | grep "3306" | head -1 | awk '{print $1}')
+elif "${SUDO[@]}" docker ps --format "table {{.Names}}\t{{.Ports}}" | grep -q "3306"; then
+    MYSQL_CONTAINER=$("${SUDO[@]}" docker ps --format "table {{.Names}}\t{{.Ports}}" | grep "3306" | head -1 | awk '{print $1}')
     MYSQL_RUNNING=true
     print_status "Found 1Panel MySQL container: $MYSQL_CONTAINER"
 fi
 
 if [ "$MYSQL_RUNNING" = false ]; then
     print_status "Installing MariaDB..."
-    sudo dnf install -y mariadb-server
-    sudo systemctl start mariadb
-    sudo systemctl enable mariadb
+    "${SUDO[@]}" dnf install -y mariadb-server
+    "${SUDO[@]}" systemctl start mariadb
+    "${SUDO[@]}" systemctl enable mariadb
     print_status "MariaDB installed and started"
 else
     print_status "Using existing MySQL/MariaDB service"
@@ -185,7 +186,7 @@ if [ -n "$MYSQL_CONTAINER" ]; then
     print_warning ""
     
     # Get the container IP for database connection
-    CONTAINER_IP=$(sudo docker inspect $MYSQL_CONTAINER --format '{{.NetworkSettings.IPAddress}}')
+    CONTAINER_IP=$("${SUDO[@]}" docker inspect $MYSQL_CONTAINER --format '{{.NetworkSettings.IPAddress}}')
     if [ -n "$CONTAINER_IP" ]; then
         DB_HOST=$MYSQL_CONTAINER  # Use container name for inter-container communication
         print_status "Using MySQL container name: $MYSQL_CONTAINER"
@@ -210,7 +211,7 @@ else
     
     # Try to connect and setup database
     print_status "Connecting to database..."
-    if sudo mysql -u root -p"$MYSQL_ROOT_PASSWORD" -h 127.0.0.1 -P 3306 << EOF 2>/dev/null
+    if "${SUDO[@]}" mysql -u root -p"$MYSQL_ROOT_PASSWORD" -h 127.0.0.1 -P 3306 << EOF 2>/dev/null
 CREATE DATABASE IF NOT EXISTS $DB_NAME CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER IF NOT EXISTS '$DB_USER'@'localhost' IDENTIFIED WITH mysql_native_password BY '$DB_PASSWORD';
 CREATE USER IF NOT EXISTS '$DB_USER'@'%' IDENTIFIED WITH mysql_native_password BY '$DB_PASSWORD';
@@ -291,7 +292,7 @@ print_status "Environment configuration completed"
 print_step "Setting up Python backend..."
 $PYTHON_CMD -m venv backend/.venv
 source backend/.venv/bin/activate
-sudo cp .env backend/.env  # Copy .env to backend for runtime
+"${SUDO[@]}" cp .env backend/.env  # Copy .env to backend for runtime
 cd backend
 
 # Upgrade pip with timeout and retry
@@ -356,9 +357,9 @@ cd ..
 
 # Deploy frontend to 1Panel sites directory
 print_step "Deploying frontend to 1Panel sites directory..."
-sudo cp -r frontend/build/* "$FRONTEND_DEPLOY_DIR/"
-sudo chown -R www-data:www-data "$FRONTEND_DEPLOY_DIR" 2>/dev/null || sudo chown -R nginx:nginx "$FRONTEND_DEPLOY_DIR" 2>/dev/null || sudo chown -R $USER:$USER "$FRONTEND_DEPLOY_DIR"
-sudo chmod -R 755 "$FRONTEND_DEPLOY_DIR"
+"${SUDO[@]}" cp -r frontend/build/* "$FRONTEND_DEPLOY_DIR/"
+"${SUDO[@]}" chown -R www-data:www-data "$FRONTEND_DEPLOY_DIR" 2>/dev/null || "${SUDO[@]}" chown -R nginx:nginx "$FRONTEND_DEPLOY_DIR" 2>/dev/null || "${SUDO[@]}" chown -R $USER:$USER "$FRONTEND_DEPLOY_DIR"
+"${SUDO[@]}" chmod -R 755 "$FRONTEND_DEPLOY_DIR"
 
 # Setup manage.py in backend (assuming it exists)
 print_step "Checking manage.py in backend..."
