@@ -107,6 +107,7 @@ DB_PORT = os.getenv('DB_PORT', '3306')
 if DB_ENGINE == 'mysql':
     try:  # attempt auto-create database
         import pymysql  # type: ignore
+        pymysql.install_as_MySQLdb()
         conn = pymysql.connect(host=DB_HOST, port=int(DB_PORT), user=DB_USER, password=DB_PASSWORD)
         with conn.cursor() as cur:
             cur.execute(
