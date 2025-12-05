@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import FloatingInput from '../components/FloatingInput';
+import { resolveApiUrl } from '../utils/api';
 
 const CompleteProfilePage: React.FC = () => {
     const { t } = useTranslation();
@@ -22,7 +23,7 @@ const CompleteProfilePage: React.FC = () => {
         e.preventDefault();
         if (!tokens) return;
         setSaving(true);
-        await fetch('/api/auth/me/', {
+        await fetch(resolveApiUrl('/api/auth/me/'), {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tokens.access}` },
             body: JSON.stringify({ first_name: name, phone }),

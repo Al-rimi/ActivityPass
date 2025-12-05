@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { AdminUser, SecurityPreferences } from '../types/admin';
+import { resolveApiUrl } from '../utils/api';
 
 type Notice = { type: 'success' | 'error' | 'info'; text: string };
 
@@ -30,7 +31,7 @@ const AdminDashboardPage: React.FC = () => {
         if (!tokens) return;
         setLoading(true);
         try {
-            const res = await fetch('/api/admin/users/', { headers: authHeaders });
+            const res = await fetch(resolveApiUrl('/api/admin/users/'), { headers: authHeaders });
             if (!res.ok) throw new Error('fetch_failed');
             const data = await res.json();
             setUsers(data);
@@ -46,7 +47,7 @@ const AdminDashboardPage: React.FC = () => {
         if (!tokens) return;
         setCountsLoading(true);
         try {
-            const res = await fetch('/api/admin/counts/', { headers: authHeaders });
+            const res = await fetch(resolveApiUrl('/api/admin/counts/'), { headers: authHeaders });
             if (!res.ok) throw new Error('counts_failed');
             const data = await res.json();
             setCounts(data);
@@ -62,7 +63,7 @@ const AdminDashboardPage: React.FC = () => {
         if (!tokens) return;
         setSecurityLoading(true);
         try {
-            const res = await fetch('/api/admin/security/preferences/', { headers: authHeaders });
+            const res = await fetch(resolveApiUrl('/api/admin/security/preferences/'), { headers: authHeaders });
             if (!res.ok) throw new Error('security_failed');
             const data = await res.json();
             setSecurityPrefs(data);
@@ -79,7 +80,7 @@ const AdminDashboardPage: React.FC = () => {
         const nextEnabled = !currentValue;
         setTogglingSecurity(prev => ({ ...prev, [role]: true }));
         try {
-            const res = await fetch('/api/admin/security/toggle/', {
+            const res = await fetch(resolveApiUrl('/api/admin/security/toggle/'), {
                 method: 'POST',
                 headers: authHeaders,
                 body: JSON.stringify({ role, enabled: nextEnabled }),

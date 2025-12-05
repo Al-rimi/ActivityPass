@@ -2,6 +2,46 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useCallback } from 'react';
 
+const normalizeBasePath = (raw?: string | null): string => {
+    if (!raw || raw.trim() === '') {
+        return '/api/';
+    }
+    let value = raw.trim();
+    if (!value.startsWith('/')) {
+        value = `/${value}`;
+    }
+    if (!value.endsWith('/')) {
+        value = `${value}/`;
+    }
+    return value;
+};
+
+const inferApiBase = (): string => {
+    const configured = normalizeBasePath(import.meta.env.VITE_API_BASE_PATH);
+    if (configured !== '/api/') {
+        return configured;
+    }
+
+    const basePath = normalizeBasePath(import.meta.env.VITE_BASE_PATH ?? '/');
+    if (basePath === '/') {
+        return '/api/';
+    }
+    return `${basePath}api/`;
+};
+
+const API_BASE = inferApiBase();
+
+export const resolveApiUrl = (url: string): string => {
+    if (/^https?:\/\//i.test(url)) {
+        return url;
+    }
+    let trimmed = url.startsWith('/') ? url.slice(1) : url;
+    if (API_BASE.endsWith('/api/') && trimmed.startsWith('api/')) {
+        trimmed = trimmed.slice(4);
+    }
+    return `${API_BASE}${trimmed}`;
+};
+
 export interface ApiError extends Error {
     status?: number;
 }
@@ -42,7 +82,7 @@ export const useAuthenticatedApi = () => {
         }
 
         try {
-            const response = await fetch(url, {
+            const response = await fetch(resolveApiUrl(url), {
                 ...options,
                 headers
             });
@@ -105,7 +145,7 @@ export const makeAuthenticatedRequest = async (
         }
     }
 
-    const response = await fetch(url, {
+    const response = await fetch(resolveApiUrl(url), {
         ...options,
         headers
     });

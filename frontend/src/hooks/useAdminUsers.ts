@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AdminUser } from '../types/admin';
 import { useAuth } from '../context/AuthContext';
+import { resolveApiUrl } from '../utils/api';
 
 export type UseAdminUsersOptions = {
     role?: 'student' | 'staff';
@@ -25,7 +26,8 @@ export const useAdminUsers = (options: UseAdminUsersOptions = {}) => {
             const params = new URLSearchParams();
             if (options.role) params.set('role', options.role);
             if (query.trim()) params.set('q', query.trim());
-            const res = await fetch(`/api/admin/users/${params.toString() ? `?${params.toString()}` : ''}`, {
+            const requestPath = `/api/admin/users/${params.toString() ? `?${params.toString()}` : ''}`;
+            const res = await fetch(resolveApiUrl(requestPath), {
                 headers,
             });
             if (!res.ok) throw new Error('fetch_failed');

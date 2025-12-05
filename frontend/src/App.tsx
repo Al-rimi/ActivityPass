@@ -18,6 +18,7 @@ import AdminCoursesPage from './pages/AdminCoursesPage';
 import AdminActivitiesPage from './pages/AdminActivitiesPage';
 import StaffDashboardPage from './pages/StaffDashboardPage';
 import Logo from './components/Logo';
+import { resolveApiUrl } from './utils/api';
 
 const setDocumentCssVar = (name: string, value: number) => {
     if (typeof document === 'undefined') return;
@@ -366,7 +367,7 @@ const ActivityList: React.FC = () => {
     const [notice, setNotice] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
 
     useEffect(() => {
-        fetch('/api/activities/')
+        fetch(resolveApiUrl('/api/activities/'))
             .then(r => r.json())
             .then((data: Activity[]) => { setActivities(data); setLoading(false); })
             .catch((err: unknown) => { setError(err instanceof Error ? err.message : String(err)); setLoading(false); });
@@ -377,7 +378,7 @@ const ActivityList: React.FC = () => {
             setNotice({ type: 'error', text: t('auth.loginRequired') });
             return;
         }
-        const res = await fetch(`/api/activities/${id}/apply/`, {
+        const res = await fetch(resolveApiUrl(`/api/activities/${id}/apply/`), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

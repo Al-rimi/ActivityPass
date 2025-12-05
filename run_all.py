@@ -37,6 +37,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from typing import Dict
 
 
 def run(cmd: list[str] | str, cwd: Path | None = None, env: dict[str, str] | None = None, quiet: bool = False) -> int:
@@ -105,10 +106,98 @@ def ensure_env_file(repo_root: Path):
     secret_key = secrets.token_urlsafe(50)
     env_content = env_content.replace("DJANGO_SECRET_KEY=change-me-example", f"DJANGO_SECRET_KEY={secret_key}")
     
+    if "VITE_BASE_PATH" not in env_content:
+        env_content += "\nVITE_BASE_PATH=/"
+    if "VITE_API_BASE_PATH" not in env_content:
+        env_content += "\nVITE_API_BASE_PATH=/api/"
+
     with open(env_file, 'w') as f:
         f.write(env_content)
     
     print(f"[config] .env file created successfully at {env_file}")
+
+
+def load_env_settings(env_path: Path) -> Dict[str, str]:
+    values: Dict[str, str] = {}
+    if not env_path.exists():
+        return values
+
+    with open(env_path, 'r', encoding='utf-8') as f:
+        for raw_line in f:
+            line = raw_line.strip()
+            if not line or line.startswith('#'):
+                continue
+            if '=' not in line:
+                continue
+            key, value = line.split('=', 1)
+            values[key.strip()] = value.strip()
+    return values
+
+
+def normalize_base_path(path_value: str | None) -> str:
+    if not path_value:
+        return '/'
+    value = path_value.strip()
+    if value == '':
+        return '/'
+    if not value.startswith('/'):
+        value = '/' + value
+    if not value.endswith('/'):
+        value = value + '/'
+    return value
+
+
+def derive_api_base(base_path: str, explicit: str | None = None) -> str:
+    if explicit:
+        return normalize_base_path(explicit)
+    if base_path == '/':
+        return '/api/'
+    return f"{base_path}api/"
+
+
+def upsert_env_values(env_path: Path, updates: Dict[str, str]):
+    if not updates or not env_path.exists():
+        return
+
+    with open(env_path, 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+
+    replaced: set[str] = set()
+    new_lines = []
+    for line in lines:
+        stripped = line.strip()
+        if '=' in stripped and not stripped.startswith('#'):
+            key, _, _ = stripped.partition('=')
+            key = key.strip()
+            if key in updates:
+                new_lines.append(f"{key}={updates[key]}\n")
+                replaced.add(key)
+                continue
+        new_lines.append(line)
+
+    for key, value in updates.items():
+        if key not in replaced:
+            new_lines.append(f"{key}={value}\n")
+
+    with open(env_path, 'w', encoding='utf-8') as f:
+        f.writelines(new_lines)
+
+
+def ensure_env_defaults(env_path: Path) -> Dict[str, str]:
+    values = load_env_settings(env_path)
+    base_norm = normalize_base_path(values.get('VITE_BASE_PATH'))
+    api_norm = derive_api_base(base_norm, values.get('VITE_API_BASE_PATH'))
+    updates: Dict[str, str] = {}
+
+    if values.get('VITE_BASE_PATH') != base_norm:
+        updates['VITE_BASE_PATH'] = base_norm
+    if values.get('VITE_API_BASE_PATH') != api_norm:
+        updates['VITE_API_BASE_PATH'] = api_norm
+
+    upsert_env_values(env_path, updates)
+    if updates:
+        values = load_env_settings(env_path)
+    return values
 
 
 def venv_python(venv_dir: Path) -> Path:
@@ -238,17 +327,22 @@ def frontend_install(frontend_dir: Path):
         sys.exit(code)
 
 
-def frontend_start(frontend_dir: Path, port: int) -> subprocess.Popen:
+def frontend_start(frontend_dir: Path, port: int, vite_base: str, vite_api_base: str) -> subprocess.Popen:
     env = os.environ.copy()
     # CRA respects PORT env var
     env.setdefault("PORT", str(port))
+    env.setdefault("VITE_BASE_PATH", vite_base)
+    env.setdefault("VITE_API_BASE_PATH", vite_api_base)
     print(f"[frontend] Starting React dev server at http://localhost:{port}")
     return spawn([npm_executable(), "start"], cwd=frontend_dir, env=env)
 
 
-def frontend_build(frontend_dir: Path):
+def frontend_build(frontend_dir: Path, vite_base: str, vite_api_base: str):
     print("[frontend] Building production bundle...")
-    code = run([npm_executable(), "run", "build"], cwd=frontend_dir, quiet=True)
+    env = os.environ.copy()
+    env.setdefault("VITE_BASE_PATH", vite_base)
+    env.setdefault("VITE_API_BASE_PATH", vite_api_base)
+    code = run([npm_executable(), "run", "build"], cwd=frontend_dir, quiet=True, env=env)
     if code == 0:
         print("[frontend] ✓ Production build completed successfully")
     else:
@@ -314,6 +408,9 @@ def main():
 
     # Check and create .env file if needed
     ensure_env_file(repo_root)
+    env_settings = ensure_env_defaults(repo_root / ".env")
+    vite_base_path = normalize_base_path(env_settings.get("VITE_BASE_PATH"))
+    vite_api_base_path = derive_api_base(vite_base_path, env_settings.get("VITE_API_BASE_PATH"))
 
     if args.rebuild:
         print("[rebuild] Refreshing build artifacts (dependencies stay cached)")
@@ -344,7 +441,7 @@ def main():
         else:
             try:
                 frontend_install(frontend_dir)
-                frontend_build(frontend_dir)
+                frontend_build(frontend_dir, vite_base_path, vite_api_base_path)
             except FileNotFoundError:
                 print("[error] npm command not found. Install Node.js (https://nodejs.org) and ensure npm is on your PATH.")
 
@@ -362,7 +459,7 @@ def main():
             except FileNotFoundError:
                 print("[error] npm command not found. Install Node.js (https://nodejs.org) and ensure npm is on your PATH.")
             else:
-                frontend_proc = frontend_start(frontend_dir, args.frontend_port)
+                frontend_proc = frontend_start(frontend_dir, args.frontend_port, vite_base_path, vite_api_base_path)
 
     print("\n[done] Automation started. Press Ctrl+C to terminate.")
     print("Backend PID:", backend_proc.pid)

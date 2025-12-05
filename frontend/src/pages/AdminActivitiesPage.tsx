@@ -10,6 +10,7 @@ import SelectPeriod from '../components/SelectPeriod';
 import LocationPicker from '../components/LocationPicker';
 import SearchInput from '../components/SearchInput';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { resolveApiUrl } from '../utils/api';
 
 const DEPARTMENT_OPTIONS = [
     { value: '计算机科学与技术学院', labelKey: 'admin.department.computerScience' },
@@ -335,7 +336,7 @@ const AdminActivitiesPage: React.FC = () => {
         if (!tokens) return;
         setLoading(true);
         try {
-            const res = await fetch('/api/admin/activities/', { headers });
+            const res = await fetch(resolveApiUrl('/api/admin/activities/'), { headers });
             if (!res.ok) throw new Error('fetch_failed');
             const data = await res.json();
             setAllActivities(data);
@@ -402,7 +403,7 @@ const AdminActivitiesPage: React.FC = () => {
             if (!form.description.trim()) delete (payload as any).description;
             if (!form.chinese_level_min.trim()) delete (payload as any).chinese_level_min;
 
-            const res = await fetch('/api/admin/activities/', {
+            const res = await fetch(resolveApiUrl('/api/admin/activities/'), {
                 method: 'POST',
                 headers,
                 body: JSON.stringify(payload),

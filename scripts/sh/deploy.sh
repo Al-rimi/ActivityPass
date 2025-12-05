@@ -71,6 +71,12 @@ else
     NGINX_SPA_LOCATION="/"
 fi
 
+if [ "$FRONTEND_BASE_PATH" = "/" ]; then
+    FRONTEND_API_BASE_PATH="/api/"
+else
+    FRONTEND_API_BASE_PATH="${FRONTEND_BASE_PATH}api/"
+fi
+
 print_status "Alias: $ALIAS"
 print_status "Backend will be deployed to: $DEPLOY_DIR"
 print_status "Frontend base path: $FRONTEND_BASE_PATH"
@@ -299,6 +305,7 @@ CORS_ALLOW_ALL=true
 VITE_AMAP_KEY=your-amap-key-here
 DOMAIN_NAME=your-domain-here
 VITE_BASE_PATH=/
+VITE_API_BASE_PATH=/api/
 EOF
 fi
 
@@ -334,6 +341,12 @@ if grep -q "^VITE_BASE_PATH=" .env; then
     sed -i "s|VITE_BASE_PATH=.*|VITE_BASE_PATH=$FRONTEND_BASE_PATH|" .env
 else
     echo "VITE_BASE_PATH=$FRONTEND_BASE_PATH" >> .env
+fi
+
+if grep -q "^VITE_API_BASE_PATH=" .env; then
+    sed -i "s|VITE_API_BASE_PATH=.*|VITE_API_BASE_PATH=$FRONTEND_API_BASE_PATH|" .env
+else
+    echo "VITE_API_BASE_PATH=$FRONTEND_API_BASE_PATH" >> .env
 fi
 
 # Update DOMAIN_NAME
@@ -437,7 +450,7 @@ cd frontend
 # Skip puppeteer browser download to avoid network timeouts
 export PUPPETEER_SKIP_DOWNLOAD=true
 npm install
-VITE_BASE_PATH="$FRONTEND_BASE_PATH" npm run build
+VITE_BASE_PATH="$FRONTEND_BASE_PATH" VITE_API_BASE_PATH="$FRONTEND_API_BASE_PATH" npm run build
 cd ..
 
 # Deploy frontend to 1Panel sites directory

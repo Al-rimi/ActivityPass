@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import { useNavigate } from 'react-router-dom';
+import { resolveApiUrl } from '../utils/api';
 
 export interface Tokens {
     access: string;
@@ -47,7 +48,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
             // fetch /api/auth/me to get role and profile
             setMe(null);
             setMeLoading(true);
-            fetch('/api/auth/me/', { headers: { Authorization: `Bearer ${tokens.access}` } })
+            fetch(resolveApiUrl('/api/auth/me/'), { headers: { Authorization: `Bearer ${tokens.access}` } })
                 .then(r => {
                     if (r.status === 403) {
                         // Token is invalid or expired, logout and redirect to auth
@@ -69,7 +70,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     }, [tokens]);
 
     const login = async (username: string, password: string) => {
-        const res = await fetch('/api/token/', {
+        const res = await fetch(resolveApiUrl('/api/token/'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password })
@@ -84,7 +85,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     };
 
     const register: AuthContextValue['register'] = async (payload) => {
-        const res = await fetch('/api/auth/register/', {
+        const res = await fetch(resolveApiUrl('/api/auth/register/'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
