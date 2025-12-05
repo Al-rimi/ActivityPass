@@ -83,6 +83,12 @@ if ! "$PY_BIN" -m pip -V >/dev/null 2>&1; then
 fi
 "$PY_BIN" -m pip -V
 
+log "Ensure mysqlclient not installed"
+if "$PY_BIN" -m pip show mysqlclient >/dev/null 2>&1; then
+    warn "Removing incompatible mysqlclient package from venv"
+    "$PY_BIN" -m pip uninstall -y mysqlclient || warn "Unable to remove mysqlclient"
+fi
+
 install_marker="$VENV_PATH/.deps_installed"
 
 if [ -f "$install_marker" ]; then
