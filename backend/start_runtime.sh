@@ -5,33 +5,24 @@ set -euo pipefail
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 cd "$SCRIPT_DIR"
 
-log() {
-    printf '%s %s
-' "[DEBUG]" "$1"
+section() {
+    printf '\n=== %s ===\n' "$1"
+}
+
+info() {
+    printf '[INFO] %s\n' "$1"
 }
 
 warn() {
-    printf '%s %s
-' "[WARN]" "$1"
+    printf '[WARN] %s\n' "$1"
 }
 
-log "Runtime diagnostics begin"
-log "PWD=$(pwd)"
-log "Whoami=$(whoami)"
-log "Listing current directory"
-ls -al
+section "Startup"
+info "Working directory: $SCRIPT_DIR"
+info "Running as: $(whoami)"
 
-if [ -d ".venv" ]; then
-    log "Listing .venv/bin contents"
-    ls -al .venv/bin 2>/dev/null || warn "Unable to list .venv/bin"
-else
-    warn ".venv directory missing before activation"
-fi
-
-if [ -f .env ]; then
-    log "Found .env file"
-else
-    warn ".env not found in $(pwd)"
+if [ ! -f .env ]; then
+    warn ".env not found; ensure it is mounted alongside the backend"
 fi
 
 VENV_PATH="${SCRIPT_DIR}/.venv"
@@ -50,65 +41,48 @@ refresh_venv() {
     "$SYSTEM_PYTHON" -m venv "$VENV_PATH"
 }
 
+section "Virtualenv"
 if [ ! -f "$VENV_PATH/bin/activate" ]; then
-    refresh_venv "Virtualenv activate script missing; creating fresh venv"
+    refresh_venv "Virtualenv missing; creating fresh environment"
 fi
 
-log "Activating virtualenv at $VENV_PATH"
 # shellcheck disable=SC1090
 source "$VENV_PATH/bin/activate"
 
-log "VIRTUAL_ENV=$VIRTUAL_ENV"
-log "PATH=$PATH"
-
 if [ ! -x "$PY_BIN" ] || ! "$PY_BIN" -c "import sys" >/dev/null 2>&1; then
     deactivate 2>/dev/null || true
-    refresh_venv "Virtualenv python missing or broken; recreating venv"
+    refresh_venv "Virtualenv python invalid; recreating"
     # shellcheck disable=SC1090
     source "$VENV_PATH/bin/activate"
 fi
 
 PY_BIN="$VENV_PATH/bin/python"
-if [ ! -x "$PY_BIN" ]; then
-    warn "Unable to locate python inside venv even after recreation"
-fi
+info "Python: $($PY_BIN -V 2>&1)"
 
-log "Python executable: $PY_BIN"
-"$PY_BIN" -V
-
-log "pip executable: ${VENV_PATH}/bin/pip"
+section "Dependencies"
 if ! "$PY_BIN" -m pip -V >/dev/null 2>&1; then
-    warn "pip missing or broken; bootstrapping with ensurepip"
+    warn "pip missing; bootstrapping with ensurepip"
     "$PY_BIN" -m ensurepip --upgrade
 fi
-"$PY_BIN" -m pip -V
 
-log "Ensure mysqlclient not installed"
 if "$PY_BIN" -m pip show mysqlclient >/dev/null 2>&1; then
-    warn "Removing incompatible mysqlclient package from venv"
+    warn "Removing incompatible mysqlclient package"
     "$PY_BIN" -m pip uninstall -y mysqlclient || warn "Unable to remove mysqlclient"
 fi
 
 install_marker="$VENV_PATH/.deps_installed"
-
-if [ -f "$install_marker" ]; then
-    if "$PY_BIN" -c "import django" >/dev/null 2>&1; then
-        log "Dependencies already installed; continuing"
-    else
-        warn "Marker present but Django missing; reinstalling requirements"
-        "$PY_BIN" -m pip install --no-cache-dir -r requirements.txt
-    fi
+if [ -f "$install_marker" ] && "$PY_BIN" -c "import django" >/dev/null 2>&1; then
+    info "Dependencies already satisfied"
 else
-    warn "No dependency marker found; installing requirements"
+    info "Installing Python requirements"
     "$PY_BIN" -m pip install --no-cache-dir -r requirements.txt
     touch "$install_marker"
 fi
 
-log "Running database migrations"
+section "Migrations"
 "$PY_BIN" manage.py migrate --noinput
+info "Database migrations complete"
 
-log "Installed packages snapshot"
-"$PY_BIN" -m pip freeze | head -n 40 || warn "pip freeze failed"
-
-log "Launching Django runserver"
+section "Server"
+info "Starting Django development server on 0.0.0.0:8000"
 exec "$PY_BIN" manage.py runserver 0.0.0.0:8000

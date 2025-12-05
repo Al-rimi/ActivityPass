@@ -161,7 +161,10 @@ if [ -f .env ]; then
     DB_NAME=$(grep "^DB_NAME=" .env | cut -d'=' -f2- | sed 's/^"//' | sed 's/"$//')
     DB_USER=$(grep "^DB_USER=" .env | cut -d'=' -f2- | sed 's/^"//' | sed 's/"$//')
     DB_PASSWORD=$(grep "^DB_PASSWORD=" .env | cut -d'=' -f2- | sed 's/^"//' | sed 's/"$//')
+    DB_HOST_VALUE=$(grep "^DB_HOST=" .env | cut -d'=' -f2- | sed 's/^"//' | sed 's/"$//')
 fi
+
+DB_HOST_DEFAULT="$DB_HOST_VALUE"
 
 # Prompt for database credentials if not set
 if [ -z "$DB_NAME" ]; then
@@ -188,14 +191,16 @@ if [ -n "$MYSQL_CONTAINER" ]; then
     # Get the container IP for database connection
     CONTAINER_IP=$("${SUDO[@]}" docker inspect $MYSQL_CONTAINER --format '{{.NetworkSettings.IPAddress}}')
     if [ -n "$CONTAINER_IP" ]; then
-        DB_HOST=$MYSQL_CONTAINER  # Use container name for inter-container communication
         print_status "Using MySQL container name: $MYSQL_CONTAINER"
     else
-        DB_HOST=$MYSQL_CONTAINER  # Still use container name even if IP not detected
         print_warning "Could not detect container IP, using container name: $MYSQL_CONTAINER"
     fi
-    
-    print_warning "The database host in .env will be set to: $DB_HOST"
+
+    if [ -z "$DB_HOST_DEFAULT" ]; then
+        DB_HOST_DEFAULT="$MYSQL_CONTAINER"
+    fi
+
+    print_warning "The database host in .env will default to: $DB_HOST_DEFAULT"
     print_warning ""
     print_warning "Press Enter when you have created the database and user in 1Panel..."
     read -p ""
@@ -228,6 +233,21 @@ EOF
         print_warning "2. Create database manually"
         print_warning "3. Update .env file with correct database credentials"
     fi
+
+    if [ -z "$DB_HOST_DEFAULT" ]; then
+        DB_HOST_DEFAULT="127.0.0.1"
+    fi
+fi
+
+if [ -z "$DB_HOST_DEFAULT" ]; then
+    DB_HOST_DEFAULT="127.0.0.1"
+fi
+
+read -p "Enter database host [${DB_HOST_DEFAULT}]: " DB_HOST_INPUT
+if [ -n "$DB_HOST_INPUT" ]; then
+    DB_HOST_VALUE="$DB_HOST_INPUT"
+else
+    DB_HOST_VALUE="$DB_HOST_DEFAULT"
 fi
 
 # Setup environment file
@@ -269,12 +289,17 @@ if [ -z "$SECRET_KEY" ] || [ "$SECRET_KEY" = "change-me-in-production" ]; then
 fi
 
 # Update .env file with current values
-sed -i "s/DB_NAME=.*/DB_NAME=$DB_NAME/" .env
-sed -i "s/DB_USER=.*/DB_USER=$DB_USER/" .env
-sed -i "s/DB_PASSWORD=.*/DB_PASSWORD=$DB_PASSWORD/" .env
-sed -i "s/DB_HOST=.*/DB_HOST=127.0.0.1/" .env  # Use localhost for host migrations
-sed -i "s/DJANGO_SECRET_KEY=.*/DJANGO_SECRET_KEY=$SECRET_KEY/" .env
-sed -i "s/DJANGO_DEBUG=.*/DJANGO_DEBUG=false/" .env
+sed -i "s|DB_NAME=.*|DB_NAME=$DB_NAME|" .env
+sed -i "s|DB_USER=.*|DB_USER=$DB_USER|" .env
+sed -i "s|DB_PASSWORD=.*|DB_PASSWORD=$DB_PASSWORD|" .env
+sed -i "s|DJANGO_SECRET_KEY=.*|DJANGO_SECRET_KEY=$SECRET_KEY|" .env
+sed -i "s|DJANGO_DEBUG=.*|DJANGO_DEBUG=false|" .env
+
+if grep -q "^DB_HOST=" .env; then
+    sed -i "s|DB_HOST=.*|DB_HOST=$DB_HOST_VALUE|" .env
+else
+    echo "DB_HOST=$DB_HOST_VALUE" >> .env
+fi
 
 if [ -n "$AMAP_KEY" ]; then
     sed -i "s|VITE_AMAP_KEY=.*|VITE_AMAP_KEY=$AMAP_KEY|" .env
@@ -284,6 +309,26 @@ fi
 sed -i "s/DOMAIN_NAME=.*/DOMAIN_NAME=$DOMAIN_NAME/" .env
 if ! grep -q "^DOMAIN_NAME=" .env; then
     echo "DOMAIN_NAME=$DOMAIN_NAME" >> .env
+fi
+
+ALLOWED_HOSTS=$(grep "^DJANGO_ALLOWED_HOSTS=" .env | cut -d'=' -f2- | sed 's/^"//' | sed 's/"$//')
+ALLOWED_HOSTS=${ALLOWED_HOSTS// /}
+if [ -z "$ALLOWED_HOSTS" ]; then
+    ALLOWED_HOSTS="localhost,127.0.0.1"
+fi
+
+if [ -n "$DOMAIN_NAME" ] && [[ ",$ALLOWED_HOSTS," != *,${DOMAIN_NAME},* ]]; then
+    if [ -n "$ALLOWED_HOSTS" ]; then
+        ALLOWED_HOSTS="$ALLOWED_HOSTS,$DOMAIN_NAME"
+    else
+        ALLOWED_HOSTS="$DOMAIN_NAME"
+    fi
+fi
+
+if grep -q "^DJANGO_ALLOWED_HOSTS=" .env; then
+    sed -i "s|DJANGO_ALLOWED_HOSTS=.*|DJANGO_ALLOWED_HOSTS=$ALLOWED_HOSTS|" .env
+else
+    echo "DJANGO_ALLOWED_HOSTS=$ALLOWED_HOSTS" >> .env
 fi
 
 print_status "Environment configuration completed"
@@ -343,8 +388,12 @@ cd ..
 # Ensure runtime script is executable for 1Panel startup
 chmod +x backend/start_runtime.sh 2>/dev/null || true
 
-# Now update .env to use container name for runtime
-sed -i "s/DB_HOST=.*/DB_HOST=$MYSQL_CONTAINER/" .env
+# Ensure DB host preference persists for runtime
+if grep -q "^DB_HOST=" .env; then
+    sed -i "s|DB_HOST=.*|DB_HOST=$DB_HOST_VALUE|" .env
+else
+    echo "DB_HOST=$DB_HOST_VALUE" >> .env
+fi
 
 # Build frontend
 print_step "Building React frontend..."
