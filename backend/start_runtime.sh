@@ -36,7 +36,6 @@ fi
 
 VENV_PATH="${SCRIPT_DIR}/.venv"
 PY_BIN="$VENV_PATH/bin/python"
-PIP_BIN="$VENV_PATH/bin/pip"
 SYSTEM_PYTHON="$(command -v python3 || command -v python || true)"
 
 if [ -z "$SYSTEM_PYTHON" ]; then
@@ -70,8 +69,6 @@ if [ ! -x "$PY_BIN" ] || ! "$PY_BIN" -c "import sys" >/dev/null 2>&1; then
 fi
 
 PY_BIN="$VENV_PATH/bin/python"
-PIP_BIN="$VENV_PATH/bin/pip"
-
 if [ ! -x "$PY_BIN" ]; then
     warn "Unable to locate python inside venv even after recreation"
 fi
@@ -79,14 +76,12 @@ fi
 log "Python executable: $PY_BIN"
 "$PY_BIN" -V
 
-if [ -x "$PIP_BIN" ]; then
-    log "pip executable: $PIP_BIN"
-    "$PIP_BIN" -V
-else
-    warn "pip executable missing in venv; bootstrapping"
+log "pip executable: ${VENV_PATH}/bin/pip"
+if ! "$PY_BIN" -m pip -V >/dev/null 2>&1; then
+    warn "pip missing or broken; bootstrapping with ensurepip"
     "$PY_BIN" -m ensurepip --upgrade
-    PIP_BIN="$VENV_PATH/bin/pip"
 fi
+"$PY_BIN" -m pip -V
 
 install_marker="$VENV_PATH/.deps_installed"
 
@@ -95,11 +90,11 @@ if [ -f "$install_marker" ]; then
         log "Dependencies already installed; continuing"
     else
         warn "Marker present but Django missing; reinstalling requirements"
-        "$PIP_BIN" install --no-cache-dir -r requirements.txt
+        "$PY_BIN" -m pip install --no-cache-dir -r requirements.txt
     fi
 else
     warn "No dependency marker found; installing requirements"
-    "$PIP_BIN" install --no-cache-dir -r requirements.txt
+    "$PY_BIN" -m pip install --no-cache-dir -r requirements.txt
     touch "$install_marker"
 fi
 
@@ -107,7 +102,7 @@ log "Running database migrations"
 "$PY_BIN" manage.py migrate --noinput
 
 log "Installed packages snapshot"
-"$PIP_BIN" freeze | head -n 40 || warn "pip freeze failed"
+"$PY_BIN" -m pip freeze | head -n 40 || warn "pip freeze failed"
 
 log "Launching Django runserver"
 exec "$PY_BIN" manage.py runserver 0.0.0.0:8000
