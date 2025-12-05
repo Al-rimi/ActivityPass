@@ -107,6 +107,8 @@ DB_PORT = os.getenv('DB_PORT', '3306')
 if DB_ENGINE == 'mysql':
     try:  # attempt auto-create database
         import pymysql  # type: ignore
+        pymysql.version_info = (2, 2, 1, "final", 0)  # pretend to satisfy Django's mysqlclient version check
+        pymysql.__version__ = "2.2.1"
         pymysql.install_as_MySQLdb()
         conn = pymysql.connect(host=DB_HOST, port=int(DB_PORT), user=DB_USER, password=DB_PASSWORD)
         with conn.cursor() as cur:
