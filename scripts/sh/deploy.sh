@@ -177,6 +177,8 @@ if [ -z "$DB_PASSWORD" ]; then
     read -p "Enter database password: " DB_PASSWORD
 fi
 
+HOST_DB_HOST=""
+
 if [ -n "$MYSQL_CONTAINER" ]; then
     print_status "Using 1Panel MySQL container: $MYSQL_CONTAINER"
     print_warning "⚠️  IMPORTANT: You must create the database and user manually in 1Panel"
@@ -189,11 +191,13 @@ if [ -n "$MYSQL_CONTAINER" ]; then
     print_warning ""
     
     # Get the container IP for database connection
-    CONTAINER_IP=$("${SUDO[@]}" docker inspect $MYSQL_CONTAINER --format '{{.NetworkSettings.IPAddress}}')
+    CONTAINER_IP=$("${SUDO[@]}" docker inspect "$MYSQL_CONTAINER" --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}')
     if [ -n "$CONTAINER_IP" ]; then
-        print_status "Using MySQL container name: $MYSQL_CONTAINER"
+        HOST_DB_HOST="$CONTAINER_IP"
+        print_status "Detected MySQL container IP: $CONTAINER_IP"
     else
-        print_warning "Could not detect container IP, using container name: $MYSQL_CONTAINER"
+        HOST_DB_HOST="127.0.0.1"
+        print_warning "Could not detect container IP automatically; host-side commands will use localhost (ensure port 3306 is published)"
     fi
 
     if [ -z "$DB_HOST_DEFAULT" ]; then
@@ -237,6 +241,7 @@ EOF
     if [ -z "$DB_HOST_DEFAULT" ]; then
         DB_HOST_DEFAULT="127.0.0.1"
     fi
+    HOST_DB_HOST="$DB_HOST_DEFAULT"
 fi
 
 if [ -z "$DB_HOST_DEFAULT" ]; then
@@ -248,6 +253,10 @@ if [ -n "$DB_HOST_INPUT" ]; then
     DB_HOST_VALUE="$DB_HOST_INPUT"
 else
     DB_HOST_VALUE="$DB_HOST_DEFAULT"
+fi
+
+if [ -z "$HOST_DB_HOST" ]; then
+    HOST_DB_HOST="$DB_HOST_VALUE"
 fi
 
 # Setup environment file
@@ -362,15 +371,19 @@ for i in {1..3}; do
     fi
 done
 
+run_backend_cmd() {
+    DB_HOST="$HOST_DB_HOST" "$PYTHON_CMD" "$@"
+}
+
 print_status "Initializing application (migrations + seeding + superuser)..."
-if $PYTHON_CMD manage.py init_app; then
+if run_backend_cmd manage.py init_app; then
     print_status "Application initialized successfully"
 else
     print_warning "init_app failed; falling back to separate commands"
     print_status "Running database migrations..."
-    $PYTHON_CMD manage.py migrate
+    run_backend_cmd manage.py migrate
     print_status "Creating superuser..."
-    $PYTHON_CMD manage.py shell -c "
+    run_backend_cmd manage.py shell -c "
 from django.contrib.auth import get_user_model
 User = get_user_model()
 if not User.objects.filter(username='admin').exists():
@@ -380,7 +393,7 @@ else:
     print('Superuser already exists')
 "
     print_status "Seeding initial data..."
-    $PYTHON_CMD manage.py seed_students
+    run_backend_cmd manage.py seed_students
 fi
 
 cd ..
