@@ -5,6 +5,7 @@
 /* app-inspired CSS custom properties for dynamic theming */
 :root {
   /* Light theme app colors */
+  --ap-viewport-height: 100vh;
   --app-bg: #f7f7f7;
   --app-surface: #ffffff;
   --app-surface-secondary: #fafafa;
@@ -400,7 +401,216 @@ input:-webkit-autofill:active {
     transition: none !important;
 }
 
+[data-scroll-root] {
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ap-toggle-thumb {
+  position: absolute;
+  top: 50%;
+  left: auto;
+  right: auto;
+  display: inline-block;
+  transform: translate(0, -50%);
+  will-change: left, right, transform;
+  transition:
+    left 0.3s cubic-bezier(0.33, 1.45, 0.4, 1),
+    right 0.3s cubic-bezier(0.33, 1.45, 0.4, 1),
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.ap-toggle-thumb--left {
+  left: 0.55rem;
+  right: auto;
+  animation: ap-toggle-slide-left 0.32s cubic-bezier(0.33, 1.45, 0.4, 1) both;
+}
+
+.ap-toggle-thumb--right {
+  right: 0.55rem;
+  left: auto;
+  animation: ap-toggle-slide-right 0.32s cubic-bezier(0.33, 1.45, 0.4, 1) both;
+}
+
+.ap-toggle-thumb--left-static {
+  left: 0.55rem;
+  right: auto;
+}
+
+.ap-toggle-thumb--right-static {
+  right: 0.55rem;
+  left: auto;
+}
+
+@keyframes ap-toggle-slide-right {
+  0% {
+    transform: translate(-45%, -50%) scale(0.92);
+  }
+  55% {
+    transform: translate(10%, -50%) scale(1.05);
+  }
+  100% {
+    transform: translate(0, -50%) scale(1);
+  }
+}
+
+@keyframes ap-toggle-slide-left {
+  0% {
+    transform: translate(45%, -50%) scale(0.92);
+  }
+  55% {
+    transform: translate(-10%, -50%) scale(1.05);
+  }
+  100% {
+    transform: translate(0, -50%) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ap-toggle-thumb {
+    transition-duration: 0.01ms !important;
+  }
+
+  .ap-toggle-thumb--left,
+  .ap-toggle-thumb--right {
+    animation: none !important;
+  }
+}
+
 /* Ensure theme toggle thumb always animates */
 .theme-toggle-thumb {
     transition: transform 0.2s ease-out !important;
+}
+
+/* Student timetable theming */
+.schedule-cell-class {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border-dark);
+  box-shadow: 0 8px 16px var(--app-shadow-light);
+  color: var(--app-text-primary);
+}
+
+.dark .schedule-cell-class {
+  background: var(--app-surface-secondary);
+  border-color: var(--app-border);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
+  color: var(--app-text-primary);
+}
+
+.schedule-cell-activity {
+  background: var(--app-surface-secondary);
+  border: 1px solid var(--app-border);
+  box-shadow: 0 6px 14px var(--app-shadow-light);
+  color: var(--app-text-primary);
+}
+
+.dark .schedule-cell-activity {
+  background: var(--app-surface);
+  border-color: var(--app-border);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
+  color: var(--app-text-primary);
+}
+
+
+.schedule-conflict-chip {
+  background: rgba(248, 113, 113, 0.15);
+  color: #b91c1c;
+  border: 1px solid rgba(248, 113, 113, 0.4);
+}
+
+.dark .schedule-conflict-chip {
+  background: rgba(248, 113, 113, 0.12);
+  color: rgba(255, 228, 230, 0.95);
+  border-color: rgba(248, 113, 113, 0.5);
+}
+
+.schedule-section-label {
+  color: var(--app-text-secondary);
+}
+
+.dark .schedule-section-label {
+  color: var(--app-text-secondary);
+}
+
+.schedule-placeholder {
+  background: var(--app-surface-secondary);
+  border: 1px solid var(--app-border-light);
+  will-change: transform;
+}
+
+.dark .schedule-placeholder {
+  background: var(--app-surface-secondary);
+  border-color: var(--app-border);
+}
+
+.schedule-today-column {
+  position: relative;
+}
+
+.schedule-today-column::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 2;
+  border: 2px solid rgba(7, 193, 96, 0.3);
+}
+.dark .schedule-today-column::after {
+  border-color: rgba(7, 193, 96, 0.45);
+}
+
+.schedule-today-column > * {
+  position: relative;
+  z-index: 1;
+}
+
+.schedule-today-header {
+  background: rgba(7, 193, 96, 0.14);
+  color: var(--app-accent);
+  box-shadow: 0 0 0 2px rgba(7, 193, 96, 0.16);
+}
+
+.dark .schedule-today-header {
+  background: rgba(7, 193, 96, 0.22);
+  color: var(--app-accent);
+  box-shadow: 0 0 0 2px rgba(7, 193, 96, 0.25);
+}
+
+.schedule-column-header {
+  background: var(--app-surface);
+  color: var(--app-text-secondary);
+  border: 1px solid var(--app-border);
+}
+
+.dark .schedule-column-header {
+  background: var(--app-surface-secondary);
+  color: var(--app-text-secondary);
+  border-color: var(--app-border);
+}
+
+.schedule-row-header {
+  background: var(--app-surface);
+  color: var(--app-text-primary);
+  border: 1px solid var(--app-border);
+}
+
+.dark .schedule-row-header {
+  background: var(--app-surface-secondary);
+  color: var(--app-text-primary);
+  border-color: var(--app-border);
+}
+
+.schedule-today-badge {
+  background: var(--app-accent);
+  color: #ffffff;
+}
+
+.schedule-info-chip {
+  color: var(--app-text-secondary);
+}
+
+.dark .schedule-info-chip {
+  color: var(--app-text-secondary);
 }

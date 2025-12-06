@@ -3,12 +3,12 @@ import { useAuthenticatedApi } from '../utils/api';
 import {
     ActivityEligibility,
     EligibleActivityRecord,
-    StudentCourseEventRecord,
+    StudentCourseScheduleRecord,
     StudentParticipationRecord
 } from '../types/student';
 
 interface StudentScheduleState {
-    courseEvents: StudentCourseEventRecord[];
+    courseSchedules: StudentCourseScheduleRecord[];
     participations: StudentParticipationRecord[];
     eligibleActivities: EligibleActivityRecord[];
     loading: boolean;
@@ -16,7 +16,7 @@ interface StudentScheduleState {
 }
 
 const INITIAL_STATE: StudentScheduleState = {
-    courseEvents: [],
+    courseSchedules: [],
     participations: [],
     eligibleActivities: [],
     loading: true,
@@ -39,7 +39,7 @@ export const useStudentSchedule = () => {
         setState(prev => ({ ...prev, loading: true, error: null }));
         try {
             const [events, participations, eligible] = await Promise.all([
-                authenticatedJsonFetch<StudentCourseEventRecord[]>('/api/course-events/?ordering=start_datetime'),
+                authenticatedJsonFetch<StudentCourseScheduleRecord[]>('/api/course-events/'),
                 authenticatedJsonFetch<StudentParticipationRecord[]>('/api/participations/?ordering=-applied_at'),
                 authenticatedJsonFetch<EligibleActivityRecord[]>('/api/activities/eligible/?limit=8').catch(() => [])
             ]);
@@ -50,7 +50,7 @@ export const useStudentSchedule = () => {
             }));
 
             setState({
-                courseEvents: events || [],
+                courseSchedules: events || [],
                 participations: participations || [],
                 eligibleActivities: normalizedEligible,
                 loading: false,

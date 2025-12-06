@@ -27,13 +27,21 @@ export interface EligibleActivityRecord extends ActivityRecord {
     eligibility?: ActivityEligibility;
 }
 
-export interface StudentCourseEventRecord {
-    id: number;
+export interface StudentCourseScheduleRecord {
+    enrollment_id: number;
+    course_id: number;
     student: number;
     title: string;
     title_i18n?: Record<string, string> | null;
-    start_datetime: string;
-    end_datetime: string;
+    code?: string | null;
+    location?: string | null;
+    weekday: number;
+    periods: number[];
+    weeks: number[];
+    term_start_date?: string | null;
+    term?: string | null;
+    teacher_id?: string | null;
+    campus_name?: string | null;
 }
 
 export interface StudentParticipationRecord {
@@ -51,10 +59,56 @@ export interface StudentTimelineEntry {
     title: string;
     start: Date;
     end: Date;
-    courseEventId?: number;
+    courseId?: number;
+    enrollmentId?: number;
     activityId?: number;
     status?: ParticipationStatus;
     location?: string | null;
+    courseCode?: string | null;
+    periodStart?: number;
+    periodEnd?: number;
+    periodCount?: number;
+    periods?: number[];
     titleKey?: string;
     titleTranslations?: Record<string, string> | null;
+    weeks?: number[];
+    occurrenceWeek?: number;
+    hasConflict?: boolean;
+    conflictCount?: number;
+    conflicts?: StudentTimelineEntryConflict[];
+}
+
+export interface StudentTimelineEntryConflict {
+    key: string;
+    title: string;
+    courseCode?: string | null;
+}
+
+export type StudentUnscheduledCourseReason =
+    | 'missingTermStart'
+    | 'unspecifiedWeekday'
+    | 'invalidWeekday'
+    | 'missingWeeks'
+    | 'missingPeriods'
+    | 'invalidPeriod';
+
+export interface StudentUnscheduledCourse {
+    key: string;
+    title: string;
+    courseId: number;
+    enrollmentId: number;
+    courseCode?: string | null;
+    location?: string | null;
+    weekday: number | null;
+    weeks: number[];
+    periods: number[];
+    reason: StudentUnscheduledCourseReason;
+    titleKey?: string;
+    titleTranslations?: Record<string, string> | null;
+    termStartDate?: string | null;
+}
+
+export interface StudentTimelineBuildResult {
+    scheduled: StudentTimelineEntry[];
+    unscheduledCourses: StudentUnscheduledCourse[];
 }
