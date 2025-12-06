@@ -1,0 +1,83 @@
+import { TFunction } from 'i18next';
+
+export const COURSE_TITLE_KEY_BY_ZH: Record<string, string> = {
+    '人工智能导论': 'admin.course.title.aiIntro',
+    '大模型引领的人工智能通识与实践': 'admin.course.title.largeModelAI',
+    '动手学 AI：人工智能通识与实践（人文艺术版）': 'admin.course.title.handsOnAIHumanities',
+    '动手学 AI：人工智能通识与实践（社科版）': 'admin.course.title.handsOnAISocialScience',
+    '动手学 AI：人工智能通识与实践（理工版）': 'admin.course.title.handsOnAIScience',
+    '人工智能通识与实践应用': 'admin.course.title.aiGeneralPractice',
+    '人工智能实践应用（师范类、人文社科）': 'admin.course.title.aiPracticeNormalHumanities',
+    '人工智能实践应用（师范类、理工科）': 'admin.course.title.aiPracticeNormalScience',
+    'WPS智能办公': 'admin.course.title.wpsOffice',
+    '人工智能应用-网站设计': 'admin.course.title.aiWebDesign',
+    '人工智能基础-Python程序设计': 'admin.course.title.pythonProgramming',
+    'C语言程序设计': 'admin.course.title.cProgramming',
+    'Java程序设计': 'admin.course.title.javaProgramming',
+    'Python与数据分析': 'admin.course.title.pythonDataAnalysis',
+    'Python数据分析应用实训': 'admin.course.title.pythonDataAnalysisTraining',
+    'UI/UX交互设计': 'admin.course.title.uiUxDesign',
+    'Web前端开发技术': 'admin.course.title.webFrontendDevelopment',
+    'Web应用程序开发': 'admin.course.title.webAppDevelopment',
+    '专业基础技能考核': 'admin.course.title.professionalSkillsAssessment',
+    '专业实习': 'admin.course.title.internship',
+    '专业导论': 'admin.course.title.professionalIntroduction',
+    '专业英语': 'admin.course.title.professionalEnglish',
+    '专业见习': 'admin.course.title.professionalVisit',
+    '个人项目实训': 'admin.course.title.individualProjectTraining',
+    '交互设计': 'admin.course.title.interactionDesign',
+    '人工智能基础': 'admin.course.title.aiFoundation',
+    '人工智能算法实训': 'admin.course.title.aiAlgorithmTraining',
+    '分布式系统': 'admin.course.title.distributedSystems',
+    '团队协作与职业素质': 'admin.course.title.teamworkProfessionalQuality',
+    '团队规范项目实训': 'admin.course.title.teamProjectTraining',
+    '多媒体技术与应用': 'admin.course.title.multimediaTechnology',
+    '嵌入式软件开发': 'admin.course.title.embeddedSoftwareDevelopment',
+    '开源硬件实训': 'admin.course.title.openSourceHardwareTraining',
+    '教育实习': 'admin.course.title.educationInternship',
+    '教育研习': 'admin.course.title.educationResearch',
+    '数字信号处理': 'admin.course.title.digitalSignalProcessing',
+    '数字图像处理与计算机视觉': 'admin.course.title.digitalImageProcessing',
+    '数据库原理及应用': 'admin.course.title.databasePrinciples',
+    '数据库及应用技术': 'admin.course.title.databaseTechnology',
+    '数据结构课程设计': 'admin.course.title.dataStructuresDesign',
+    '智能科学新技术讲座': 'admin.course.title.intelligentScienceSeminar',
+    '智能移动设备软件开发': 'admin.course.title.mobileSoftwareDevelopment',
+    '机器人学': 'admin.course.title.robotics',
+    '概率与数理统计': 'admin.course.title.probabilityStatistics',
+    '离散数学': 'admin.course.title.discreteMathematics',
+    '科技文献检索及专利申请': 'admin.course.title.techLiteratureSearch',
+    '移动应用开发': 'admin.course.title.mobileAppDevelopment',
+    '算法设计与分析': 'admin.course.title.algorithmDesign',
+    '系统分析与设计：理论和方法': 'admin.course.title.systemAnalysisDesign',
+    '线性代数': 'admin.course.title.linearAlgebra',
+    '编译原理': 'admin.course.title.compilerPrinciples',
+    '网络安全': 'admin.course.title.networkSecurity',
+    '网络安全技能综合实训': 'admin.course.title.networkSecurityTraining',
+    '网络攻击与防御技术': 'admin.course.title.networkAttackDefense',
+    '计算方法': 'admin.course.title.computationalMethods',
+    '计算机新技术讲座': 'admin.course.title.computerScienceSeminar',
+    '计算机科学导论': 'admin.course.title.computerScienceIntro',
+    '计算机组成与结构': 'admin.course.title.computerArchitecture',
+    '软件新技术讲座': 'admin.course.title.softwareSeminar',
+    '软件设计模式': 'admin.course.title.softwareDesignPatterns',
+    '软件质量保证与测试': 'admin.course.title.softwareQualityTesting',
+    '软件过程与文档写作': 'admin.course.title.softwareProcessDocumentation',
+    '软件项目管理': 'admin.course.title.softwareProjectManagement',
+    '防火墙与入侵检测技术': 'admin.course.title.firewallIntrusionDetection',
+    '面向对象分析与设计': 'admin.course.title.ooAnalysisDesign',
+    '面向对象程序设计C#': 'admin.course.title.ooProgrammingCsharp',
+    '面向对象程序设计Java': 'admin.course.title.ooProgrammingJava',
+    '面向对象编程基础': 'admin.course.title.ooProgrammingFoundation',
+    '项目管理与工程实训': 'admin.course.title.projectManagementTraining'
+};
+
+export const getCourseTitleKey = (title: string): string | undefined => {
+    if (!title) return undefined;
+    return COURSE_TITLE_KEY_BY_ZH[title.trim()];
+};
+
+export const translateCourseTitle = (title: string, t: TFunction<'common'>): string => {
+    const key = getCourseTitleKey(title);
+    return key ? t(key) : title;
+};

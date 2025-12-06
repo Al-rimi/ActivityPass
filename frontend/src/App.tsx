@@ -17,8 +17,9 @@ import AdminStaffPage from './pages/AdminStaffPage';
 import AdminCoursesPage from './pages/AdminCoursesPage';
 import AdminActivitiesPage from './pages/AdminActivitiesPage';
 import StaffDashboardPage from './pages/StaffDashboardPage';
+import StudentHomePage from './pages/StudentHomePage';
+import StudentCalendarPage from './pages/StudentCalendarPage';
 import Logo from './components/Logo';
-import { resolveApiUrl } from './utils/api';
 
 const setDocumentCssVar = (name: string, value: number) => {
     if (typeof document === 'undefined') return;
@@ -59,6 +60,12 @@ const Navbar: React.FC = () => {
         }
         if (me?.role === 'staff') {
             return [{ label: dashboardLabel, to: '/staff' }];
+        }
+        if (me?.role === 'student') {
+            return [
+                { label: t('nav.studentHome', { defaultValue: 'Today' }), to: '/student' },
+                { label: t('nav.studentCalendar', { defaultValue: 'Calendar' }), to: '/student/calendar' }
+            ];
         }
         return [{ label: dashboardLabel, to: '/' }];
     }, [tokens, me?.role, dashboardLabel, t]);
@@ -348,81 +355,6 @@ const Navbar: React.FC = () => {
     );
 };
 
-// Legacy inline Login removed in favor of unified AuthPage
-
-type Activity = {
-    id: number;
-    title: string;
-    description?: string | null;
-    start_datetime: string;
-    end_datetime: string;
-};
-
-const ActivityList: React.FC = () => {
-    const { t } = useTranslation();
-    const { tokens } = useAuth();
-    const [activities, setActivities] = useState<Activity[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [notice, setNotice] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
-
-    useEffect(() => {
-        fetch(resolveApiUrl('/api/activities/'))
-            .then(r => r.json())
-            .then((data: Activity[]) => { setActivities(data); setLoading(false); })
-            .catch((err: unknown) => { setError(err instanceof Error ? err.message : String(err)); setLoading(false); });
-    }, []);
-
-    const apply = async (id: number) => {
-        if (!tokens) {
-            setNotice({ type: 'error', text: t('auth.loginRequired') });
-            return;
-        }
-        const res = await fetch(resolveApiUrl(`/api/activities/${id}/apply/`), {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${tokens.access}`
-            }
-        });
-        if (res.ok) {
-            setNotice({ type: 'success', text: t('apply.success') });
-        } else {
-            const data = await res.json().catch(() => ({ detail: 'Error' }));
-            setNotice({ type: 'error', text: data.detail || t('apply.fail') });
-        }
-    };
-
-    const fmt = useMemo(() => new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }), []);
-    return (
-        <main className="px-4 mx-auto max-w-7xl">
-            {notice && (
-                <div className={`mb-4 rounded-md border px-4 py-3 text-sm ${notice.type === 'success' ? 'border-app-light-accent bg-app-light-accent/10 text-app-light-text-primary dark:border-app-dark-accent dark:bg-app-dark-accent/20 dark:text-app-dark-text-primary' : notice.type === 'error' ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-700 dark:bg-red-900/30 dark:text-red-100' : 'border-app-light-border bg-app-light-surface-secondary text-app-light-text-primary dark:border-app-dark-border dark:bg-app-dark-surface-secondary dark:text-app-dark-text-primary'}`}>{notice.text}</div>
-            )}
-            {loading && <p className="py-6 text-app-light-text-primary">{t('activities.loading')}</p>}
-            {error && <p className="py-6 text-red-500">{t('error.generic')}: {error}</p>}
-            {!loading && !error && (
-                <div className="grid grid-cols-1 gap-4 py-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {activities.map(a => (
-                        <article key={a.id} className="flex flex-col p-5 border shadow-sm bg-app-light-surface border-app-light-border rounded-xl dark:border-app-dark-border dark:bg-app-dark-surface">
-                            <h3 className="mb-2 text-base font-semibold lg:text-lg">{a.title}</h3>
-                            <p className="flex-1 text-sm text-app-light-text-secondary lg:text-base dark:text-app-dark-text-secondary">{a.description || '—'}</p>
-                            <div className="mt-3 text-xs text-app-light-text-secondary lg:text-sm dark:text-app-dark-text-secondary">
-                                <div>Starts: {fmt.format(new Date(a.start_datetime))}</div>
-                                <div>Ends: {fmt.format(new Date(a.end_datetime))}</div>
-                            </div>
-                            <button onClick={() => apply(a.id)} className="mt-4 px-4 py-2.5 rounded-md bg-primary-500 text-white text-sm lg:text-base hover:bg-primary-600">{t('activity.apply')}</button>
-                        </article>
-                    ))}
-                </div>
-            )}
-            {!loading && !error && activities.length === 0 && (
-                <p className="py-6 text-app-light-text-secondary dark:text-app-dark-text-secondary">{t('activities.none')}</p>
-            )}
-        </main>
-    );
-};
-
 const RoleAwareHome: React.FC = () => {
     const { t } = useTranslation();
     const { me, meLoading } = useAuth();
@@ -433,6 +365,8 @@ const RoleAwareHome: React.FC = () => {
             navigate('/admin', { replace: true });
         } else if (me.role === 'staff') {
             navigate('/staff', { replace: true });
+        } else if (me.role === 'student') {
+            navigate('/student', { replace: true });
         }
     }, [me, meLoading, navigate]);
 
@@ -443,8 +377,11 @@ const RoleAwareHome: React.FC = () => {
             </main>
         );
     }
-    if (me.role === 'admin' || me.role === 'staff') return null;
-    return <ActivityList />;
+    return (
+        <main className="flex items-center justify-center flex-1 py-10">
+            <p className="text-sm text-app-light-text-secondary dark:text-app-dark-text-secondary">{t('app.loadingDashboard')}</p>
+        </main>
+    );
 };
 
 const Footer: React.FC = () => {
@@ -508,6 +445,8 @@ const App: React.FC = () => {
                 <Route path="/admin/courses/*" element={<ProtectedRoute><AdminRoute><AdminCoursesPage /></AdminRoute></ProtectedRoute>} />
                 <Route path="/admin/activities/*" element={<ProtectedRoute><AdminRoute><AdminActivitiesPage /></AdminRoute></ProtectedRoute>} />
                 <Route path="/staff" element={<ProtectedRoute><StaffRoute><StaffDashboardPage /></StaffRoute></ProtectedRoute>} />
+                <Route path="/student" element={<ProtectedRoute><StudentRoute><StudentHomePage /></StudentRoute></ProtectedRoute>} />
+                <Route path="/student/calendar" element={<ProtectedRoute><StudentRoute><StudentCalendarPage /></StudentRoute></ProtectedRoute>} />
                 <Route path="/" element={<ProtectedRoute><RoleAwareHome /></ProtectedRoute>} />
             </Routes>
             <Footer />
@@ -542,6 +481,21 @@ const StaffRoute: React.FC<React.PropsWithChildren> = ({ children }) => {
     }
     if (!me) return null;
     if (me.role !== 'staff') return <Navigate to="/" replace />;
+    return <>{children}</>;
+};
+
+const StudentRoute: React.FC<React.PropsWithChildren> = ({ children }) => {
+    const { t } = useTranslation();
+    const { me, meLoading } = useAuth();
+    if (meLoading) {
+        return (
+            <main className="flex items-center justify-center flex-1 py-10">
+                <p className="text-sm text-app-light-text-secondary dark:text-app-dark-text-secondary">{t('app.loadingDashboard')}</p>
+            </main>
+        );
+    }
+    if (!me) return null;
+    if (me.role !== 'student') return <Navigate to="/" replace />;
     return <>{children}</>;
 };
 
