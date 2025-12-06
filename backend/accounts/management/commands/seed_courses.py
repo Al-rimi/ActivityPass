@@ -3,8 +3,9 @@ import os
 import random
 from pathlib import Path
 from datetime import datetime
+from typing import Iterable
+
 from django.core.management.base import BaseCommand
-from django.db import transaction
 
 from accounts.models import Course, StudentProfile, CourseEnrollment, AcademicTerm
 
@@ -17,6 +18,7 @@ class Command(BaseCommand):
         parser.add_argument('--random-min', type=int, default=5, help='Min random courses for students without specific courses')
         parser.add_argument('--random-max', type=int, default=10, help='Max random courses for students without specific courses')
         parser.add_argument('--skip-existing', action='store_true', default=True, help='Skip students who already have course enrollments (default: True)')
+        parser.add_argument('--clear-enrollments', action='store_true', help='Delete all existing course enrollments before seeding')
 
     def handle(self, *args, **options):
         seed_dir = Path(__file__).resolve().parents[2] / 'seed_data'
@@ -28,9 +30,30 @@ class Command(BaseCommand):
         random_min = options['random_min']
         random_max = options['random_max']
         skip_existing = options['skip_existing']
+        clear_enrollments = options['clear_enrollments']
+
+        if clear_enrollments:
+            deleted = CourseEnrollment.objects.all().delete()
+            self.stdout.write(self.style.WARNING(f'Cleared existing course enrollments (deleted {deleted[0]} records)'))
 
         with json_path.open('r', encoding='utf-8') as f:
             courses_data = json.load(f)
+
+        manual_assignments_path = seed_dir / 'student_courses.json'
+        manual_course_codes: dict[str, list[str]] = {}
+        if manual_assignments_path.exists():
+            try:
+                with manual_assignments_path.open('r', encoding='utf-8') as f:
+                    manual_data = json.load(f)
+                for entry in manual_data:
+                    student_id = entry.get('student_id')
+                    codes = entry.get('courses', [])
+                    if student_id and codes:
+                        filtered_codes = [code.strip() for code in codes if isinstance(code, str) and code.strip()]
+                        if filtered_codes:
+                            manual_course_codes[student_id] = filtered_codes
+            except json.JSONDecodeError as exc:
+                self.stderr.write(self.style.WARNING(f'Failed to parse manual assignment file {manual_assignments_path}: {exc}'))
 
         # Extract and create academic terms from course data
         academic_terms_data = {}
@@ -110,6 +133,7 @@ class Command(BaseCommand):
 
         # Create courses
         course_objects = {}
+        courses_by_code: dict[str, list[Course]] = {}
         for course_key, course_data in all_courses:
             periods = course_data.get('periods', [])
             course, created = Course.objects.get_or_create(
@@ -143,18 +167,68 @@ class Command(BaseCommand):
                 }
             )
             course_objects[course_key] = course
+            if course.code:
+                courses_by_code.setdefault(course.code, []).append(course)
             if created:
                 self.stdout.write(f'Created course: {course}')
+
+        def has_schedule_conflict(existing_courses: Iterable[Course], candidate: Course) -> bool:
+            """Return True when the candidate course overlaps with an existing course."""
+
+            # Flexible or unscheduled courses cannot conflict because they have no fixed slot.
+            if candidate.weekday in (-1, None):
+                return False
+
+            candidate_weeks = set(candidate.weeks or [])
+            candidate_periods = set(candidate.periods or [])
+            if not candidate_weeks or not candidate_periods:
+                return False
+
+            for existing in existing_courses:
+                if existing.weekday in (-1, None):
+                    continue
+
+                if existing.weekday != candidate.weekday:
+                    continue
+
+                existing_weeks = set(existing.weeks or [])
+                existing_periods = set(existing.periods or [])
+
+                if not existing_weeks or not existing_periods:
+                    continue
+
+                # Conflict only if weeks overlap *and* periods overlap.
+                if candidate_weeks.intersection(existing_weeks) and candidate_periods.intersection(existing_periods):
+                    return True
+
+            return False
+
+        def enroll_student_in_course(student: StudentProfile, course: Course) -> None:
+            CourseEnrollment.objects.update_or_create(
+                course=course,
+                student=student,
+                defaults={
+                    'external_course_code': course.code or None,
+                    'external_student_id': student.student_id or None,
+                }
+            )
 
         # Enroll students
         students = StudentProfile.objects.all()
         enrolled_students = set()
         random_assignments = 0
-        
+        manual_assignments = 0
+
         for student in students:
             sid = student.student_id
+            existing_enrollments = list(student.course_enrollments.select_related('course'))
+            existing_courses = [enrollment.course for enrollment in existing_enrollments]
+            existing_course_ids = {course.id for course in existing_courses}
+            existing_course_codes = {course.code for course in existing_courses if course.code}
+
+            assigned_specific = False
+
             if sid in courses_by_student:
-                # Enroll in their specific courses
                 for course_data in courses_by_student[sid]:
                     course_key = (
                         course_data.get('code', ''),
@@ -168,23 +242,98 @@ class Command(BaseCommand):
                         course_data.get('term_start_date', ''),
                     )
                     course = course_objects.get(course_key)
-                    if course:
-                        CourseEnrollment.objects.get_or_create(course=course, student=student)
-                enrolled_students.add(sid)
-            else:
-                # Check if student already has enrollments
-                if skip_existing and student.course_enrollments.exists():
-                    self.stdout.write(f'Skipping {student} - already has {student.course_enrollments.count()} course enrollments')
-                    continue
-                
-                # Assign random courses (5-10)
-                num_courses = random.randint(random_min, random_max)
-                available_courses = list(course_objects.values())
-                if available_courses:
-                    selected_courses = random.sample(available_courses, min(num_courses, len(available_courses)))
-                    for course in selected_courses:
-                        CourseEnrollment.objects.get_or_create(course=course, student=student)
-                    random_assignments += 1
-                    self.stdout.write(f'Assigned {len(selected_courses)} random courses to {student}')
+                    if not course:
+                        continue
+                    if course.id in existing_course_ids:
+                        continue
+                    if course.code and course.code in existing_course_codes:
+                        continue
+                    if has_schedule_conflict(existing_courses, course):
+                        continue
 
-        self.stdout.write(self.style.SUCCESS(f'Seeding courses done. Created {len(course_objects)} courses, enrolled {len(enrolled_students)} students with specific courses, assigned random courses to {random_assignments} students.'))
+                    enroll_student_in_course(student, course)
+                    existing_courses.append(course)
+                    existing_course_ids.add(course.id)
+                    if course.code:
+                        existing_course_codes.add(course.code)
+                    assigned_specific = True
+
+            manual_codes = manual_course_codes.get(sid, [])
+            for code in manual_codes:
+                candidates = courses_by_code.get(code, [])
+                if not candidates:
+                    self.stderr.write(self.style.WARNING(f'Manual assignment: course code {code} not found for student {sid}'))
+                    continue
+
+                assigned = False
+                for course in candidates:
+                    if course.id in existing_course_ids:
+                        assigned = True
+                        break
+                    if has_schedule_conflict(existing_courses, course):
+                        continue
+                    enroll_student_in_course(student, course)
+                    existing_courses.append(course)
+                    existing_course_ids.add(course.id)
+                    if course.code:
+                        existing_course_codes.add(course.code)
+                    manual_assignments += 1
+                    assigned_specific = True
+                    assigned = True
+                    break
+
+                if not assigned:
+                    self.stderr.write(self.style.WARNING(
+                        f'Manual assignment: unable to assign course {code} to student {sid} due to conflicts or pre-existing enrollment'
+                    ))
+
+            if assigned_specific:
+                enrolled_students.add(sid)
+                continue
+
+            if skip_existing and existing_enrollments:
+                self.stdout.write(f'Skipping {student} - already has {len(existing_enrollments)} course enrollments')
+                continue
+
+            num_courses = random.randint(random_min, random_max)
+            available_courses = list(course_objects.values())
+
+            if not available_courses:
+                continue
+
+            random.shuffle(available_courses)
+            selected_courses: list[Course] = []
+            selected_codes: set[str] = set()
+
+            for course in available_courses:
+                if len(selected_courses) >= num_courses:
+                    break
+                if course.code:
+                    if course.code in existing_course_codes or course.code in selected_codes:
+                        continue
+                if has_schedule_conflict(existing_courses, course) or has_schedule_conflict(selected_courses, course):
+                    continue
+                selected_courses.append(course)
+                existing_courses.append(course)
+                if course.code:
+                    selected_codes.add(course.code)
+                    existing_course_codes.add(course.code)
+
+            if selected_courses:
+                for course in selected_courses:
+                    enroll_student_in_course(student, course)
+                random_assignments += 1
+                self.stdout.write(
+                    f'Assigned {len(selected_courses)} random non-conflicting courses to {student}'
+                )
+
+        self.stdout.write(self.style.SUCCESS(
+            'Seeding courses done. Created {course_count} courses, enrolled {specific_count} students with specific courses/manual codes '
+            '({manual_count} manual assignments applied), assigned random courses to {random_count} students.'
+            .format(
+                course_count=len(course_objects),
+                specific_count=len(enrolled_students),
+                manual_count=manual_assignments,
+                random_count=random_assignments,
+            )
+        ))

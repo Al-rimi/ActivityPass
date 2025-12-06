@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.db.models import Q
 
 
 def default_i18n():
@@ -115,13 +116,25 @@ class Course(models.Model):
 class CourseEnrollment(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='enrollments')
     student = models.ForeignKey(StudentProfile, on_delete=models.CASCADE, related_name='course_enrollments')
+    external_course_code = models.CharField(max_length=64, null=True, blank=True)
+    external_student_id = models.CharField(max_length=64, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('course', 'student')
+        constraints = [
+            models.UniqueConstraint(fields=['course', 'student'], name='unique_course_student'),
+            models.UniqueConstraint(
+                fields=['external_course_code', 'external_student_id'],
+                name='unique_external_course_student',
+                condition=Q(external_course_code__isnull=False, external_student_id__isnull=False)
+            ),
+        ]
 
     def __str__(self):
-        return f"CourseEnrollment(course={self.course_id}, student={self.student_id})"
+        return (
+            f"CourseEnrollment(course={self.external_course_code or self.course_id}, "
+            f"student={self.external_student_id or self.student_id})"
+        )
 
 
 class AcademicTerm(models.Model):

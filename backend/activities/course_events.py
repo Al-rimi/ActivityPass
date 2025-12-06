@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import date, datetime, time, timedelta
 from typing import Dict, Iterable, List, Sequence, Tuple
 
+from zoneinfo import ZoneInfo
+
 from django.utils import timezone
 
 from accounts.models import CourseEnrollment, StudentProfile
@@ -24,6 +26,9 @@ PERIOD_TIME_RANGES: Dict[int, Tuple[time, time]] = {
     12: (time(19, 40), time(20, 20)),
     13: (time(20, 30), time(21, 10)),
 }
+
+
+CAMPUS_TIME_ZONE = ZoneInfo("Asia/Shanghai")
 
 
 def _as_int_list(value: Sequence[int] | Sequence[str] | str | None) -> List[int]:
@@ -80,13 +85,14 @@ def _course_occurrences(course) -> Iterable[Tuple[str, datetime, datetime]]:
     if not start_range or not end_range:
         return []
 
-    tz = timezone.get_current_timezone()
+    tz = CAMPUS_TIME_ZONE
     title = getattr(course, "title", None) or getattr(course, "code", None) or "Course"
 
     for week_number in weeks:
         if week_number < 1:
             continue
         start_date = term_start + timedelta(weeks=week_number - 1, days=weekday - 1)
+        # Ensure stored datetimes are aligned with the campus timetable timezone
         start_dt = datetime.combine(start_date, start_range[0])
         end_dt = datetime.combine(start_date, end_range[1])
         yield title, timezone.make_aware(start_dt, tz), timezone.make_aware(end_dt, tz)
@@ -134,6 +140,46 @@ def build_student_course_event_payloads(student: StudentProfile) -> List[Dict[st
                 }
             )
             idx += 1
+
+    return payloads
+
+
+def build_student_course_payloads(student: StudentProfile) -> List[Dict[str, object]]:
+    """Return raw course scheduling metadata so clients can perform their own expansion."""
+
+    enrollments = CourseEnrollment.objects.select_related("course").filter(student=student)
+    payloads: List[Dict[str, object]] = []
+
+    for enrollment in enrollments:
+        course = enrollment.course
+        if not course:
+            continue
+
+        term_start = _normalise_term_start(getattr(course, "term_start_date", None))
+        periods = sorted(set(_as_int_list(getattr(course, "periods", []))))
+        weeks = sorted(set(_as_int_list(getattr(course, "weeks", []))))
+
+        title = getattr(course, "title", None) or getattr(course, "code", None) or "Course"
+        title_i18n = _course_title_i18n(title)
+
+        payloads.append(
+            {
+                "enrollment_id": enrollment.id,
+                "course_id": course.id,
+                "student": student.id,
+                "title": title_i18n.get('en', title),
+                "title_i18n": dict(title_i18n),
+                "code": getattr(course, "code", ""),
+                "location": getattr(course, "location", ""),
+                "weekday": getattr(course, "weekday", -1),
+                "periods": periods,
+                "weeks": weeks,
+                "term_start_date": term_start.isoformat() if term_start else None,
+                "term": getattr(course, "term", ""),
+                "teacher_id": getattr(course, "teacher_id", ""),
+                "campus_name": getattr(course, "campus_name", ""),
+            }
+        )
 
     return payloads
 

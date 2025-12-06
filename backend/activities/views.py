@@ -11,7 +11,7 @@ from .serializers import (
     ParticipationSerializer,
 )
 from .eligibility import evaluate_eligibility
-from .course_events import build_student_course_event_payloads
+from .course_events import build_student_course_event_payloads, build_student_course_payloads
 
 
 class IsStaffOrReadOnly(permissions.BasePermission):
@@ -121,7 +121,7 @@ class StudentCourseEventViewSet(viewsets.ViewSet):
         if not target_student:
             return Response([])
 
-        payloads = build_student_course_event_payloads(target_student)
+        payloads = build_student_course_payloads(target_student)
 
         lang = 'en'
         accept = request.META.get('HTTP_ACCEPT_LANGUAGE', '') if request else ''
