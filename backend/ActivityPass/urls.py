@@ -32,7 +32,7 @@ from accounts import admin_views as accounts_admin
 router = DefaultRouter()
 router.register(r'activities', ActivityViewSet)
 router.register(r'participations', ParticipationViewSet)
-router.register(r'course-events', StudentCourseEventViewSet)
+router.register(r'course-events', StudentCourseEventViewSet, basename='course-events')
 router.register(r'student-profile', StudentProfileViewSet, basename='student-profile')
 router.register(r'faculty-profile', FacultyProfileViewSet, basename='faculty-profile')
 router.register(r'admin/users', accounts_admin.AdminUserViewSet, basename='admin-users')

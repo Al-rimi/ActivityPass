@@ -4,16 +4,13 @@ from typing import Dict, List
 from django.utils import timezone
 
 from accounts.models import StudentProfile
-from .models import Activity, Participation, StudentCourseEvent
+from .models import Activity, Participation
+from .course_events import student_has_time_conflict
 
 
 def check_time_conflict(student: StudentProfile, activity: Activity) -> bool:
     # Any course event overlapping activity time
-    return StudentCourseEvent.objects.filter(
-        student=student,
-        start_datetime__lt=activity.end_datetime,
-        end_datetime__gt=activity.start_datetime,
-    ).exists()
+    return student_has_time_conflict(student, activity.start_datetime, activity.end_datetime)
 
 
 def check_major_college(student: StudentProfile, activity: Activity) -> bool:

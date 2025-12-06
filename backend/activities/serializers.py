@@ -1,8 +1,7 @@
 from rest_framework import serializers
-from django.utils.translation import get_language
 
 from accounts.serializers import StudentProfileSerializer
-from .models import Activity, Participation, StudentCourseEvent
+from .models import Activity, Participation
 
 
 class ActivitySerializer(serializers.ModelSerializer):
@@ -41,32 +40,11 @@ class ActivitySerializer(serializers.ModelSerializer):
         return data
 
 
-class StudentCourseEventSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = StudentCourseEvent
-        fields = ['id', 'student', 'title', 'title_i18n', 'start_datetime', 'end_datetime']
-
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        request = self.context.get('request')
-        lang = 'en'
-        if request:
-            accept = request.META.get('HTTP_ACCEPT_LANGUAGE', '')
-            if 'zh' in accept.lower():
-                lang = 'zh'
-            elif 'en' in accept.lower():
-                lang = 'en'
-            qp = request.query_params.get('lang')
-            if qp:
-                lang = 'zh' if qp.lower().startswith('zh') else 'en'
-        data['title'] = (instance.title_i18n or {}).get(lang) or data.get('title')
-        return data
-
-
 class ParticipationSerializer(serializers.ModelSerializer):
     student = StudentProfileSerializer(read_only=True)
+    activity_detail = ActivitySerializer(source='activity', read_only=True)
 
     class Meta:
         model = Participation
-        fields = ['id', 'student', 'activity', 'status', 'applied_at']
+        fields = ['id', 'student', 'activity', 'activity_detail', 'status', 'applied_at']
         read_only_fields = ['applied_at']

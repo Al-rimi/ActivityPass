@@ -1,16 +1,17 @@
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
 from accounts.models import StudentProfile
-from .models import Activity, Participation, StudentCourseEvent
+from .models import Activity, Participation
 from .serializers import (
     ActivitySerializer,
     ParticipationSerializer,
-    StudentCourseEventSerializer,
 )
 from .eligibility import evaluate_eligibility
+from .course_events import build_student_course_event_payloads
 
 
 class IsStaffOrReadOnly(permissions.BasePermission):
@@ -32,6 +33,35 @@ class ActivityViewSet(viewsets.ModelViewSet):
         ctx = super().get_serializer_context()
         ctx['request'] = self.request
         return ctx
+
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated], url_path='eligible')
+    def eligible(self, request):
+        student_profile = getattr(request.user, 'student_profile', None)
+        if not student_profile:
+            return Response([])
+
+        qs = self.filter_queryset(self.get_queryset()).filter(end_datetime__gte=timezone.now()).order_by('start_datetime')
+        limit_param = request.query_params.get('limit')
+        limit = None
+        if limit_param and limit_param.isdigit():
+            try:
+                limit = max(int(limit_param), 0)
+            except ValueError:
+                limit = None
+
+        results = []
+        for activity in qs:
+            evaluation = evaluate_eligibility(student_profile, activity)
+            if not evaluation.get('eligible'):
+                continue
+            serializer = self.get_serializer(activity, context=self.get_serializer_context())
+            data = serializer.data
+            data['eligibility'] = evaluation
+            results.append(data)
+            if limit is not None and len(results) >= limit:
+                break
+
+        return Response(results)
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def apply(self, request, pk=None):
@@ -72,29 +102,42 @@ class ParticipationViewSet(viewsets.ModelViewSet):
         return ctx
 
 
-class StudentCourseEventViewSet(viewsets.ModelViewSet):
-    queryset = StudentCourseEvent.objects.all().order_by('start_datetime')
-    serializer_class = StudentCourseEventSerializer
+class StudentCourseEventViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
+    http_method_names = ['get', 'head', 'options']
 
-    def get_queryset(self):
-        qs = super().get_queryset()
-        student_profile = getattr(self.request.user, 'student_profile', None)
-        if student_profile and not (self.request.user.is_staff or self.request.user.is_superuser):
-            return qs.filter(student=student_profile)
-        return qs
+    def list(self, request):
+        student_profile = getattr(request.user, 'student_profile', None)
+        target_student = student_profile
 
-    def perform_create(self, serializer):
-        student_profile = getattr(self.request.user, 'student_profile', None)
-        if student_profile:
-            serializer.save(student=student_profile)
-        else:
-            serializer.save()
+        if request.user.is_staff or request.user.is_superuser:
+            student_id = request.query_params.get('student')
+            if student_id:
+                try:
+                    target_student = StudentProfile.objects.get(pk=student_id)
+                except StudentProfile.DoesNotExist:
+                    target_student = None
 
-    def get_serializer_context(self):
-        ctx = super().get_serializer_context()
-        ctx['request'] = self.request
-        return ctx
+        if not target_student:
+            return Response([])
+
+        payloads = build_student_course_event_payloads(target_student)
+
+        lang = 'en'
+        accept = request.META.get('HTTP_ACCEPT_LANGUAGE', '') if request else ''
+        if 'zh' in accept.lower():
+            lang = 'zh'
+        elif 'en' in accept.lower():
+            lang = 'en'
+        qp = request.query_params.get('lang') if request else None
+        if qp:
+            lang = 'zh' if qp.lower().startswith('zh') else 'en'
+
+        for item in payloads:
+            title_i18n = item.get('title_i18n') or {}
+            item['title'] = title_i18n.get(lang, item.get('title'))
+
+        return Response(payloads)
 
 
 @api_view(['GET'])
