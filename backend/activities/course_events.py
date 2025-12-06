@@ -6,7 +6,7 @@ from typing import Dict, Iterable, List, Sequence, Tuple
 try:
     from zoneinfo import ZoneInfo
 except ImportError:  # Python < 3.9 fallback
-    from backports.zoneinfo import ZoneInfo
+    from backports.zoneinfo import ZoneInfo  # type: ignore[import]
 
 from django.utils import timezone
 
