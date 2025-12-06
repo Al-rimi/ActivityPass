@@ -3,7 +3,10 @@ from __future__ import annotations
 from datetime import date, datetime, time, timedelta
 from typing import Dict, Iterable, List, Sequence, Tuple
 
-from zoneinfo import ZoneInfo
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:  # Python < 3.9 fallback
+    from backports.zoneinfo import ZoneInfo
 
 from django.utils import timezone
 

@@ -4,6 +4,7 @@ djangorestframework-simplejwt>=5.3.1
 python-dotenv>=1.0.1
 PyMySQL>=1.1.1
 django-cors-headers>=4.4.0
+backports.zoneinfo>=0.2.1; python_version < "3.9"
 tzdata>=2024.1
 cryptography>=3.4.0
 gunicorn>=21.2.0
